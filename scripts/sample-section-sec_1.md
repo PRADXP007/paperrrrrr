@@ -1,0 +1,5 @@
+# Executive Summary & Current Renewable Energy Baseline
+
+India has emerged as one of the fastest-growing renewable energy markets globally, currently holding the 4th position worldwide in total installed renewable capacity. As of recent ministry updates, the nation's solar power infrastructure has scaled beyond 70 GW, while onshore wind installed capacity has surpassed 44 GW [Source: Ministry of New and Renewable Energy](https://mnre.gov.in/overview/).
+
+This rapid acceleration forms part of a broader geopolitical and environmental commitment to achieve 500 GW of non-fossil fuel power capacity by 2030, fulfilling half of the national electricity demand through clean energy sources [Source: IEA Analysis](https://www.iea.org/reports/india-energy-outlook). Strategic interventions such as the Production Linked Incentive (PLI) scheme for high-efficiency solar photovoltaic modules have significantly reduced reliance on imported equipment, establishing domestic supply chains and underpinning long-term energy independence.

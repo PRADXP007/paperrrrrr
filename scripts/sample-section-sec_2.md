@@ -1,0 +1,5 @@
+# Policy Frameworks: PLI Schemes and PM-KUSUM
+
+The policy architecture governing India's green energy transition is built around targeted economic incentives and decentralized rural deployment. A major catalyst is the Production Linked Incentive (PLI) scheme, designed to stimulate gigawatt-scale domestic manufacturing of high-efficiency solar cells and modules [Source: Ministry of New and Renewable Energy](https://mnre.gov.in/overview/).
+
+Concurrently, the PM-KUSUM (Pradhan Mantri Kisan Urja Suraksha evam Utthaan Mahabhiyan) initiative focuses on solarizing agricultural pumps and decentralized solar plants in rural feeder systems. By decoupling agricultural electricity subsidies from state power distribution companies (discoms), PM-KUSUM enhances farmers' financial stability while injecting clean power directly into local feeder networks.
