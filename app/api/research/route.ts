@@ -6,13 +6,21 @@ import Document from "@/models/Document";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { prompt, format = "docx", tone = "Academic", audience = "Students", targetLength = "Detailed" } = body;
+    const {
+      prompt,
+      format = "docx",
+      tone = "Academic",
+      audience = "Students",
+      targetLength = "Detailed",
+      depth = "standard",
+      referenceNotes
+    } = body;
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
-    const researchBundle = await executeTavilyResearch(prompt);
+    const researchBundle = await executeTavilyResearch(prompt, { depth });
 
     let docId = null;
     try {

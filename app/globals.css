@@ -10,19 +10,34 @@
     --on-primary: #ffffff;
     --secondary: #5f5e5e;
     --surface: #faf9f5;
-    --surface-container-lowest: #ffffff;
-    --surface-container-low: #f4f4f0;
-    --surface-container: #efeeea;
-    --surface-container-high: #e9e8e4;
-    --surface-container-highest: #e3e2df;
-    --outline: #88726d;
-    --outline-variant: #dbc1ba;
+    --surface-card: #ffffff;
+    --surface-border: #dbc1ba;
+    --surface-muted: #f4f4f0;
+    --text-muted: #55423e;
+    --text-subtle: #88726d;
+  }
+
+  .dark {
+    --background: #0f1117;
+    --on-background: #f1f3f7;
+    --primary: #e07a5f;
+    --primary-container: #b65a42;
+    --primary-fixed: #3d2219;
+    --on-primary: #ffffff;
+    --secondary: #94a3b8;
+    --surface: #0f1117;
+    --surface-card: #181b24;
+    --surface-border: #2e3444;
+    --surface-muted: #1e2230;
+    --text-muted: #cbd5e1;
+    --text-subtle: #94a3b8;
   }
 
   body {
     background-color: var(--background);
     color: var(--on-background);
     font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, .font-serif-title {
@@ -31,7 +46,40 @@
 }
 
 .paper-shadow {
-  box-shadow: 0px 4px 12px rgba(26, 26, 26, 0.08);
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.dark .paper-shadow {
+  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .glass-panel {
+  background: rgba(24, 27, 36, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.shimmer-skeleton {
+  background: linear-gradient(90deg, rgba(219, 193, 186, 0.2) 0%, rgba(151, 66, 44, 0.15) 50%, rgba(219, 193, 186, 0.2) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+.dark .shimmer-skeleton {
+  background: linear-gradient(90deg, rgba(46, 52, 68, 0.4) 0%, rgba(224, 122, 95, 0.2) 50%, rgba(46, 52, 68, 0.4) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .cursor-blink {
@@ -46,6 +94,6 @@
   animation: pulse-soft 2s ease-in-out infinite;
 }
 @keyframes pulse-soft {
-  0%, 100% { color: #97422c; }
-  50% { color: #b65a42; }
+  0%, 100% { color: var(--primary); }
+  50% { color: var(--primary-container); }
 }

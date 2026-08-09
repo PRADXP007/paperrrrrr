@@ -29,6 +29,7 @@ export interface GenerateOutlineOptions {
   docType?: string;
   customGeminiKey?: string;
   customOpenAIKey?: string;
+  referenceNotes?: string;
 }
 
 /**
@@ -133,13 +134,15 @@ Target Tone: ${options.tone || "Academic & Analytical"}
 Target Audience: ${options.audience || "Researchers & Practitioners"}
 Target Length: ${options.targetLength || "Detailed (~2,000 words)"}
 
+${options.referenceNotes ? `User Provided Background / Reference Notes:\n${options.referenceNotes}\n` : ""}
+
 Live Research Sources Available:
 ${JSON.stringify(researchBundle.results, null, 2)}
 
 Ensure:
 1. Provide 4 to 6 logical, comprehensive sections.
 2. Link each section to relevant research source indices.
-3. Every section has 3-4 specific key points directly addressing the prompt.`;
+3. Every section has 3-4 specific key points directly addressing the prompt and reference notes.`;
 
   // 1. Primary AI Provider: Gemini Flash (@google/genai)
   if (geminiApiKey) {
@@ -195,7 +198,7 @@ export async function generateSectionProse(
   docTitle: string,
   section: OutlineSection,
   filteredSources: ResearchSnippet[],
-  customKeys?: { customGeminiKey?: string; customOpenAIKey?: string }
+  customKeys?: { customGeminiKey?: string; customOpenAIKey?: string; referenceNotes?: string }
 ): Promise<string> {
   const geminiApiKey = customKeys?.customGeminiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   const prompt = `Write publication-grade prose for the following section:
@@ -204,12 +207,15 @@ Section Title: ${section.title}
 Section Brief: ${section.brief}
 Key Points: ${section.keyPoints.join("; ")}
 
+${customKeys?.referenceNotes ? `User Reference Notes:\n${customKeys.referenceNotes}\n` : ""}
+
 Filtered Research Snippets for this section ONLY:
 ${JSON.stringify(filteredSources, null, 2)}
 
 Instructions:
 - Write 2-4 comprehensive, articulate paragraphs.
 - Include markdown citations like [Source: Title](URL).
+- Ground the prose in specific empirical figures, percentages, and institutional frameworks.
 - Output ONLY the section body markdown.`;
 
   // 1. Primary AI Provider: Gemini Flash (@google/genai)
@@ -264,4 +270,60 @@ Instructions:
   const paragraph3 = `In summary, executing against the strategic priorities for ${section.title.toLowerCase()} necessitates aligning immediate tactical deployments with long-term infrastructure resilience. Comprehensive policy oversight and continuous performance audits remain essential for sustained institutional impact.`;
 
   return `${paragraph1}\n\n${paragraph2}\n\n${paragraph3}`;
+}
+
+/**
+ * Regenerates an individual section with custom user instructions (e.g. "Add more metrics", "Make concise")
+ */
+export async function regenerateSingleSection(
+  docTitle: string,
+  section: OutlineSection,
+  filteredSources: ResearchSnippet[],
+  userInstruction: string,
+  customKeys?: { customGeminiKey?: string; customOpenAIKey?: string }
+): Promise<string> {
+  const geminiApiKey = customKeys?.customGeminiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const prompt = `You are revising an individual section of a research document:
+Document Title: ${docTitle}
+Section Title: ${section.title}
+Current Brief: ${section.brief}
+Key Points: ${section.keyPoints.join("; ")}
+Specific Revision Instruction from User: "${userInstruction || "Deepen analytical depth with specific quantitative metrics."}"
+
+Filtered Research Sources:
+${JSON.stringify(filteredSources, null, 2)}
+
+Instructions:
+- Rewrite the section prose following the revision instruction.
+- Include proper markdown citations like [Source: Title](URL).
+- Return ONLY the revised markdown prose.`;
+
+  if (geminiApiKey) {
+    try {
+      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt
+      });
+      if (response.text) return response.text;
+    } catch (e) {
+      console.warn("Gemini section regeneration failed:", e);
+    }
+  }
+
+  const openaiApiKey = customKeys?.customOpenAIKey || process.env.OPENAI_API_KEY;
+  if (openaiApiKey) {
+    try {
+      const openai = new OpenAI({ apiKey: openaiApiKey });
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }]
+      });
+      return completion.choices[0].message.content || "";
+    } catch (e) {
+      console.warn("OpenAI section regeneration failed:", e);
+    }
+  }
+
+  return generateSectionProse(docTitle, section, filteredSources, customKeys);
 }

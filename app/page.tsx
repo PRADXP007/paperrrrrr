@@ -8,6 +8,7 @@ interface ResearchSource {
   url: string;
   snippet: string;
   score?: number;
+  sourceDomain?: string;
 }
 
 interface OutlineSection {
@@ -30,8 +31,11 @@ interface GeneratedOutline {
 }
 
 export default function PaperrrrrrApp() {
-  // Navigation & Pipeline state: 'intake' | 'generating_outline' | 'outline' | 'workspace' | 'preview'
-  const [step, setStep] = useState<"intake" | "generating_outline" | "outline" | "workspace" | "preview">("intake");
+  // Theme Mode: 'light' | 'dark'
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  // Navigation & Pipeline state: 'intake' | 'generating_outline' | 'outline' | 'workspace'
+  const [step, setStep] = useState<"intake" | "generating_outline" | "outline" | "workspace">("intake");
 
   // User state & Mongo persistence
   const [user, setUser] = useState<{ id?: string; name?: string; email?: string; avatar?: string } | null>(null);
@@ -59,6 +63,21 @@ export default function PaperrrrrrApp() {
   const [tone, setTone] = useState("Academic & Analytical");
   const [audience, setAudience] = useState("Students & Researchers");
   const [targetLength, setTargetLength] = useState("Detailed (~2,000 words)");
+  const [researchDepth, setResearchDepth] = useState<"standard" | "deep">("standard");
+
+  // Reference File / Notes Intake
+  const [showFileIntake, setShowFileIntake] = useState(false);
+  const [referenceNotes, setReferenceNotes] = useState("");
+  const [attachedFileName, setAttachedFileName] = useState("");
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+
+  // Research Sources Modal Inspector
+  const [showSourcesModal, setShowSourcesModal] = useState(false);
+
+  // Section Regeneration Modal / State
+  const [regeneratingSectionId, setRegeneratingSectionId] = useState<string | null>(null);
+  const [sectionRevisionInstruction, setSectionRevisionInstruction] = useState("");
+  const [activeRegenSection, setActiveRegenSection] = useState<OutlineSection | null>(null);
 
   // Follow-up instruction state for split-screen pinned prompt bar
   const [followUpInstruction, setFollowUpInstruction] = useState("");
@@ -67,7 +86,7 @@ export default function PaperrrrrrApp() {
   // Pipeline runtime state
   const [docId, setDocId] = useState<string | null>(null);
   const [isResearching, setIsResearching] = useState(false);
-  const [researchBundle, setResearchBundle] = useState<{ query: string; results: ResearchSource[]; answer?: string } | null>(null);
+  const [researchBundle, setResearchBundle] = useState<{ query: string; results: ResearchSource[]; answer?: string; depth?: string } | null>(null);
 
   // Outline state
   const [outline, setOutline] = useState<GeneratedOutline | null>(null);
@@ -84,8 +103,26 @@ export default function PaperrrrrrApp() {
   const [isAssembledReady, setIsAssembledReady] = useState(false);
   const [assembledBlobUrl, setAssembledBlobUrl] = useState<string | null>(null);
   const [assembledFilename, setAssembledFilename] = useState<string>("");
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const timelineEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Initialize theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("paperrrrrr_theme") as "light" | "dark" | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    localStorage.setItem("paperrrrrr_theme", nextTheme);
+    document.documentElement.classList.toggle("dark", nextTheme === "dark");
+  };
 
   // Load document history & key settings on mount/user change
   useEffect(() => {
@@ -122,6 +159,33 @@ export default function PaperrrrrrApp() {
       }
     } catch (e) {
       console.warn("Failed to fetch user keys:", e);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFile(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAttachedFileName(file.name);
+        setReferenceNotes((prev) => (prev ? `${prev}\n\n[Attached File: ${file.name}]\n${data.extractedText}` : `[Attached File: ${file.name}]\n${data.extractedText}`));
+      } else {
+        alert("Upload error: " + (data.error || "Failed to process file"));
+      }
+    } catch (err: any) {
+      alert("File upload error: " + err.message);
+    } finally {
+      setIsUploadingFile(false);
     }
   };
 
@@ -233,7 +297,7 @@ export default function PaperrrrrrApp() {
       timestamp: new Date().toLocaleTimeString(),
       type: "status" as const,
       title: "Live Web Research Started",
-      detail: `Searching live web benchmarks for: "${prompt}"`
+      detail: `Searching live web benchmarks for: "${prompt}" (Depth: ${researchDepth.toUpperCase()})`
     };
     setStreamTimelineEvents([initialEvent]);
 
@@ -242,7 +306,15 @@ export default function PaperrrrrrApp() {
       const resResearch = await fetch("/api/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, format, tone, audience, targetLength })
+        body: JSON.stringify({
+          prompt,
+          format,
+          tone,
+          audience,
+          targetLength,
+          depth: researchDepth,
+          referenceNotes: referenceNotes || undefined
+        })
       });
       const dataResearch = await resResearch.json();
 
@@ -280,6 +352,7 @@ export default function PaperrrrrrApp() {
             audience,
             targetLength,
             docType,
+            referenceNotes: referenceNotes || undefined,
             customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined
           },
           researchBundle: dataResearch.researchBundle
@@ -306,7 +379,6 @@ export default function PaperrrrrrApp() {
         }
       ]);
 
-      // Transition smoothly to Outline Reviewer Screen
       setStep("outline");
     } catch (err: any) {
       alert("Pipeline Error: " + err.message);
@@ -387,6 +459,7 @@ export default function PaperrrrrrApp() {
           docId,
           approvedOutline: outline,
           researchBundle,
+          referenceNotes: referenceNotes || undefined,
           customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined
         })
       });
@@ -454,11 +527,10 @@ export default function PaperrrrrrApp() {
                 setActiveGeneratingSectionIndex(null);
                 setStreamStatusText("All sections drafted! Assembling binary download package...");
 
-                // Execute final assemble call to get downloadable Blob
-                const compiledSections = event.sections || outline.sections.map((s) => ({
+                const compiledSections = event.sections || outline.sections.map((s, idx) => ({
                   title: s.title,
                   brief: s.brief,
-                  content: generatedSections[s.id] || s.brief
+                  content: generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || s.brief
                 }));
 
                 const resAssemble = await fetch("/api/assemble", {
@@ -522,20 +594,69 @@ export default function PaperrrrrrApp() {
     }
   };
 
+  // Section-by-Section Single Regeneration Action
+  const handleRegenerateSectionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!outline || !activeRegenSection) return;
+
+    const sec = activeRegenSection;
+    const secId = sec.id;
+    setRegeneratingSectionId(secId);
+
+    try {
+      const filteredSources = (researchBundle?.results || []).filter((src) =>
+        (sec.relevantSourceIndices || [1]).includes(src.index)
+      );
+
+      const res = await fetch("/api/generate-section", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          docId,
+          docTitle: outline.title,
+          section: sec,
+          filteredSources,
+          userInstruction: sectionRevisionInstruction,
+          customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined
+        })
+      });
+
+      const data = await res.json();
+      if (data.success && data.content) {
+        setGeneratedSections((prev) => ({
+          ...prev,
+          [secId]: data.content,
+          [sec.title]: data.content
+        }));
+
+        setStreamTimelineEvents((prev) => [
+          ...prev,
+          {
+            id: `ev_regen_${Date.now()}`,
+            timestamp: new Date().toLocaleTimeString(),
+            type: "section",
+            title: `Refined: "${sec.title}"`,
+            detail: `User Instruction: "${sectionRevisionInstruction || 'Quantitative enhancement'}"`
+          }
+        ]);
+
+        setActiveRegenSection(null);
+        setSectionRevisionInstruction("");
+      } else {
+        alert("Section regeneration failed: " + (data.error || "Unknown"));
+      }
+    } catch (err: any) {
+      alert("Error regenerating section: " + err.message);
+    } finally {
+      setRegeneratingSectionId(null);
+    }
+  };
+
+  // Follow-up notes in split screen
   const handleAddFollowUpNote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!followUpInstruction.trim()) return;
     setFollowUpNotes((prev) => [...prev, followUpInstruction.trim()]);
-    setStreamTimelineEvents((prev) => [
-      ...prev,
-      {
-        id: `ev_follow_${Date.now()}`,
-        timestamp: new Date().toLocaleTimeString(),
-        type: "status",
-        title: "User Refinement Added",
-        detail: `Instruction: "${followUpInstruction.trim()}"`
-      }
-    ]);
     setFollowUpInstruction("");
   };
 
@@ -549,51 +670,86 @@ export default function PaperrrrrrApp() {
     document.body.removeChild(a);
   };
 
+  const handleCopyMarkdown = () => {
+    if (!outline) return;
+    let md = `# ${outline.title}\n\n*${outline.subtitle}*\n\nGenerated by **Paperrrrrr** • ${new Date().toLocaleDateString()}\n\n---\n\n`;
+    outline.sections.forEach((sec, idx) => {
+      const prose = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || sec.brief;
+      md += `## ${sec.title}\n\n${prose}\n\n`;
+    });
+
+    navigator.clipboard.writeText(md);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2500);
+  };
+
+  const readySectionsCount = outline
+    ? outline.sections.filter((s, i) =>
+        Boolean(generatedSections[s.id] || generatedSections[i] || generatedSections[`sec_${i + 1}`] || (generatedSections as any)[s.title])
+      ).length
+    : 0;
+
   return (
-    <div className="min-h-screen bg-[#FAF9F5] text-[#1B1C1A] flex flex-col font-sans">
-      {/* ============================================================ */}
-      {/* TOP HEADER: BRANDING, BYOK BADGE, AUTH                       */}
-      {/* ============================================================ */}
-      <header className="sticky top-0 bg-[#FAF9F5]/95 backdrop-blur-md border-b border-[#DBC1BA] z-40">
-        <div className="flex justify-between items-center px-4 sm:px-8 py-3.5 max-w-7xl mx-auto w-full">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setStep("intake")}>
-            <span className="material-symbols-outlined text-[#97422C] text-3xl font-bold">draft</span>
-            <div className="flex flex-col">
-              <span className="font-serif text-2xl font-black tracking-tight text-[#97422C]">Paperrrrrr</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#88726D] -mt-1">
-                Gemini 2.5 Flash Studio
+    <div className="min-h-screen bg-[var(--background)] text-[var(--on-background)] flex flex-col font-sans transition-colors duration-300">
+      {/* Top Navigation Bar */}
+      <header className="w-full border-b border-[var(--surface-border)] bg-[var(--surface-card)] px-4 sm:px-8 py-3.5 sticky top-0 z-40 paper-shadow">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setStep("intake")}
+              className="flex items-center gap-2 cursor-pointer group focus:outline-none"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center font-serif text-lg font-bold shadow group-hover:scale-105 transition-transform">
+                P
+              </div>
+              <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[var(--primary)]">
+                Paperrrrrr
               </span>
-            </div>
+            </button>
+            <span className="hidden sm:inline-block text-[11px] font-bold uppercase tracking-wider text-[var(--text-subtle)] border border-[var(--surface-border)] px-2 py-0.5 rounded-full bg-[var(--surface-muted)]">
+              Studio 2.0
+            </span>
           </div>
 
-          {/* Center / Right Header Navigation & BYOK Status */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* BYOK Status Indicator Badge */}
+          <div className="flex items-center gap-2.5 sm:gap-4">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              title="Toggle Dark / Light Theme"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] hover:border-[var(--primary)] text-[var(--on-background)] transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+            </button>
+
+            {/* BYOK Settings Button & Badge */}
             <button
               onClick={() => setShowSettingsModal(true)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${
-                hasCustomGeminiKey
-                  ? "bg-[#FFDBD2] text-[#97422C] border-[#97422C]"
-                  : "bg-white text-[#55423E] border-[#DBC1BA] hover:border-[#97422C]"
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
+                hasCustomGeminiKey || hasCustomOpenAIKey
+                  ? "bg-[var(--primary-fixed)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-sm"
+                  : "border-[var(--surface-border)] text-[var(--text-muted)] hover:border-[var(--primary)] bg-[var(--surface-muted)]"
               }`}
             >
-              <span className="material-symbols-outlined text-sm">{hasCustomGeminiKey ? "key" : "tune"}</span>
+              <span className="material-symbols-outlined text-sm">key</span>
               <span className="hidden sm:inline">
-                {hasCustomGeminiKey ? `Custom Key (${geminiKeyMasked})` : "App Default AI"}
+                {hasCustomGeminiKey
+                  ? `Gemini Key (${geminiKeyMasked})`
+                  : hasCustomOpenAIKey
+                  ? `OpenAI Key (${openaiKeyMasked})`
+                  : "API Keys"}
               </span>
-              <span className="sm:hidden">{hasCustomGeminiKey ? "Key" : "AI"}</span>
+              <span className="sm:hidden">{hasCustomGeminiKey ? "Key" : "Keys"}</span>
             </button>
 
             {/* Auth Button / Profile */}
             {user ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#1B1C1A] bg-[#FAF9F5] border border-[#DBC1BA] px-2.5 py-1 rounded">
+                <span className="text-xs font-bold text-[var(--on-background)] bg-[var(--surface-muted)] border border-[var(--surface-border)] px-2.5 py-1 rounded">
                   👤 {user.name}
                 </span>
                 <button
                   onClick={() => setUser(null)}
-                  className="text-xs text-[#88726D] hover:text-[#97422C] underline ml-1"
+                  className="text-xs text-[var(--text-subtle)] hover:text-[var(--primary)] underline ml-1 cursor-pointer"
                 >
                   Sign Out
                 </button>
@@ -601,7 +757,7 @@ export default function PaperrrrrrApp() {
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="text-xs font-bold uppercase tracking-wider text-[#97422C] border border-[#97422C] px-3.5 py-1.5 rounded hover:bg-[#97422C] hover:text-white transition-colors flex items-center gap-1"
+                className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] border border-[var(--primary)] px-3.5 py-1.5 rounded-lg hover:bg-[var(--primary)] hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">login</span>
                 Sign In
@@ -618,22 +774,22 @@ export default function PaperrrrrrApp() {
         {/* ============================================================ */}
         {step === "intake" && (
           <div className="w-full max-w-3xl mx-auto flex flex-col gap-8 py-4 sm:py-8">
-            {/* Header Text - Prominently Centered near the top */}
+            {/* Header Text */}
             <div className="flex flex-col gap-2 text-center">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#97422C] bg-[#FFDBD2] px-3 py-1 rounded-full w-max mx-auto">
+              <span className="text-xs font-bold uppercase tracking-widest text-[var(--primary)] bg-[var(--primary-fixed)] px-3 py-1 rounded-full w-max mx-auto">
                 ⚡ Powered by Gemini 2.5 Flash & Tavily Web Search
               </span>
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-[#1B1C1A] font-bold leading-tight mt-2">
+              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-[var(--on-background)] font-bold leading-tight mt-2">
                 Tell us what you're working on.
               </h1>
-              <p className="text-base sm:text-lg text-[#55423E] max-w-xl mx-auto">
+              <p className="text-base sm:text-lg text-[var(--text-muted)] max-w-xl mx-auto">
                 Enter a topic, research question, or thesis to generate a fully sourced, editable Word, PPT, Excel, or PDF document.
               </p>
             </div>
 
             {/* Target Output Format Pills */}
             <div className="flex flex-wrap justify-center gap-2 items-center">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#55423E] mr-1">Target Output:</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mr-1">Target Output:</span>
               {[
                 { key: "docx", label: "📄 Word (.docx)" },
                 { key: "pptx", label: "📊 PowerPoint (.pptx)" },
@@ -644,10 +800,10 @@ export default function PaperrrrrrApp() {
                   key={fmt.key}
                   type="button"
                   onClick={() => setFormat(fmt.key as any)}
-                  className={`text-xs font-semibold px-4 py-2 rounded-full transition-all border ${
+                  className={`text-xs font-semibold px-4 py-2 rounded-full transition-all border cursor-pointer ${
                     format === fmt.key
-                      ? "bg-[#97422C] text-white border-[#97422C] shadow-sm"
-                      : "bg-white text-[#1B1C1A] border-[#DBC1BA] hover:border-[#97422C]"
+                      ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm"
+                      : "bg-[var(--surface-card)] text-[var(--on-background)] border-[var(--surface-border)] hover:border-[var(--primary)]"
                   }`}
                 >
                   {fmt.label}
@@ -663,78 +819,127 @@ export default function PaperrrrrrApp() {
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={4}
                   placeholder="e.g., A comprehensive analysis of renewable energy adoption in India, or a pitch deck on AI document pipelines..."
-                  className="w-full p-5 bg-white border-2 border-[#DBC1BA] rounded-xl focus:border-[#97422C] focus:ring-2 focus:ring-[#FFDBD2] outline-none text-[#1B1C1A] text-lg leading-relaxed paper-shadow"
+                  className="w-full p-5 bg-[var(--surface-card)] border-2 border-[var(--surface-border)] rounded-xl focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-fixed)] outline-none text-[var(--on-background)] text-lg leading-relaxed paper-shadow"
                 />
-                <div className="absolute right-4 bottom-4 text-xs text-[#88726D]">
+                <div className="absolute right-4 bottom-4 text-xs text-[var(--text-subtle)]">
                   {prompt.length} characters
                 </div>
               </div>
             </div>
 
-            {/* Document Type Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {[
-                { type: "Research Report", icon: "description", desc: "In-depth analysis with structured web citations & findings." },
-                { type: "Academic Essay", icon: "edit_document", desc: "Argumentative prose with clear thesis & section briefs." },
-                { type: "Literature Review", icon: "history_edu", desc: "Synthesize research & current academic conversations." },
-                { type: "Freeform Summary", icon: "article", desc: "Unconstrained synthesis across multiple research topics." }
-              ].map((card) => (
+            {/* Reference File & Notes Dropzone Drawer */}
+            <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-4 paper-shadow flex flex-col gap-3">
+              <div className="flex justify-between items-center">
                 <button
-                  key={card.type}
-                  onClick={() => setDocType(card.type)}
-                  className={`p-4 rounded-xl border text-left flex items-start gap-3.5 transition-all ${
-                    docType === card.type
-                      ? "bg-[#FAF9F5] border-[#97422C] ring-2 ring-[#97422C] shadow-sm"
-                      : "bg-white border-[#DBC1BA] hover:border-[#97422C]"
-                  }`}
+                  type="button"
+                  onClick={() => setShowFileIntake(!showFileIntake)}
+                  className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] flex items-center gap-1.5 cursor-pointer hover:underline"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-[#FFDBD2] text-[#97422C] flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-xl">{card.icon}</span>
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-base text-[#1B1C1A] font-bold">{card.type}</h3>
-                    <p className="text-xs text-[#55423E] mt-0.5">{card.desc}</p>
-                  </div>
+                  <span className="material-symbols-outlined text-base">attach_file</span>
+                  {showFileIntake ? "Hide Reference Notes / File Dropzone" : "+ Attach Reference Notes or File (PDF, TXT, MD, DOCX)"}
                 </button>
-              ))}
+                {attachedFileName && (
+                  <span className="text-xs bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 px-2 py-0.5 rounded font-medium">
+                    ✓ {attachedFileName} attached
+                  </span>
+                )}
+              </div>
+
+              {showFileIntake && (
+                <div className="space-y-3 pt-2 border-t border-[var(--surface-border)] animate-in fade-in duration-300">
+                  <div className="flex flex-col sm:flex-row gap-3 items-center">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".txt,.md,.pdf,.json,.csv"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingFile}
+                      className="w-full sm:w-auto px-4 py-2 bg-[var(--surface-muted)] border border-dashed border-[var(--primary)] text-[var(--primary)] text-xs font-bold rounded-lg hover:bg-[var(--primary-fixed)] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">upload_file</span>
+                      {isUploadingFile ? "Extracting Text..." : "Choose Local File"}
+                    </button>
+                    <span className="text-xs text-[var(--text-subtle)]">
+                      Upload reference context to anchor AI outline & citations
+                    </span>
+                  </div>
+
+                  <textarea
+                    value={referenceNotes}
+                    onChange={(e) => setReferenceNotes(e.target.value)}
+                    rows={3}
+                    placeholder="Or paste background text notes, research findings, or specific requirements here..."
+                    className="w-full p-3 text-xs bg-[var(--surface-muted)] border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] text-[var(--on-background)]"
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Tone, Audience, Length Customization Controls */}
-            <div className="p-4 bg-white border border-[#DBC1BA] rounded-xl grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div>
-                <label className="font-bold text-[#55423E] block mb-1">Tone</label>
+            {/* Document Type Cards */}
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Document Type Preset:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { title: "Research Report", desc: "Deep analytical synthesis with comprehensive citations and empirical metrics." },
+                  { title: "Executive Brief", desc: "High-level takeaways, core KPIs, and actionable strategic directives." },
+                  { title: "Pitch / Strategy Deck", desc: "Problem statement, solution architecture, and market traction slides." }
+                ].map((item) => (
+                  <button
+                    key={item.title}
+                    type="button"
+                    onClick={() => setDocType(item.title)}
+                    className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                      docType === item.title
+                        ? "border-[var(--primary)] bg-[var(--primary-fixed)]/30 ring-2 ring-[var(--primary)]"
+                        : "border-[var(--surface-border)] bg-[var(--surface-card)] hover:border-[var(--primary)]"
+                    }`}
+                  >
+                    <div className="font-bold text-sm text-[var(--on-background)]">{item.title}</div>
+                    <div className="text-xs text-[var(--text-muted)] mt-1">{item.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Customization Options Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-[var(--surface-card)] border border-[var(--surface-border)] p-4 sm:p-5 rounded-xl paper-shadow text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-[var(--text-muted)] uppercase tracking-wider">Research Depth</label>
+                <select
+                  value={researchDepth}
+                  onChange={(e) => setResearchDepth(e.target.value as any)}
+                  className="w-full p-2.5 border border-[var(--surface-border)] rounded-lg bg-[var(--surface-muted)] text-[var(--on-background)] outline-none"
+                >
+                  <option value="standard">Standard (Fast Synthesis)</option>
+                  <option value="deep">Deep Investigative (High Citation Density)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-[var(--text-muted)] uppercase tracking-wider">Tone & Style</label>
                 <select
                   value={tone}
                   onChange={(e) => setTone(e.target.value)}
-                  className="w-full p-2.5 border border-[#DBC1BA] rounded-lg bg-[#FAF9F5] outline-none"
+                  className="w-full p-2.5 border border-[var(--surface-border)] rounded-lg bg-[var(--surface-muted)] text-[var(--on-background)] outline-none"
                 >
                   <option>Academic & Analytical</option>
-                  <option>Business Professional</option>
-                  <option>Technical Deep-Dive</option>
-                  <option>Persuasive Argument</option>
+                  <option>Executive & Direct</option>
+                  <option>Technical & Architectural</option>
+                  <option>Venture & Investor Ready</option>
                 </select>
               </div>
 
-              <div>
-                <label className="font-bold text-[#55423E] block mb-1">Audience</label>
-                <select
-                  value={audience}
-                  onChange={(e) => setAudience(e.target.value)}
-                  className="w-full p-2.5 border border-[#DBC1BA] rounded-lg bg-[#FAF9F5] outline-none"
-                >
-                  <option>Students & Researchers</option>
-                  <option>Executive Management</option>
-                  <option>General Public</option>
-                  <option>Technical Engineers</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-bold text-[#55423E] block mb-1">Length</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-[var(--text-muted)] uppercase tracking-wider">Target Length</label>
                 <select
                   value={targetLength}
                   onChange={(e) => setTargetLength(e.target.value)}
-                  className="w-full p-2.5 border border-[#DBC1BA] rounded-lg bg-[#FAF9F5] outline-none"
+                  className="w-full p-2.5 border border-[var(--surface-border)] rounded-lg bg-[var(--surface-muted)] text-[var(--on-background)] outline-none"
                 >
                   <option>Detailed (~2,000 words)</option>
                   <option>Standard (~1,200 words)</option>
@@ -747,7 +952,7 @@ export default function PaperrrrrrApp() {
             <button
               onClick={handleStartPipeline}
               disabled={isResearching || isGeneratingOutline}
-              className="w-full py-4.5 bg-[#97422C] text-white font-bold text-base rounded-xl hover:bg-[#B65A42] transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-4.5 bg-[var(--primary)] text-white font-bold text-base rounded-xl hover:bg-[var(--primary-container)] transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer"
             >
               <span className="material-symbols-outlined">search</span>
               Run Research & Generate Outline with Gemini →
@@ -762,41 +967,41 @@ export default function PaperrrrrrApp() {
           <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center gap-8 py-16 text-center">
             {/* Animated Beacon */}
             <div className="relative flex items-center justify-center">
-              <div className="w-24 h-24 rounded-full bg-[#FFDBD2] animate-ping opacity-75" />
-              <div className="absolute w-20 h-20 rounded-full bg-[#97422C] flex items-center justify-center text-white text-3xl shadow-xl">
+              <div className="w-24 h-24 rounded-full bg-[var(--primary-fixed)] animate-ping opacity-75" />
+              <div className="absolute w-20 h-20 rounded-full bg-[var(--primary)] flex items-center justify-center text-white text-3xl shadow-xl">
                 <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
               </div>
             </div>
 
             {/* Dynamic Status Text */}
             <div className="flex flex-col gap-2 max-w-md">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#97422C] bg-[#FFDBD2] px-3 py-1 rounded-full w-max mx-auto">
+              <span className="text-xs font-bold uppercase tracking-widest text-[var(--primary)] bg-[var(--primary-fixed)] px-3 py-1 rounded-full w-max mx-auto">
                 ⚡ Active Synthesis Pipeline
               </span>
-              <h2 className="font-serif text-2xl sm:text-3xl text-[#1B1C1A] font-bold">
+              <h2 className="font-serif text-2xl sm:text-3xl text-[var(--on-background)] font-bold">
                 {streamStatusText}
               </h2>
-              <p className="text-sm text-[#55423E]">
+              <p className="text-sm text-[var(--text-muted)]">
                 Analyzing verified web sources and framing structured sections with Gemini 2.5 Flash.
               </p>
             </div>
 
             {/* Progress Bar & Timeline Feed Preview */}
-            <div className="w-full bg-white border border-[#DBC1BA] p-6 rounded-2xl paper-shadow flex flex-col gap-4 text-left">
-              <div className="flex justify-between items-center text-xs font-mono text-[#88726D]">
+            <div className="w-full bg-[var(--surface-card)] border border-[var(--surface-border)] p-6 rounded-2xl paper-shadow flex flex-col gap-4 text-left">
+              <div className="flex justify-between items-center text-xs font-mono text-[var(--text-subtle)]">
                 <span>Pipeline Status</span>
-                <span className="text-[#97422C] font-bold">Live Research Active</span>
+                <span className="text-[var(--primary)] font-bold">Live Research Active ({researchDepth.toUpperCase()})</span>
               </div>
-              <div className="w-full h-2.5 bg-[#FAF9F5] border border-[#DBC1BA] rounded-full overflow-hidden">
-                <div className="h-full bg-[#97422C] rounded-full animate-pulse w-3/4" />
+              <div className="w-full h-2.5 bg-[var(--surface-muted)] border border-[var(--surface-border)] rounded-full overflow-hidden">
+                <div className="h-full bg-[var(--primary)] rounded-full animate-pulse w-3/4" />
               </div>
 
               {/* Mini Activity Feed during synthesis */}
-              <div className="space-y-2 pt-2 border-t border-[#EFEEEA] text-xs">
+              <div className="space-y-2 pt-2 border-t border-[var(--surface-border)] text-xs">
                 {streamTimelineEvents.map((ev) => (
-                  <div key={ev.id} className="flex items-center gap-2 text-[#55423E]">
-                    <span className="text-[#97422C] font-bold">✓</span>
-                    <span className="font-medium text-[#1B1C1A]">{ev.title}</span>
+                  <div key={ev.id} className="flex items-center gap-2 text-[var(--text-muted)]">
+                    <span className="text-[var(--primary)] font-bold">✓</span>
+                    <span className="font-medium text-[var(--on-background)]">{ev.title}</span>
                   </div>
                 ))}
               </div>
@@ -809,77 +1014,87 @@ export default function PaperrrrrrApp() {
         {/* ============================================================ */}
         {step === "outline" && outline && (
           <div className="w-full max-w-3xl mx-auto flex flex-col gap-6 py-4">
-            <div className="border-b border-[#DBC1BA] pb-4 flex justify-between items-start">
+            <div className="border-b border-[var(--surface-border)] pb-4 flex justify-between items-start">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#97422C]">Step 2 of 3</span>
-                <h1 className="font-serif text-3xl text-[#97422C] font-bold mt-1">Review & Approve Outline</h1>
-                <p className="text-sm text-[#55423E]">
+                <span className="text-xs font-bold uppercase tracking-widest text-[var(--primary)]">Step 2 of 3</span>
+                <h1 className="font-serif text-3xl text-[var(--primary)] font-bold mt-1">Review & Approve Outline</h1>
+                <p className="text-sm text-[var(--text-muted)]">
                   Edit titles, briefs, or reorder sections before opening the live split-screen workspace.
                 </p>
               </div>
-              <span className="px-3 py-1 bg-[#FFDBD2] text-[#97422C] text-xs font-bold rounded-full">
-                {outline.sections.length} Sections
-              </span>
+              <div className="flex items-center gap-2">
+                {researchBundle && (
+                  <button
+                    onClick={() => setShowSourcesModal(true)}
+                    className="px-3 py-1 bg-[var(--surface-muted)] border border-[var(--surface-border)] hover:border-[var(--primary)] text-[var(--primary)] text-xs font-bold rounded-lg cursor-pointer flex items-center gap-1"
+                  >
+                    🔍 Inspect Sources ({researchBundle.results.length})
+                  </button>
+                )}
+                <span className="px-3 py-1 bg-[var(--primary-fixed)] text-[var(--primary)] text-xs font-bold rounded-full">
+                  {outline.sections.length} Sections
+                </span>
+              </div>
             </div>
 
             {/* Document Title Header Input */}
-            <div className="p-4 bg-white border border-[#DBC1BA] rounded-xl flex flex-col gap-2">
-              <label className="text-xs font-bold text-[#88726D] uppercase tracking-wider">Document Title</label>
+            <div className="p-4 bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl flex flex-col gap-2">
+              <label className="text-xs font-bold text-[var(--text-subtle)] uppercase tracking-wider">Document Title</label>
               <input
                 type="text"
                 value={outline.title}
                 onChange={(e) => setOutline({ ...outline, title: e.target.value })}
-                className="font-serif text-xl font-bold text-[#1B1C1A] p-2.5 border border-[#DBC1BA] rounded-lg focus:border-[#97422C] outline-none"
+                className="font-serif text-xl font-bold text-[var(--on-background)] p-2.5 border border-[var(--surface-border)] rounded-lg focus:border-[var(--primary)] outline-none bg-[var(--surface-muted)]"
               />
               <input
                 type="text"
                 value={outline.subtitle}
                 onChange={(e) => setOutline({ ...outline, subtitle: e.target.value })}
-                className="text-xs text-[#55423E] italic p-2 border border-[#DBC1BA] rounded-lg"
+                className="text-xs text-[var(--text-muted)] italic p-2 border border-[var(--surface-border)] rounded-lg bg-[var(--surface-muted)]"
                 placeholder="Subtitle..."
               />
             </div>
 
             {/* Editable Sections List */}
-            <div className="flex flex-col gap-4">
+            <div className="space-y-4">
               {outline.sections.map((sec, idx) => (
-                <div key={sec.id || idx} className="p-5 bg-white border border-[#DBC1BA] rounded-xl paper-shadow flex flex-col gap-3">
+                <div key={sec.id || idx} className="p-4 sm:p-5 bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl paper-shadow flex flex-col gap-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#97422C] bg-[#FAF9F5] px-2.5 py-1 rounded border border-[#DBC1BA]">
-                      Section #{idx + 1}
+                    <span className="text-xs font-bold text-[var(--primary)] uppercase tracking-wider">
+                      Section {idx + 1}
                     </span>
                     <button
                       onClick={() => handleDeleteSection(idx)}
-                      className="text-xs text-[#BA1A1A] hover:underline cursor-pointer"
+                      className="text-xs text-red-600 hover:underline cursor-pointer"
                     >
                       Remove Section
                     </button>
                   </div>
 
                   <div>
-                    <label className="text-xs text-[#88726D] font-semibold">Section Title</label>
+                    <label className="text-xs text-[var(--text-subtle)] font-semibold">Section Title</label>
                     <input
                       type="text"
                       value={sec.title}
                       onChange={(e) => handleSectionTitleChange(idx, e.target.value)}
-                      className="w-full font-serif text-base font-bold text-[#1B1C1A] p-2 border border-[#DBC1BA] rounded-lg mt-1"
+                      className="w-full font-serif text-base font-bold text-[var(--on-background)] p-2 border border-[var(--surface-border)] rounded-lg mt-1 bg-[var(--surface-muted)]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs text-[#88726D] font-semibold">One-Line Brief</label>
+                    <label className="text-xs text-[var(--text-subtle)] font-semibold">One-Line Brief</label>
                     <input
                       type="text"
                       value={sec.brief}
                       onChange={(e) => handleSectionBriefChange(idx, e.target.value)}
-                      className="w-full text-xs text-[#55423E] p-2 border border-[#DBC1BA] rounded-lg mt-1"
+                      className="w-full text-xs text-[var(--text-muted)] p-2 border border-[var(--surface-border)] rounded-lg mt-1 bg-[var(--surface-muted)]"
                     />
                   </div>
 
-                  <div className="flex flex-wrap gap-2 items-center pt-1 border-t border-[#EFEEEA]">
-                    <span className="text-xs text-[#88726D]">Sources Attached:</span>
+                  <div className="flex flex-wrap gap-2 items-center pt-1 border-t border-[var(--surface-border)]">
+                    <span className="text-xs text-[var(--text-subtle)]">Sources Attached:</span>
                     {(sec.relevantSourceIndices || [1]).map((srcIdx: number) => (
-                      <span key={srcIdx} className="text-xs bg-[#E9E8E4] text-[#1B1C1A] px-2 py-0.5 rounded font-mono">
+                      <span key={srcIdx} className="text-xs bg-[var(--surface-muted)] text-[var(--on-background)] px-2 py-0.5 rounded font-mono border border-[var(--surface-border)]">
                         Source #{srcIdx}
                       </span>
                     ))}
@@ -889,23 +1104,23 @@ export default function PaperrrrrrApp() {
 
               <button
                 onClick={handleAddSection}
-                className="py-3.5 border-2 border-dashed border-[#DBC1BA] text-[#97422C] text-sm font-bold rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 border-2 border-dashed border-[var(--surface-border)] text-[var(--primary)] text-sm font-bold rounded-xl hover:bg-[var(--surface-card)] transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 + Add Section
               </button>
             </div>
 
             {/* Approval CTAs */}
-            <div className="flex gap-4 pt-4 border-t border-[#DBC1BA]">
+            <div className="flex gap-4 pt-4 border-t border-[var(--surface-border)]">
               <button
                 onClick={() => setStep("intake")}
-                className="px-6 py-3.5 border border-[#88726D] text-[#1B1C1A] text-sm font-bold rounded-xl hover:bg-[#EFEEEA] cursor-pointer"
+                className="px-6 py-3.5 border border-[var(--surface-border)] text-[var(--on-background)] text-sm font-bold rounded-xl hover:bg-[var(--surface-muted)] cursor-pointer"
               >
                 ← Back
               </button>
               <button
                 onClick={handleApproveAndLaunchLiveWorkspace}
-                className="flex-1 py-3.5 bg-[#97422C] text-white font-bold text-sm rounded-xl hover:bg-[#B65A42] transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 py-3.5 bg-[var(--primary)] text-white font-bold text-sm rounded-xl hover:bg-[var(--primary-container)] transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
               >
                 Approve Outline & Open Live Split-Screen Workspace →
               </button>
@@ -923,25 +1138,25 @@ export default function PaperrrrrrApp() {
             {/* -------------------------------------------------------- */}
             <div className="w-full lg:w-[40%] flex flex-col gap-4 shrink-0">
               {/* Pinned Top Prompt Bar */}
-              <div className="bg-white border border-[#DBC1BA] rounded-xl p-4 paper-shadow flex flex-col gap-2.5">
+              <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-4 paper-shadow flex flex-col gap-2.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#97422C] flex items-center gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-sm">tune</span>
                     Follow-Up Instructions
                   </span>
-                  <span className="text-[10px] text-[#88726D] font-mono">Pinned</span>
+                  <span className="text-[10px] text-[var(--text-subtle)] font-mono">Pinned</span>
                 </div>
                 <form onSubmit={handleAddFollowUpNote} className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Add follow-up instructions or specific points..."
+                    placeholder="Add follow-up focal points or notes..."
                     value={followUpInstruction}
                     onChange={(e) => setFollowUpInstruction(e.target.value)}
-                    className="flex-1 text-xs p-2.5 border border-[#DBC1BA] rounded-lg outline-none focus:border-[#97422C]"
+                    className="flex-1 text-xs p-2.5 border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)]"
                   />
                   <button
                     type="submit"
-                    className="px-3.5 py-2 bg-[#97422C] text-white text-xs font-bold rounded-lg hover:bg-[#B65A42] transition-colors shrink-0"
+                    className="px-3.5 py-2 bg-[var(--primary)] text-white text-xs font-bold rounded-lg hover:bg-[var(--primary-container)] transition-colors shrink-0 cursor-pointer"
                   >
                     Add
                   </button>
@@ -949,7 +1164,7 @@ export default function PaperrrrrrApp() {
                 {followUpNotes.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {followUpNotes.map((n, i) => (
-                      <span key={i} className="text-[11px] bg-[#FAF9F5] border border-[#DBC1BA] text-[#55423E] px-2 py-0.5 rounded">
+                      <span key={i} className="text-[11px] bg-[var(--surface-muted)] border border-[var(--surface-border)] text-[var(--text-muted)] px-2 py-0.5 rounded">
                         ✓ {n}
                       </span>
                     ))}
@@ -958,24 +1173,34 @@ export default function PaperrrrrrApp() {
               </div>
 
               {/* Status Banner */}
-              <div className="bg-[#FAF9F5] border border-[#DBC1BA] p-3.5 rounded-xl flex items-center justify-between">
+              <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] p-3.5 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className={`w-2.5 h-2.5 rounded-full ${isStreaming ? "bg-[#97422C] animate-ping" : "bg-green-600"}`} />
-                  <span className="text-xs font-bold text-[#1B1C1A]">{streamStatusText}</span>
+                  <div className={`w-2.5 h-2.5 rounded-full ${isStreaming ? "bg-[var(--primary)] animate-ping" : "bg-green-600"}`} />
+                  <span className="text-xs font-bold text-[var(--on-background)]">{streamStatusText}</span>
                 </div>
-                <span className="text-[10px] font-mono uppercase bg-[#E9E8E4] px-2 py-0.5 rounded">
-                  {isStreaming ? "Streaming SSE" : "Completed"}
-                </span>
+                <div className="flex items-center gap-2">
+                  {researchBundle && (
+                    <button
+                      onClick={() => setShowSourcesModal(true)}
+                      className="text-[10px] bg-[var(--surface-muted)] hover:border-[var(--primary)] border border-[var(--surface-border)] text-[var(--primary)] font-bold px-2 py-0.5 rounded cursor-pointer"
+                    >
+                      Sources ({researchBundle.results.length})
+                    </button>
+                  )}
+                  <span className="text-[10px] font-mono uppercase bg-[var(--surface-muted)] text-[var(--text-muted)] px-2 py-0.5 rounded border border-[var(--surface-border)]">
+                    {isStreaming ? "Streaming SSE" : "Completed"}
+                  </span>
+                </div>
               </div>
 
               {/* Live SSE Activity Feed */}
-              <div className="bg-white border border-[#DBC1BA] rounded-xl p-4 paper-shadow flex flex-col gap-3 max-h-[600px] overflow-y-auto">
-                <div className="flex justify-between items-center pb-2 border-b border-[#EFEEEA]">
-                  <h3 className="font-serif text-sm font-bold text-[#97422C] flex items-center gap-1.5">
+              <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-4 paper-shadow flex flex-col gap-3 max-h-[600px] overflow-y-auto">
+                <div className="flex justify-between items-center pb-2 border-b border-[var(--surface-border)]">
+                  <h3 className="font-serif text-sm font-bold text-[var(--primary)] flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-sm">stream</span>
                     Live SSE Activity Timeline
                   </h3>
-                  <span className="text-[10px] text-[#88726D] font-mono">{streamTimelineEvents.length} events logged</span>
+                  <span className="text-[10px] text-[var(--text-subtle)] font-mono">{streamTimelineEvents.length} events logged</span>
                 </div>
 
                 <div className="space-y-3 text-xs">
@@ -984,25 +1209,25 @@ export default function PaperrrrrrApp() {
                       key={ev.id}
                       className={`p-3.5 rounded-xl border transition-all duration-300 flex flex-col gap-1.5 shadow-sm ${
                         ev.type === "section"
-                          ? "bg-[#FAF9F5] border-[#97422C]/40 border-l-4 border-l-[#97422C]"
+                          ? "bg-[var(--surface-muted)] border-[var(--primary)]/40 border-l-4 border-l-[var(--primary)]"
                           : ev.type === "complete"
-                          ? "bg-green-50 border-green-300 text-green-900 border-l-4 border-l-green-600"
+                          ? "bg-green-50 dark:bg-green-950/40 border-green-300 text-green-900 dark:text-green-300 border-l-4 border-l-green-600"
                           : ev.type === "research"
-                          ? "bg-[#FDFBF7] border-[#DBC1BA] border-l-4 border-l-[#55423E]"
-                          : "bg-white border-[#EFEEEA] border-l-4 border-l-[#DBC1BA]"
+                          ? "bg-[var(--surface-card)] border-[var(--surface-border)] border-l-4 border-l-[var(--text-muted)]"
+                          : "bg-[var(--surface-card)] border-[var(--surface-border)] border-l-4 border-l-[var(--surface-border)]"
                       }`}
                     >
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-[#1B1C1A] flex items-center gap-1.5">
-                          {ev.type === "section" && <span className="text-[#97422C]">📝</span>}
+                        <span className="font-bold text-[var(--on-background)] flex items-center gap-1.5">
+                          {ev.type === "section" && <span className="text-[var(--primary)]">📝</span>}
                           {ev.type === "complete" && <span>🎉</span>}
                           {ev.type === "research" && <span>🔍</span>}
                           {ev.type === "status" && <span className="animate-spin text-[10px]">⚡</span>}
                           {ev.title}
                         </span>
-                        <span className="text-[10px] text-[#88726D] font-mono">{ev.timestamp}</span>
+                        <span className="text-[10px] text-[var(--text-subtle)] font-mono">{ev.timestamp}</span>
                       </div>
-                      {ev.detail && <p className="text-[#55423E] leading-relaxed text-[11px]">{ev.detail}</p>}
+                      {ev.detail && <p className="text-[var(--text-muted)] leading-relaxed text-[11px]">{ev.detail}</p>}
                     </div>
                   ))}
                   <div ref={timelineEndRef} />
@@ -1015,24 +1240,28 @@ export default function PaperrrrrrApp() {
             {/* -------------------------------------------------------- */}
             <div className="w-full lg:w-[60%] flex flex-col gap-4">
               {/* Sticky Action Bar */}
-              <div className="bg-white border border-[#DBC1BA] rounded-xl p-3.5 paper-shadow flex justify-between items-center">
+              <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-3.5 paper-shadow flex flex-wrap gap-2 justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#97422C] bg-[#FFDBD2] px-2.5 py-1 rounded">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] bg-[var(--primary-fixed)] px-2.5 py-1 rounded">
                     {format.toUpperCase()} Document
                   </span>
-                  <span className="text-xs font-bold text-[#55423E]">
-                    {
-                      outline.sections.filter((s, i) =>
-                        Boolean(generatedSections[s.id] || generatedSections[i] || generatedSections[`sec_${i + 1}`] || (generatedSections as any)[s.title])
-                      ).length
-                    } of {outline.sections.length} sections live
+                  <span className="text-xs font-bold text-[var(--text-muted)]">
+                    {readySectionsCount} of {outline.sections.length} sections live
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={handleCopyMarkdown}
+                    title="Copy Markdown with Citations"
+                    className="text-xs font-semibold px-3 py-1.5 border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-muted)] transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">content_copy</span>
+                    {copySuccess ? "Copied!" : "Copy Markdown"}
+                  </button>
+                  <button
                     onClick={() => setStep("outline")}
-                    className="text-xs font-semibold px-3 py-1.5 border border-[#DBC1BA] rounded-lg hover:bg-[#EFEEEA] transition-colors"
+                    className="text-xs font-semibold px-3 py-1.5 border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-muted)] transition-colors cursor-pointer"
                   >
                     Edit Outline
                   </button>
@@ -1041,8 +1270,8 @@ export default function PaperrrrrrApp() {
                     disabled={!isAssembledReady}
                     className={`text-xs font-bold px-4 py-1.5 rounded-lg flex items-center gap-1.5 shadow transition-all ${
                       isAssembledReady
-                        ? "bg-[#97422C] text-white hover:bg-[#B65A42] cursor-pointer"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        ? "bg-[var(--primary)] text-white hover:bg-[var(--primary-container)] cursor-pointer"
+                        : "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
                     }`}
                   >
                     <span className="material-symbols-outlined text-sm">download</span>
@@ -1051,77 +1280,91 @@ export default function PaperrrrrrApp() {
                 </div>
               </div>
 
-              {/* Styled Paper Preview Container (Updates live as sections arrive) */}
-              <div className="bg-white border border-[#DBC1BA] p-6 sm:p-10 paper-shadow rounded-xl min-h-[600px] flex flex-col gap-6">
+              {/* Styled Paper Preview Container */}
+              <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] p-6 sm:p-10 paper-shadow rounded-xl min-h-[600px] flex flex-col gap-6">
                 {/* Paper Header */}
-                <div className="text-center pb-6 border-b border-[#DBC1BA] flex flex-col gap-2">
-                  <h1 className="font-serif text-2xl sm:text-3xl text-[#97422C] font-bold leading-tight">
+                <div className="text-center pb-6 border-b border-[var(--surface-border)] flex flex-col gap-2">
+                  <h1 className="font-serif text-2xl sm:text-3xl text-[var(--primary)] font-bold leading-tight">
                     {outline.title}
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#55423E] italic">{outline.subtitle}</p>
-                  <div className="text-[11px] text-[#88726D] mt-1">
-                    Generated by <strong className="text-[#97422C]">Paperrrrrr</strong> • {new Date().toLocaleDateString()}
+                  <p className="text-xs sm:text-sm text-[var(--text-muted)] italic">{outline.subtitle}</p>
+                  <div className="text-[11px] text-[var(--text-subtle)] mt-1">
+                    Generated by <strong className="text-[var(--primary)]">Paperrrrrr</strong> • {new Date().toLocaleDateString()}
                   </div>
                 </div>
 
-                {/* Live Section Prose List with Active Shimmer Skeleton */}
-                <div className="space-y-8 text-sm text-[#1B1C1A] leading-relaxed">
+                {/* Live Section Prose List with Active Shimmer Skeleton & Per-Section Refine */}
+                <div className="space-y-8 text-sm text-[var(--on-background)] leading-relaxed">
                   {outline.sections.map((sec, idx) => {
                     const proseContent = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[sec.title];
                     const isDraftingNow = isStreaming && activeGeneratingSectionIndex === idx && !proseContent;
+                    const isSectionRegenerating = regeneratingSectionId === sec.id;
 
                     return (
                       <div
-                        key={sec.id}
-                        className={`space-y-3 p-4 rounded-xl transition-all duration-300 ${
-                          isDraftingNow
-                            ? "bg-[#FAF9F5] border-2 border-[#97422C] shadow-md ring-2 ring-[#FFDBD2]"
+                        key={sec.id || idx}
+                        className={`space-y-3 p-4 sm:p-5 rounded-xl transition-all duration-300 ${
+                          isDraftingNow || isSectionRegenerating
+                            ? "bg-[var(--surface-muted)] border-2 border-[var(--primary)] shadow-md ring-2 ring-[var(--primary-fixed)]"
                             : proseContent
                             ? "bg-transparent border border-transparent"
-                            : "bg-[#FCFBFA] border border-[#EFEEEA] opacity-75"
+                            : "bg-[var(--surface-muted)]/50 border border-[var(--surface-border)] opacity-75"
                         }`}
                       >
-                        <div className="flex items-center justify-between border-b border-[#EFEEEA] pb-2">
-                          <h2 className="font-serif text-lg font-bold text-[#97422C] flex items-center gap-2">
+                        <div className="flex items-center justify-between border-b border-[var(--surface-border)] pb-2">
+                          <h2 className="font-serif text-lg font-bold text-[var(--primary)] flex items-center gap-2">
                             <span>{sec.title}</span>
                           </h2>
-                          {isDraftingNow ? (
-                            <span className="text-[11px] bg-[#97422C] text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm">
-                              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                              ⚡ Gemini 2.5 Flash Drafting...
-                            </span>
-                          ) : proseContent ? (
-                            <span className="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded font-bold">
-                              ✓ Ready ({proseContent.length} chars)
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-[#88726D] font-mono">Queued</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {proseContent && !isStreaming && (
+                              <button
+                                onClick={() => {
+                                  setActiveRegenSection(sec);
+                                  setSectionRevisionInstruction("");
+                                }}
+                                className="text-[10px] text-[var(--primary)] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                              >
+                                🔄 Refine Section
+                              </button>
+                            )}
+                            {isDraftingNow || isSectionRegenerating ? (
+                              <span className="text-[11px] bg-[var(--primary)] text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm">
+                                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                ⚡ {isSectionRegenerating ? "Refining..." : "Gemini Drafting..."}
+                              </span>
+                            ) : proseContent ? (
+                              <span className="text-[10px] bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 px-2 py-0.5 rounded font-bold">
+                                ✓ Ready ({proseContent.length} chars)
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-[var(--text-subtle)] font-mono">Queued</span>
+                            )}
+                          </div>
                         </div>
 
                         {proseContent ? (
-                          <div className="prose text-xs sm:text-sm text-[#1B1C1A] leading-relaxed whitespace-pre-wrap animate-in fade-in duration-500">
+                          <div className="prose dark:prose-invert text-xs sm:text-sm text-[var(--on-background)] leading-relaxed whitespace-pre-wrap animate-in fade-in duration-500">
                             {proseContent}
                           </div>
-                        ) : isDraftingNow ? (
+                        ) : isDraftingNow || isSectionRegenerating ? (
                           /* Visual in-progress shimmer skeleton for active section */
                           <div className="space-y-3 py-3">
-                            <div className="text-xs text-[#55423E] font-medium flex items-center gap-1.5">
-                              <span className="text-[#97422C] font-bold">Focus Brief:</span> {sec.brief}
+                            <div className="text-xs text-[var(--text-muted)] font-medium flex items-center gap-1.5">
+                              <span className="text-[var(--primary)] font-bold">Focus Brief:</span> {sec.brief}
                             </div>
                             <div className="space-y-2 pt-2">
-                              <div className="h-3.5 bg-gradient-to-r from-[#DBC1BA]/40 via-[#97422C]/20 to-[#DBC1BA]/40 rounded animate-pulse w-full" />
-                              <div className="h-3.5 bg-gradient-to-r from-[#DBC1BA]/40 via-[#97422C]/20 to-[#DBC1BA]/40 rounded animate-pulse w-[92%]" />
-                              <div className="h-3.5 bg-gradient-to-r from-[#DBC1BA]/40 via-[#97422C]/20 to-[#DBC1BA]/40 rounded animate-pulse w-[96%]" />
-                              <div className="h-3.5 bg-gradient-to-r from-[#DBC1BA]/40 via-[#97422C]/20 to-[#DBC1BA]/40 rounded animate-pulse w-[70%]" />
+                              <div className="h-3.5 shimmer-skeleton rounded w-full" />
+                              <div className="h-3.5 shimmer-skeleton rounded w-[92%]" />
+                              <div className="h-3.5 shimmer-skeleton rounded w-[96%]" />
+                              <div className="h-3.5 shimmer-skeleton rounded w-[70%]" />
                             </div>
-                            <div className="flex items-center gap-2 pt-2 text-[11px] text-[#97422C] font-mono">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#97422C] animate-bounce" />
+                            <div className="flex items-center gap-2 pt-2 text-[11px] text-[var(--primary)] font-mono">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-bounce" />
                               Synthesizing verified research citations & institutional statistics...
                             </div>
                           </div>
                         ) : (
-                          <p className="text-xs text-[#88726D] italic">{sec.brief}</p>
+                          <p className="text-xs text-[var(--text-subtle)] italic">{sec.brief}</p>
                         )}
                       </div>
                     );
@@ -1134,71 +1377,48 @@ export default function PaperrrrrrApp() {
       </main>
 
       {/* ============================================================ */}
-      {/* BYOK SETTINGS MODAL (STAGE 5)                                */}
+      {/* SECTION REGENERATION / REFINEMENT MODAL                      */}
       {/* ============================================================ */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-[#DBC1BA] rounded-2xl p-6 max-w-md w-full paper-shadow flex flex-col gap-4">
+      {activeRegenSection && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 max-w-lg w-full paper-shadow flex flex-col gap-4">
             <div className="flex justify-between items-center">
-              <h3 className="font-serif text-xl font-bold text-[#97422C] flex items-center gap-2">
-                <span className="material-symbols-outlined">key</span>
-                Bring Your Own Key (BYOK)
+              <h3 className="font-serif text-lg font-bold text-[var(--primary)] flex items-center gap-1.5">
+                <span>🔄 Refine Section:</span> {activeRegenSection.title}
               </h3>
-              <button onClick={() => setShowSettingsModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setActiveRegenSection(null)}
+                className="text-[var(--text-subtle)] hover:text-[var(--on-background)] text-xl cursor-pointer"
+              >
                 ✕
               </button>
             </div>
-            <p className="text-xs text-[#55423E]">
-              Optionally paste your personal API keys from Google AI Studio or OpenAI. Keys are stored encrypted with AES-256.
+            <p className="text-xs text-[var(--text-muted)]">
+              Provide custom revision directives (e.g. <em>"Include more quantitative statistics"</em>, <em>"Make it more concise and punchy"</em>, or <em>"Focus on regulatory friction"</em>).
             </p>
-
-            <form onSubmit={handleSaveKeys} className="flex flex-col gap-3.5 text-xs">
-              <div>
-                <label className="font-bold text-[#1B1C1A] block mb-1">
-                  Google Gemini API Key (Google AI Studio)
-                </label>
-                <input
-                  type="password"
-                  placeholder={hasCustomGeminiKey ? `Current: ${geminiKeyMasked}` : "AIzaSy..."}
-                  value={customGeminiKeyInput}
-                  onChange={(e) => setCustomGeminiKeyInput(e.target.value)}
-                  className="w-full p-2.5 border border-[#DBC1BA] rounded-lg font-mono text-xs"
-                />
-                <span className="text-[10px] text-[#88726D] mt-0.5 block">
-                  {hasCustomGeminiKey ? "✓ Custom Gemini key active" : "Using Paperrrrrr shared GEMINI_API_KEY"}
-                </span>
-              </div>
-
-              <div>
-                <label className="font-bold text-[#1B1C1A] block mb-1">
-                  OpenAI API Key (Optional Fallback)
-                </label>
-                <input
-                  type="password"
-                  placeholder={hasCustomOpenAIKey ? `Current: ${openaiKeyMasked}` : "sk-..."}
-                  value={customOpenAIKeyInput}
-                  onChange={(e) => setCustomOpenAIKeyInput(e.target.value)}
-                  className="w-full p-2.5 border border-[#DBC1BA] rounded-lg font-mono text-xs"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
+            <form onSubmit={handleRegenerateSectionSubmit} className="flex flex-col gap-3">
+              <textarea
+                value={sectionRevisionInstruction}
+                onChange={(e) => setSectionRevisionInstruction(e.target.value)}
+                rows={3}
+                placeholder="Enter specific refinement instructions for this section..."
+                className="w-full p-3 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)]"
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveRegenSection(null)}
+                  className="px-4 py-2 border border-[var(--surface-border)] rounded-lg text-xs font-bold text-[var(--text-muted)] cursor-pointer"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
-                  disabled={savingSettings}
-                  className="flex-1 py-2.5 bg-[#97422C] text-white font-bold text-xs rounded-lg hover:bg-[#B65A42] transition-colors"
+                  disabled={regeneratingSectionId !== null}
+                  className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg text-xs font-bold hover:bg-[var(--primary-container)] transition-colors cursor-pointer"
                 >
-                  {savingSettings ? "Saving..." : "Save Custom Keys"}
+                  {regeneratingSectionId ? "Regenerating..." : "Apply Refinement"}
                 </button>
-                {(hasCustomGeminiKey || hasCustomOpenAIKey) && (
-                  <button
-                    type="button"
-                    onClick={handleClearKeys}
-                    className="px-3 py-2.5 border border-red-300 text-red-700 text-xs font-bold rounded-lg hover:bg-red-50"
-                  >
-                    Clear Keys
-                  </button>
-                )}
               </div>
             </form>
           </div>
@@ -1206,63 +1426,194 @@ export default function PaperrrrrrApp() {
       )}
 
       {/* ============================================================ */}
-      {/* AUTH MODAL: EMAIL/PASSWORD & GOOGLE SIGN-IN (STAGE 1 & 4)    */}
+      {/* RESEARCH SOURCES INSPECTOR MODAL                             */}
       {/* ============================================================ */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-[#DBC1BA] rounded-2xl p-6 max-w-md w-full paper-shadow flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-serif text-xl font-bold text-[#97422C]">
-                {authMode === "signup" ? "Create Paperrrrrr Account" : "Sign In to Paperrrrrr"}
-              </h3>
-              <button onClick={() => setShowAuthModal(false)} className="text-gray-400 hover:text-gray-600">
+      {showSourcesModal && researchBundle && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 max-w-2xl w-full paper-shadow flex flex-col gap-4 max-h-[80vh] overflow-hidden">
+            <div className="flex justify-between items-center border-b border-[var(--surface-border)] pb-3">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-[var(--primary)] flex items-center gap-2">
+                  <span>🔍 Verified Research Sources</span>
+                </h3>
+                <p className="text-xs text-[var(--text-muted)]">
+                  {researchBundle.results.length} institutional references retrieved for "{researchBundle.query}"
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSourcesModal(false)}
+                className="text-[var(--text-subtle)] hover:text-[var(--on-background)] text-xl cursor-pointer"
+              >
                 ✕
               </button>
             </div>
-            <p className="text-xs text-[#55423E]">Save generated documents and access your history anywhere.</p>
 
-            {/* Google Sign-In Option (Stage 4) */}
+            <div className="overflow-y-auto space-y-3 pr-1">
+              {researchBundle.results.map((src) => (
+                <div key={src.index} className="p-3.5 rounded-xl border border-[var(--surface-border)] bg-[var(--surface-muted)] text-xs space-y-1.5">
+                  <div className="flex justify-between items-start">
+                    <span className="font-bold text-[var(--on-background)]">
+                      #{src.index}. {src.title}
+                    </span>
+                    <span className="text-[10px] font-mono bg-[var(--primary-fixed)] text-[var(--primary)] px-2 py-0.5 rounded">
+                      Score: {src.score || 0.95}
+                    </span>
+                  </div>
+                  <p className="text-[var(--text-muted)] leading-relaxed">{src.snippet}</p>
+                  <a
+                    href={src.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-[var(--primary)] hover:underline font-mono inline-block pt-1"
+                  >
+                    🔗 {src.url}
+                  </a>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-[var(--surface-border)] pt-3 flex justify-end">
+              <button
+                onClick={() => setShowSourcesModal(false)}
+                className="px-4 py-2 bg-[var(--primary)] text-white text-xs font-bold rounded-lg cursor-pointer hover:bg-[var(--primary-container)]"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* BYOK SETTINGS MODAL                                          */}
+      {/* ============================================================ */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 max-w-md w-full paper-shadow flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-serif text-lg font-bold text-[var(--primary)] flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-base">key</span>
+                Bring Your Own Key (BYOK)
+              </h3>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="text-[var(--text-subtle)] hover:text-[var(--on-background)] text-xl cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+              Your API keys are encrypted with <strong>AES-256-GCM</strong> and used exclusively for your synthesis sessions.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--text-muted)] flex justify-between">
+                  <span>Google Gemini API Key</span>
+                  {hasCustomGeminiKey && <span className="text-green-600">Active ({geminiKeyMasked})</span>}
+                </label>
+                <input
+                  type="password"
+                  placeholder={hasCustomGeminiKey ? "Enter new key to update..." : "AIzaSy..."}
+                  value={customGeminiKeyInput}
+                  onChange={(e) => setCustomGeminiKeyInput(e.target.value)}
+                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--text-muted)] flex justify-between">
+                  <span>OpenAI API Key (Optional Fallback)</span>
+                  {hasCustomOpenAIKey && <span className="text-green-600">Active ({openaiKeyMasked})</span>}
+                </label>
+                <input
+                  type="password"
+                  placeholder={hasCustomOpenAIKey ? "Enter new key to update..." : "sk-proj-..."}
+                  value={customOpenAIKeyInput}
+                  onChange={(e) => setCustomOpenAIKeyInput(e.target.value)}
+                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)]"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              {(hasCustomGeminiKey || hasCustomOpenAIKey) && (
+                <button
+                  type="button"
+                  onClick={handleClearKeys}
+                  className="px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg border border-red-200 transition-colors cursor-pointer"
+                >
+                  Clear Keys
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(false)}
+                className="px-3.5 py-2 text-xs font-bold text-[var(--text-muted)] hover:bg-[var(--surface-muted)] rounded-lg border border-[var(--surface-border)] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveKeys}
+                disabled={savingSettings || (!customGeminiKeyInput && !customOpenAIKeyInput)}
+                className="px-4 py-2 text-xs font-bold text-white bg-[var(--primary)] hover:bg-[var(--primary-container)] rounded-lg shadow transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {savingSettings ? "Saving..." : "Save Encrypted Keys"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* AUTH MODAL                                                   */}
+      {/* ============================================================ */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 sm:p-8 max-w-sm w-full paper-shadow flex flex-col gap-5">
+            <div className="flex justify-between items-center">
+              <h3 className="font-serif text-2xl font-bold text-[var(--primary)]">
+                {authMode === "signup" ? "Create Account" : "Welcome Back"}
+              </h3>
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="text-[var(--text-subtle)] hover:text-[var(--on-background)] text-xl cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Google Sign-In Identity Button */}
             <button
               onClick={handleGoogleSignIn}
               type="button"
-              className="w-full py-2.5 px-4 border border-[#DBC1BA] rounded-lg text-xs font-bold text-[#1B1C1A] hover:bg-[#FAF9F5] transition-colors flex items-center justify-center gap-2 paper-shadow"
+              className="w-full py-2.5 px-4 bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl text-xs font-bold text-[var(--on-background)] hover:bg-[var(--surface-muted)] transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
               </svg>
               Continue with Google
             </button>
 
-            <div className="flex items-center my-1">
-              <div className="flex-1 border-t border-[#EFEEEA]"></div>
-              <span className="px-2 text-[10px] text-[#88726D] uppercase">or with email</span>
-              <div className="flex-1 border-t border-[#EFEEEA]"></div>
+            <div className="flex items-center gap-2 text-xs text-[var(--text-subtle)]">
+              <div className="flex-1 h-px bg-[var(--surface-border)]" />
+              <span>or email</span>
+              <div className="flex-1 h-px bg-[var(--surface-border)]" />
             </div>
 
-            {/* Email & Password Flow */}
             <form onSubmit={handleAuthSubmit} className="flex flex-col gap-3">
               {authMode === "signup" && (
                 <input
                   type="text"
-                  placeholder="Full Name"
+                  placeholder="Your Name"
                   value={authName}
                   onChange={(e) => setAuthName(e.target.value)}
-                  className="p-2.5 border border-[#DBC1BA] rounded-lg text-xs"
+                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)]"
                   required
                 />
               )}
@@ -1271,7 +1622,7 @@ export default function PaperrrrrrApp() {
                 placeholder="Email Address"
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
-                className="p-2.5 border border-[#DBC1BA] rounded-lg text-xs"
+                className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)]"
                 required
               />
               <input
@@ -1279,36 +1630,44 @@ export default function PaperrrrrrApp() {
                 placeholder="Password"
                 value={authPassword}
                 onChange={(e) => setAuthPassword(e.target.value)}
-                className="p-2.5 border border-[#DBC1BA] rounded-lg text-xs"
+                className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)]"
                 required
               />
+
               <button
                 type="submit"
-                className="py-2.5 bg-[#97422C] text-white font-bold text-xs rounded-lg hover:bg-[#B65A42] transition-colors"
+                className="w-full py-2.5 bg-[var(--primary)] text-white text-xs font-bold rounded-lg hover:bg-[var(--primary-container)] transition-colors mt-2 cursor-pointer"
               >
-                {authMode === "signup" ? "Sign Up & Create Session" : "Sign In"}
+                {authMode === "signup" ? "Create Account" : "Sign In"}
               </button>
             </form>
 
-            <div className="text-center pt-2 border-t border-[#DBC1BA]">
-              <button
-                type="button"
-                onClick={() => setAuthMode(authMode === "signup" ? "login" : "signup")}
-                className="text-xs text-[#97422C] hover:underline"
-              >
-                {authMode === "signup" ? "Already have an account? Sign in" : "Need an account? Sign up"}
-              </button>
+            <div className="text-center text-xs text-[var(--text-muted)]">
+              {authMode === "signup" ? (
+                <span>
+                  Already have an account?{" "}
+                  <button
+                    onClick={() => setAuthMode("login")}
+                    className="text-[var(--primary)] font-bold hover:underline cursor-pointer"
+                  >
+                    Sign In
+                  </button>
+                </span>
+              ) : (
+                <span>
+                  Need an account?{" "}
+                  <button
+                    onClick={() => setAuthMode("signup")}
+                    className="text-[var(--primary)] font-bold hover:underline cursor-pointer"
+                  >
+                    Sign Up
+                  </button>
+                </span>
+              )}
             </div>
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-[#DBC1BA] py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 text-center text-xs text-[#88726D]">
-          © 2026 <strong>Paperrrrrr</strong> — Autonomous Research & Document Generation Engine with Gemini 2.5 Flash
-        </div>
-      </footer>
     </div>
   );
 }

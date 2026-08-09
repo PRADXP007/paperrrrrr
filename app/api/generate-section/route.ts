@@ -1,18 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateSectionProse } from "@/lib/ai";
+import { generateSectionProse, regenerateSingleSection } from "@/lib/ai";
 import { connectToDatabase } from "@/lib/mongodb";
 import Document from "@/models/Document";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { docId, docTitle, section, filteredSources } = body;
+    const {
+      docId,
+      docTitle,
+      section,
+      filteredSources = [],
+      userInstruction,
+      customGeminiKey,
+      customOpenAIKey
+    } = body;
 
     if (!section || !section.id) {
       return NextResponse.json({ error: "Invalid section payload" }, { status: 400 });
     }
 
-    const content = await generateSectionProse(docTitle || "Untitled Document", section, filteredSources || []);
+    let content = "";
+    if (userInstruction && userInstruction.trim() !== "") {
+      content = await regenerateSingleSection(
+        docTitle || "Untitled Document",
+        section,
+        filteredSources,
+        userInstruction,
+        { customGeminiKey, customOpenAIKey }
+      );
+    } else {
+      content = await generateSectionProse(
+        docTitle || "Untitled Document",
+        section,
+        filteredSources,
+        { customGeminiKey, customOpenAIKey }
+      );
+    }
 
     if (docId) {
       try {
