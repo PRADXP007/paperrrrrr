@@ -57,7 +57,7 @@ export default function PaperrrrrrApp() {
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Form intake state (Homepage Centerpiece)
-  const [prompt, setPrompt] = useState("a report on renewable energy adoption in India");
+  const [prompt, setPrompt] = useState("");
   const [format, setFormat] = useState<"docx" | "pptx" | "xlsx" | "pdf">("docx");
   const [docType, setDocType] = useState("Research Report");
   const [tone, setTone] = useState("Academic & Analytical");
