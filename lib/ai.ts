@@ -38,11 +38,11 @@ export interface GenerateOutlineOptions {
 function buildDynamicOutline(
   prompt: string,
   options: GenerateOutlineOptions,
-  research: ResearchBundle
+  research?: ResearchBundle
 ): GeneratedOutline {
   const cleanTitle = prompt.trim().replace(/^a report on\s+/i, "").replace(/^an essay on\s+/i, "").replace(/^a review on\s+/i, "");
   const capitalizedTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
-  const srcCount = research.results.length;
+  const srcCount = (research?.results || []).length;
   const docType = options.docType || "Research Report";
 
   let sections: OutlineSection[] = [];
@@ -245,7 +245,7 @@ function buildDynamicOutline(
 export async function generateStructuredOutline(
   prompt: string,
   options: GenerateOutlineOptions = {},
-  researchBundle: ResearchBundle
+  researchBundle?: ResearchBundle
 ): Promise<GeneratedOutline> {
   const geminiApiKey = options.customGeminiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   const docType = options.docType || "Research Report";
@@ -287,7 +287,7 @@ Target Length: ${options.targetLength || "Detailed (~2,000 words)"}
 ${options.referenceNotes ? `User Provided Background / Reference Notes:\n${options.referenceNotes}\n` : ""}
 
 Live Research Sources Available:
-${JSON.stringify(researchBundle.results, null, 2)}
+${JSON.stringify(researchBundle?.results || [], null, 2)}
 
 Ensure:
 1. Genuinely reflect the requested Document Type (${docType}) in section titles, briefs, and analytical structure.
