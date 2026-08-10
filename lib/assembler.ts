@@ -17,7 +17,7 @@ import {
 } from "docx";
 import pptxgen from "pptxgenjs";
 import ExcelJS from "exceljs";
-import PDFDocument from "pdfkit";
+import PDFDocument from "pdfkit/js/pdfkit.standalone";
 
 export interface AssembleSection {
   title: string;
@@ -283,7 +283,8 @@ export async function assembleWordDocument(input: AssembleDocumentInput): Promis
 
 // 2. PowerPoint (.pptx) Assembler - Multi-Layout Widescreen Engine
 export async function assemblePowerPoint(input: AssembleDocumentInput): Promise<Buffer> {
-  const ppt = new pptxgen();
+  const PptxClass = typeof pptxgen === "function" ? pptxgen : (pptxgen as any).default;
+  const ppt = new PptxClass();
   ppt.layout = "LAYOUT_16x9";
   ppt.title = input.title;
 
@@ -419,7 +420,8 @@ export async function assemblePowerPoint(input: AssembleDocumentInput): Promise<
 
 // 3. Excel (.xlsx) Assembler - Financial-Grade Analytical Workbook
 export async function assembleExcelSheet(input: AssembleDocumentInput): Promise<Buffer> {
-  const workbook = new ExcelJS.Workbook();
+  const WorkbookClass = ExcelJS.Workbook || (ExcelJS as any).default?.Workbook || (ExcelJS as any).default;
+  const workbook = new WorkbookClass();
   workbook.creator = "Paperrrrrr";
 
   const sheet = workbook.addWorksheet("Document Synthesis", {
@@ -544,7 +546,8 @@ export async function assembleExcelSheet(input: AssembleDocumentInput): Promise<
 // 4. PDF (.pdf) Assembler - Publication-Grade Paginated Document
 export async function assemblePdfDocument(input: AssembleDocumentInput): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({
+    const PDFDocClass = typeof PDFDocument === "function" ? PDFDocument : (PDFDocument as any).default;
+    const doc = new PDFDocClass({
       margin: 54,
       size: "A4",
       bufferPages: true
