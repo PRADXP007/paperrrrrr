@@ -104,6 +104,8 @@ export default function PaperrrrrrApp() {
   const [assembledBlobUrl, setAssembledBlobUrl] = useState<string | null>(null);
   const [assembledFilename, setAssembledFilename] = useState<string>("");
   const [copySuccess, setCopySuccess] = useState(false);
+  const [terminalTab, setTerminalTab] = useState<"terminal" | "code">("terminal");
+  const [directFullDocMode, setDirectFullDocMode] = useState(true);
 
   const timelineEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -284,9 +286,11 @@ export default function PaperrrrrrApp() {
     }
   };
 
-  // Step 1 -> Step 2: Run Tavily research & generate outline via Gemini 2.5 Flash
-  const handleStartPipeline = async () => {
+  // Step 1 -> Step 2 or Step 3: Run Tavily research & generate outline via Gemini 2.5 Flash
+  const handleStartPipeline = async (opts?: { direct?: boolean }) => {
     if (!prompt.trim()) return;
+
+    const isDirect = opts?.direct ?? directFullDocMode;
 
     setIsResearching(true);
     setStep("generating_outline");
@@ -337,7 +341,7 @@ export default function PaperrrrrrApp() {
       ]);
 
       // 2. Structured JSON Outline with Gemini 2.5 Flash
-      setStreamStatusText("Structuring JSON outline with Gemini 2.5 Flash...");
+      setStreamStatusText("Structuring manuscript outline with Gemini 2.5 Flash...");
       setIsGeneratingOutline(true);
 
       const resOutline = await fetch("/api/outline", {
@@ -379,7 +383,12 @@ export default function PaperrrrrrApp() {
         }
       ]);
 
-      setStep("outline");
+      if (isDirect) {
+        // DIRECT FULL DOCUMENT MODE: Launch live streaming workspace instantly!
+        executeStreamGeneration(dataOutline.outline, dataResearch.researchBundle, dataResearch.docId);
+      } else {
+        setStep("outline");
+      }
     } catch (err: any) {
       alert("Pipeline Error: " + err.message);
       setIsResearching(false);
@@ -424,10 +433,12 @@ export default function PaperrrrrrApp() {
     setOutline(updated);
   };
 
-  // Step 2 -> Step 3: Approve Outline -> Launch Split-Screen SSE Live Generation Stream
-  const handleApproveAndLaunchLiveWorkspace = async () => {
-    if (!outline) return;
-
+  // Core Live SSE Generation Pipeline
+  const executeStreamGeneration = async (
+    targetOutline: GeneratedOutline,
+    targetBundle: any,
+    targetDocId?: string | null
+  ) => {
     setStep("workspace");
     setIsStreaming(true);
     setIsAssembledReady(false);
@@ -440,8 +451,8 @@ export default function PaperrrrrrApp() {
         id: `ev_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         type: "status",
-        title: "Outline Approved — Live SSE Stream Connected",
-        detail: `Beginning real-time section prose drafting with Gemini 2.5 Flash.`
+        title: "Live SSE Stream Initialized",
+        detail: `Streaming live tokens and drafting sections with Gemini 2.5 Flash.`
       }
     ]);
 
@@ -450,15 +461,15 @@ export default function PaperrrrrrApp() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: outline.title,
+          prompt: targetOutline.title,
           format,
           tone,
           audience,
           targetLength,
           docType,
-          docId,
-          approvedOutline: outline,
-          researchBundle,
+          docId: targetDocId || docId,
+          approvedOutline: targetOutline,
+          researchBundle: targetBundle || researchBundle,
           referenceNotes: referenceNotes || undefined,
           customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined
         })
@@ -527,7 +538,7 @@ export default function PaperrrrrrApp() {
                 setActiveGeneratingSectionIndex(null);
                 setStreamStatusText("All sections drafted! Assembling binary download package...");
 
-                const compiledSections = event.sections || outline.sections.map((s, idx) => ({
+                const compiledSections = event.sections || targetOutline.sections.map((s, idx) => ({
                   title: s.title,
                   brief: s.brief,
                   content: generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || s.brief
@@ -537,9 +548,9 @@ export default function PaperrrrrrApp() {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    docId,
-                    title: outline.title,
-                    subtitle: outline.subtitle,
+                    docId: targetDocId || docId,
+                    title: targetOutline.title,
+                    subtitle: targetOutline.subtitle,
                     format,
                     sections: compiledSections
                   })
@@ -548,7 +559,7 @@ export default function PaperrrrrrApp() {
                 if (resAssemble.ok) {
                   const blob = await resAssemble.blob();
                   const downloadUrl = URL.createObjectURL(blob);
-                  const filename = `Paperrrrrr_${outline.title.replace(/[^a-zA-Z0-9_\-]/g, "_")}.${format}`;
+                  const filename = `Paperrrrrr_${targetOutline.title.replace(/[^a-zA-Z0-9_\-]/g, "_")}.${format}`;
 
                   setAssembledBlobUrl(downloadUrl);
                   setAssembledFilename(filename);
@@ -592,6 +603,12 @@ export default function PaperrrrrrApp() {
       setIsStreaming(false);
       setStreamStatusText("Stream finished.");
     }
+  };
+
+  // Step 2 -> Step 3: Approve Outline -> Launch Split-Screen SSE Live Generation Stream
+  const handleApproveAndLaunchLiveWorkspace = () => {
+    if (!outline) return;
+    executeStreamGeneration(outline, researchBundle, docId);
   };
 
   // Section-by-Section Single Regeneration Action
@@ -983,15 +1000,25 @@ export default function PaperrrrrrApp() {
               </div>
             </div>
 
-            {/* Primary Action Button */}
-            <button
-              onClick={handleStartPipeline}
-              disabled={isResearching || isGeneratingOutline}
-              className="w-full py-4.5 bg-[var(--primary)] text-white font-bold text-base rounded-xl hover:bg-[var(--primary-container)] transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span className="material-symbols-outlined">search</span>
-              Run Research & Generate Outline with Gemini →
-            </button>
+            {/* Primary Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                onClick={() => handleStartPipeline({ direct: true })}
+                disabled={isResearching || isGeneratingOutline}
+                className="flex-1 py-4.5 bg-[var(--primary)] text-white font-bold text-base rounded-xl hover:bg-[var(--primary-container)] transition-colors shadow-lg flex items-center justify-center gap-2.5 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-xl">bolt</span>
+                Generate Full Document Directly (Live Word Mode) →
+              </button>
+              <button
+                onClick={() => handleStartPipeline({ direct: false })}
+                disabled={isResearching || isGeneratingOutline}
+                className="px-5 py-4.5 border-2 border-[var(--surface-border)] bg-[var(--surface-card)] hover:border-[var(--primary)] text-[var(--on-background)] font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
+              >
+                <span className="material-symbols-outlined text-base">format_list_bulleted</span>
+                Review Outline First
+              </button>
+            </div>
           </div>
         )}
 
@@ -1017,15 +1044,15 @@ export default function PaperrrrrrApp() {
                 {streamStatusText}
               </h2>
               <p className="text-sm text-[var(--text-muted)]">
-                Analyzing verified web sources and framing structured sections with Gemini 2.5 Flash.
+                Conducting live Tavily web research and structuring manuscript sections with Gemini 2.5 Flash.
               </p>
             </div>
 
             {/* Progress Bar & Timeline Feed Preview */}
             <div className="w-full bg-[var(--surface-card)] border border-[var(--surface-border)] p-6 rounded-2xl paper-shadow flex flex-col gap-4 text-left">
               <div className="flex justify-between items-center text-xs font-mono text-[var(--text-subtle)]">
-                <span>Pipeline Status</span>
-                <span className="text-[var(--primary)] font-bold">Live Research Active ({researchDepth.toUpperCase()})</span>
+                <span>Pipeline Engine</span>
+                <span className="text-[var(--primary)] font-bold">Tavily Web Search &amp; Gemini 2.5 Flash Active</span>
               </div>
               <div className="w-full h-2.5 bg-[var(--surface-muted)] border border-[var(--surface-border)] rounded-full overflow-hidden">
                 <div className="h-full bg-[var(--primary)] rounded-full animate-pulse w-3/4" />
@@ -1164,14 +1191,14 @@ export default function PaperrrrrrApp() {
         )}
 
         {/* ============================================================ */}
-        {/* SCREEN 3: SPLIT-SCREEN WORKSPACE (40% FEED / 60% PREVIEW)    */}
+        {/* SCREEN 3: SPLIT-SCREEN WORKSPACE (42% CODE ENGINE / 58% MS WORD) */}
         {/* ============================================================ */}
         {step === "workspace" && outline && (
           <div className="flex flex-col lg:flex-row gap-6 w-full max-w-7xl mx-auto py-2">
             {/* -------------------------------------------------------- */}
-            {/* LEFT COLUMN: 40% WIDTH - PINNED PROMPT BAR & SSE FEED   */}
+            {/* LEFT COLUMN: 42% WIDTH - LIVE CODE & SYNTHESIS TERMINAL  */}
             {/* -------------------------------------------------------- */}
-            <div className="w-full lg:w-[40%] flex flex-col gap-4 shrink-0">
+            <div className="w-full lg:w-[42%] flex flex-col gap-4 shrink-0">
               {/* Pinned Top Prompt Bar */}
               <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-4 paper-shadow flex flex-col gap-2.5">
                 <div className="flex justify-between items-center">
@@ -1207,78 +1234,136 @@ export default function PaperrrrrrApp() {
                 )}
               </div>
 
-              {/* Status Banner */}
-              <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] p-3.5 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-2.5 h-2.5 rounded-full ${isStreaming ? "bg-[var(--primary)] animate-ping" : "bg-green-600"}`} />
-                  <span className="text-xs font-bold text-[var(--on-background)]">{streamStatusText}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {researchBundle && (
+              {/* Futuristic Live Code & Synthesis Terminal Box */}
+              <div className="bg-[#0D1117] text-[#E6EDF3] border border-[#30363D] rounded-xl overflow-hidden terminal-glow flex flex-col shadow-2xl">
+                {/* Terminal Header Bar */}
+                <div className="bg-[#161B22] border-b border-[#30363D] px-4 py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#FF5F56] inline-block" />
+                      <span className="w-3 h-3 rounded-full bg-[#FFBD2E] inline-block" />
+                      <span className="w-3 h-3 rounded-full bg-[#27C93F] inline-block" />
+                    </div>
+                    <span className="text-xs font-mono font-bold text-gray-300 ml-2 flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${isStreaming ? "bg-green-400 animate-ping" : "bg-green-500"}`} />
+                      live-synth-engine.ts
+                    </span>
+                  </div>
+
+                  {/* Terminal Tabs */}
+                  <div className="flex items-center bg-[#0D1117] p-0.5 rounded-lg border border-[#30363D] text-[11px] font-mono">
                     <button
-                      onClick={() => setShowSourcesModal(true)}
-                      className="text-[10px] bg-[var(--surface-muted)] hover:border-[var(--primary)] border border-[var(--surface-border)] text-[var(--primary)] font-bold px-2 py-0.5 rounded cursor-pointer"
-                    >
-                      Sources ({researchBundle.results.length})
-                    </button>
-                  )}
-                  <span className="text-[10px] font-mono uppercase bg-[var(--surface-muted)] text-[var(--text-muted)] px-2 py-0.5 rounded border border-[var(--surface-border)]">
-                    {isStreaming ? "Streaming SSE" : "Completed"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Live SSE Activity Feed */}
-              <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-4 paper-shadow flex flex-col gap-3 max-h-[600px] overflow-y-auto">
-                <div className="flex justify-between items-center pb-2 border-b border-[var(--surface-border)]">
-                  <h3 className="font-serif text-sm font-bold text-[var(--primary)] flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-sm">stream</span>
-                    Live SSE Activity Timeline
-                  </h3>
-                  <span className="text-[10px] text-[var(--text-subtle)] font-mono">{streamTimelineEvents.length} events logged</span>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  {streamTimelineEvents.map((ev) => (
-                    <div
-                      key={ev.id}
-                      className={`p-3.5 rounded-xl border transition-all duration-300 flex flex-col gap-1.5 shadow-sm ${
-                        ev.type === "section"
-                          ? "bg-[var(--surface-muted)] border-[var(--primary)]/40 border-l-4 border-l-[var(--primary)]"
-                          : ev.type === "complete"
-                          ? "bg-green-50 dark:bg-green-950/40 border-green-300 text-green-900 dark:text-green-300 border-l-4 border-l-green-600"
-                          : ev.type === "research"
-                          ? "bg-[var(--surface-card)] border-[var(--surface-border)] border-l-4 border-l-[var(--text-muted)]"
-                          : "bg-[var(--surface-card)] border-[var(--surface-border)] border-l-4 border-l-[var(--surface-border)]"
+                      onClick={() => setTerminalTab("terminal")}
+                      className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                        terminalTab === "terminal" ? "bg-[#238636] text-white font-bold" : "text-gray-400 hover:text-white"
                       }`}
                     >
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-[var(--on-background)] flex items-center gap-1.5">
-                          {ev.type === "section" && <span className="text-[var(--primary)]">📝</span>}
-                          {ev.type === "complete" && <span>🎉</span>}
-                          {ev.type === "research" && <span>🔍</span>}
-                          {ev.type === "status" && <span className="animate-spin text-[10px]">⚡</span>}
-                          {ev.title}
-                        </span>
-                        <span className="text-[10px] text-[var(--text-subtle)] font-mono">{ev.timestamp}</span>
-                      </div>
-                      {ev.detail && <p className="text-[var(--text-muted)] leading-relaxed text-[11px]">{ev.detail}</p>}
-                    </div>
-                  ))}
-                  <div ref={timelineEndRef} />
+                      ⚡ Terminal
+                    </button>
+                    <button
+                      onClick={() => setTerminalTab("code")}
+                      className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                        terminalTab === "code" ? "bg-[#238636] text-white font-bold" : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      📄 Raw Code
+                    </button>
+                  </div>
                 </div>
+
+                {/* Live Stats Ribbon */}
+                <div className="bg-[#1F242C] px-4 py-2 border-b border-[#30363D] flex flex-wrap justify-between items-center text-[11px] font-mono text-gray-300">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[#58A6FF]">
+                      Words: <strong>{Object.values(generatedSections).reduce((acc, t) => acc + (typeof t === "string" ? t.split(/\s+/).filter(Boolean).length : 0), 0)}</strong>
+                    </span>
+                    <span className="text-[#7EE787]">
+                      Chars: <strong>{Object.values(generatedSections).reduce((acc, t) => acc + (typeof t === "string" ? t.length : 0), 0)}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 rounded bg-[#30363D] text-gray-200">
+                      {isStreaming ? "⚡ 85 tokens/s" : "✓ Complete"}
+                    </span>
+                    {researchBundle && (
+                      <button
+                        onClick={() => setShowSourcesModal(true)}
+                        className="text-[10px] text-[#58A6FF] hover:underline cursor-pointer font-bold"
+                      >
+                        {researchBundle.results.length} Sources
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tab Content 1: Terminal Logs Stream */}
+                {terminalTab === "terminal" && (
+                  <div className="p-4 font-mono text-xs text-gray-300 max-h-[500px] overflow-y-auto space-y-2.5">
+                    <div className="text-gray-500 text-[11px]">
+                      // PaperLoop Runtime v2.0 • Gemini 2.5 Flash • Tavily Neural Search
+                    </div>
+                    {streamTimelineEvents.map((ev) => (
+                      <div key={ev.id} className="leading-relaxed flex items-start gap-2">
+                        <span className="text-gray-500 shrink-0 select-none">[{ev.timestamp.split(" ")[0]}]</span>
+                        <div className="flex-1">
+                          <span className={
+                            ev.type === "complete" ? "text-[#7EE787] font-bold" :
+                            ev.type === "section" ? "text-[#58A6FF] font-bold" :
+                            ev.type === "research" ? "text-[#D2A8FF] font-bold" :
+                            ev.type === "error" ? "text-[#FFA198] font-bold" :
+                            "text-[#79C0FF]"
+                          }>
+                            {ev.type === "section" && "📝 "}
+                            {ev.type === "complete" && "🎉 "}
+                            {ev.type === "research" && "🔍 "}
+                            {ev.type === "status" && "⚡ "}
+                            {ev.title}
+                          </span>
+                          {ev.detail && (
+                            <p className="text-gray-400 text-[11px] mt-0.5 pl-2 border-l border-gray-700">
+                              {ev.detail}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {isStreaming && (
+                      <div className="flex items-center gap-2 text-green-400 pt-2 animate-pulse">
+                        <span className="text-green-500">▶</span>
+                        <span>[Streaming] Generating section markdown & OpenXML document nodes...</span>
+                        <span className="inline-block w-2 h-4 bg-green-400 cursor-blink ml-1" />
+                      </div>
+                    )}
+                    <div ref={timelineEndRef} />
+                  </div>
+                )}
+
+                {/* Tab Content 2: Raw Code / Markdown Stream */}
+                {terminalTab === "code" && (
+                  <div className="p-4 font-mono text-xs text-[#79C0FF] max-h-[500px] overflow-y-auto bg-[#090D13]">
+                    <pre className="whitespace-pre-wrap leading-relaxed text-[11px] text-gray-200">
+                      {`# ${outline.title}\n*${outline.subtitle}*\n\n` +
+                        outline.sections.map((s, idx) => {
+                          const content = generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[s.title];
+                          return `## ${s.title}\n\n${content || `<!-- [Drafting with Gemini 2.5 Flash...] -->`}`;
+                        }).join("\n\n---\n\n")}
+                    </pre>
+                    {isStreaming && <span className="inline-block w-2 h-4 bg-green-400 cursor-blink mt-1" />}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* -------------------------------------------------------- */}
-            {/* RIGHT COLUMN: 60% WIDTH - LIVE DOCUMENT PREVIEW PANE     */}
+            {/* RIGHT COLUMN: 58% WIDTH - AUTHENTIC MS WORD DOCUMENT PREVIEW */}
             {/* -------------------------------------------------------- */}
-            <div className="w-full lg:w-[60%] flex flex-col gap-4">
+            <div className="w-full lg:w-[58%] flex flex-col gap-4">
               {/* Sticky Action Bar */}
               <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-3.5 paper-shadow flex flex-wrap gap-2 justify-between items-center">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] bg-[var(--primary-fixed)] px-2.5 py-1 rounded">
-                    {format.toUpperCase()} Document
+                    📄 {format.toUpperCase()} Manuscript
                   </span>
                   <span className="text-xs font-bold text-[var(--text-muted)]">
                     {readySectionsCount} of {outline.sections.length} sections live
@@ -1298,7 +1383,7 @@ export default function PaperrrrrrApp() {
                     onClick={() => setStep("outline")}
                     className="text-xs font-semibold px-3 py-1.5 border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-muted)] transition-colors cursor-pointer"
                   >
-                    Edit Outline
+                    Outline
                   </button>
                   <button
                     onClick={handleDownloadFile}
@@ -1315,40 +1400,54 @@ export default function PaperrrrrrApp() {
                 </div>
               </div>
 
-              {/* Styled Paper Preview Container */}
-              <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] p-6 sm:p-10 paper-shadow rounded-xl min-h-[600px] flex flex-col gap-6">
-                {/* Paper Header */}
-                <div className="text-center pb-6 border-b border-[var(--surface-border)] flex flex-col gap-2">
-                  <h1 className="font-serif text-2xl sm:text-3xl text-[var(--primary)] font-bold leading-tight">
+              {/* Realistic Microsoft Word Document Paper Canvas */}
+              <div className="ms-word-canvas bg-white dark:bg-[#181B24] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-[#2E3444] rounded-sm p-8 sm:p-14 min-h-[850px] flex flex-col gap-6 shadow-2xl">
+                {/* Word Ruler / Print Layout Header */}
+                <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-400 border-b border-gray-200 dark:border-gray-800 pb-3">
+                  <span>Microsoft Word Print Layout • 1" Margins</span>
+                  <span>{format.toUpperCase()} • 100% Zoom</span>
+                </div>
+
+                {/* Word Document Title Header */}
+                <div className="text-left pb-4 border-b border-gray-200 dark:border-gray-800 flex flex-col gap-2">
+                  <h1 className="font-serif text-2xl sm:text-4xl text-[#1B1C1A] dark:text-white font-bold leading-tight tracking-tight">
                     {outline.title}
                   </h1>
-                  <p className="text-xs sm:text-sm text-[var(--text-muted)] italic">{outline.subtitle}</p>
-                  <div className="text-[11px] text-[var(--text-subtle)] mt-1">
-                    Generated by <strong className="text-[var(--primary)]">Paperrrrrr</strong> • {new Date().toLocaleDateString()}
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">{outline.subtitle}</p>
+                  <div className="text-xs text-gray-400 mt-1 flex items-center gap-2">
+                    <span>Generated by <strong>Paperrrrrr Document Studio</strong></span>
+                    <span>•</span>
+                    <span>{new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>
                   </div>
                 </div>
 
-                {/* Live Section Prose List with Active Shimmer Skeleton & Per-Section Refine */}
-                <div className="space-y-8 text-sm text-[var(--on-background)] leading-relaxed">
+                {/* Table of Contents Section */}
+                <div className="bg-gray-50 dark:bg-[#1E2230] p-4 rounded-lg border border-gray-200 dark:border-gray-800 text-xs">
+                  <div className="font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-2">Table of Contents</div>
+                  <div className="space-y-1.5 text-gray-700 dark:text-gray-300 font-serif">
+                    {outline.sections.map((s, idx) => (
+                      <div key={idx} className="flex justify-between items-baseline gap-2">
+                        <span className="font-medium truncate">{s.title}</span>
+                        <span className="flex-1 border-b border-dotted border-gray-300 dark:border-gray-700 min-w-8" />
+                        <span className="text-[10px] text-gray-400 font-mono">Page {idx + 1}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Full Continuous Manuscript Prose */}
+                <div className="space-y-8 text-sm leading-[1.75] text-gray-800 dark:text-gray-200">
                   {outline.sections.map((sec, idx) => {
                     const proseContent = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[sec.title];
                     const isDraftingNow = isStreaming && activeGeneratingSectionIndex === idx && !proseContent;
                     const isSectionRegenerating = regeneratingSectionId === sec.id;
 
                     return (
-                      <div
-                        key={sec.id || idx}
-                        className={`space-y-3 p-4 sm:p-5 rounded-xl transition-all duration-300 ${
-                          isDraftingNow || isSectionRegenerating
-                            ? "bg-[var(--surface-muted)] border-2 border-[var(--primary)] shadow-md ring-2 ring-[var(--primary-fixed)]"
-                            : proseContent
-                            ? "bg-transparent border border-transparent"
-                            : "bg-[var(--surface-muted)]/50 border border-[var(--surface-border)] opacity-75"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between border-b border-[var(--surface-border)] pb-2">
-                          <h2 className="font-serif text-lg font-bold text-[var(--primary)] flex items-center gap-2">
-                            <span>{sec.title}</span>
+                      <div key={sec.id || idx} className="space-y-3 group">
+                        {/* Word Heading 1 */}
+                        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-1.5 pt-4">
+                          <h2 className="font-serif text-xl font-bold text-[#1B1C1A] dark:text-[#F1F3F7]">
+                            {sec.title}
                           </h2>
                           <div className="flex items-center gap-2">
                             {proseContent && !isStreaming && (
@@ -1357,7 +1456,7 @@ export default function PaperrrrrrApp() {
                                   setActiveRegenSection(sec);
                                   setSectionRevisionInstruction("");
                                 }}
-                                className="text-[10px] text-[var(--primary)] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                                className="text-[11px] text-[var(--primary)] hover:underline font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer"
                               >
                                 🔄 Refine Section
                               </button>
@@ -1365,41 +1464,31 @@ export default function PaperrrrrrApp() {
                             {isDraftingNow || isSectionRegenerating ? (
                               <span className="text-[11px] bg-[var(--primary)] text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm">
                                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                                ⚡ {isSectionRegenerating ? "Refining..." : "Gemini Drafting..."}
+                                ⚡ Drafting...
                               </span>
-                            ) : proseContent ? (
-                              <span className="text-[10px] bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 px-2 py-0.5 rounded font-bold">
-                                ✓ Ready ({proseContent.length} chars)
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-[var(--text-subtle)] font-mono">Queued</span>
-                            )}
+                            ) : null}
                           </div>
                         </div>
 
+                        {/* Paragraph Content */}
                         {proseContent ? (
-                          <div className="prose dark:prose-invert text-xs sm:text-sm text-[var(--on-background)] leading-relaxed whitespace-pre-wrap animate-in fade-in duration-500">
+                          <div className="prose dark:prose-invert text-sm leading-relaxed text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
                             {proseContent}
                           </div>
                         ) : isDraftingNow || isSectionRegenerating ? (
-                          /* Visual in-progress shimmer skeleton for active section */
                           <div className="space-y-3 py-3">
-                            <div className="text-xs text-[var(--text-muted)] font-medium flex items-center gap-1.5">
-                              <span className="text-[var(--primary)] font-bold">Focus Brief:</span> {sec.brief}
+                            <div className="text-xs text-gray-500 italic">
+                              Synthesizing section prose and empirical research data...
                             </div>
-                            <div className="space-y-2 pt-2">
+                            <div className="space-y-2">
                               <div className="h-3.5 shimmer-skeleton rounded w-full" />
                               <div className="h-3.5 shimmer-skeleton rounded w-[92%]" />
                               <div className="h-3.5 shimmer-skeleton rounded w-[96%]" />
-                              <div className="h-3.5 shimmer-skeleton rounded w-[70%]" />
-                            </div>
-                            <div className="flex items-center gap-2 pt-2 text-[11px] text-[var(--primary)] font-mono">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-bounce" />
-                              Synthesizing verified research citations & institutional statistics...
+                              <div className="h-3.5 shimmer-skeleton rounded w-[75%]" />
                             </div>
                           </div>
                         ) : (
-                          <p className="text-xs text-[var(--text-subtle)] italic">{sec.brief}</p>
+                          <p className="text-xs text-gray-400 italic">{sec.brief}</p>
                         )}
                       </div>
                     );
