@@ -97,17 +97,20 @@ function parseParagraphRunsWithHyperlinks(rawText: string): Array<TextRun | Exte
 // 1. Word Document (.docx) Assembler
 export async function assembleWordDocument(input: AssembleDocumentInput): Promise<Buffer> {
   const docChildren: any[] = [];
+  const safeTitle = input.title || "Document Title";
+  const safeSubtitle = input.subtitle || "A Comprehensive Analytical Assessment";
+  const sections = input.sections || [];
 
   // Title Page & Cover
   docChildren.push(
     new Paragraph({
-      text: input.title,
+      text: safeTitle,
       heading: HeadingLevel.TITLE,
       alignment: AlignmentType.LEFT,
       spacing: { before: 400, after: 200 }
     }),
     new Paragraph({
-      text: input.subtitle,
+      text: safeSubtitle,
       style: "Subtitle",
       alignment: AlignmentType.LEFT,
       spacing: { after: 300 }
