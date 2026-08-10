@@ -623,11 +623,12 @@ export default function PaperrrrrrApp() {
 
       const data = await res.json();
       if (data.success && data.content) {
-        setGeneratedSections((prev) => ({
-          ...prev,
+        const updatedSections = {
+          ...generatedSections,
           [secId]: data.content,
           [sec.title]: data.content
-        }));
+        };
+        setGeneratedSections(updatedSections);
 
         setStreamTimelineEvents((prev) => [
           ...prev,
@@ -642,6 +643,38 @@ export default function PaperrrrrrApp() {
 
         setActiveRegenSection(null);
         setSectionRevisionInstruction("");
+
+        // Re-assemble binary download package with the refined section!
+        const compiledSections = outline.sections.map((s, idx) => ({
+          title: s.title,
+          brief: s.brief,
+          content: updatedSections[s.id] || updatedSections[idx] || updatedSections[`sec_${idx + 1}`] || (updatedSections as any)[s.title] || s.brief
+        }));
+
+        try {
+          const resAssemble = await fetch("/api/assemble", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              docId,
+              title: outline.title,
+              subtitle: outline.subtitle,
+              format,
+              sections: compiledSections
+            })
+          });
+
+          if (resAssemble.ok) {
+            const blob = await resAssemble.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const filename = `Paperrrrrr_${outline.title.replace(/[^a-zA-Z0-9_\-]/g, "_")}.${format}`;
+            setAssembledBlobUrl(downloadUrl);
+            setAssembledFilename(filename);
+            setIsAssembledReady(true);
+          }
+        } catch (assembleErr) {
+          console.warn("Re-assembly after section refinement skipped/failed:", assembleErr);
+        }
       } else {
         alert("Section regeneration failed: " + (data.error || "Unknown"));
       }
@@ -883,24 +916,25 @@ export default function PaperrrrrrApp() {
             {/* Document Type Cards */}
             <div className="flex flex-col gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Document Type Preset:</span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { title: "Research Report", desc: "Deep analytical synthesis with comprehensive citations and empirical metrics." },
-                  { title: "Executive Brief", desc: "High-level takeaways, core KPIs, and actionable strategic directives." },
-                  { title: "Pitch / Strategy Deck", desc: "Problem statement, solution architecture, and market traction slides." }
+                  { title: "Research Report", desc: "Empirical synthesis with baseline metrics, risk analysis, and strategic roadmap." },
+                  { title: "Academic Essay", desc: "Formal critical essay with thesis argumentation, theoretical models, and scholarly discourse." },
+                  { title: "Literature Review", desc: "Systematic meta-analysis with taxonomy of scholarship, empirical gaps, and future agenda." },
+                  { title: "Freeform Summary", desc: "Concise executive briefing focusing directly on core takeaways, key themes, and actionable next steps." }
                 ].map((item) => (
                   <button
                     key={item.title}
                     type="button"
                     onClick={() => setDocType(item.title)}
-                    className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                       docType === item.title
-                        ? "border-[var(--primary)] bg-[var(--primary-fixed)]/30 ring-2 ring-[var(--primary)]"
+                        ? "border-[var(--primary)] bg-[var(--primary-fixed)]/30 ring-2 ring-[var(--primary)] shadow-sm"
                         : "border-[var(--surface-border)] bg-[var(--surface-card)] hover:border-[var(--primary)]"
                     }`}
                   >
-                    <div className="font-bold text-sm text-[var(--on-background)]">{item.title}</div>
-                    <div className="text-xs text-[var(--text-muted)] mt-1">{item.desc}</div>
+                    <div className="font-bold text-xs text-[var(--on-background)]">{item.title}</div>
+                    <div className="text-[11px] text-[var(--text-muted)] mt-1 leading-snug">{item.desc}</div>
                   </button>
                 ))}
               </div>

@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       docType = "Research Report",
       docId: incomingDocId,
       approvedOutline,
+      referenceNotes,
       customGeminiKey,
       customOpenAIKey
     } = body;
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
                 tone,
                 audience,
                 targetLength,
+                docType,
                 title: outline?.title || (prompt ? prompt.charAt(0).toUpperCase() + prompt.slice(1) : "Document"),
                 researchSummary: researchBundle?.answer || "",
                 researchSources: researchBundle?.results || [],
@@ -90,7 +92,7 @@ export async function POST(req: NextRequest) {
 
             outline = await generateStructuredOutline(
               prompt,
-              { format, tone, audience, targetLength, docType, customGeminiKey, customOpenAIKey },
+              { format, tone, audience, targetLength, docType, referenceNotes, customGeminiKey, customOpenAIKey },
               researchBundle
             );
 
@@ -149,7 +151,7 @@ export async function POST(req: NextRequest) {
                 outline.title,
                 section,
                 filteredSources,
-                { customGeminiKey, customOpenAIKey }
+                { customGeminiKey, customOpenAIKey, docType, tone, referenceNotes }
               );
             } catch (sectionErr: any) {
               console.error(`[Stream Pipeline] ❌ Error drafting Section ${i + 1} ("${section.title}"):`, sectionErr);
