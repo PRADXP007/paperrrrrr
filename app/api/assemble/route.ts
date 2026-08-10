@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     const filename = `Paperrrrrr_${safeTitle}.${fileExtension}`;
 
-    return new NextResponse(new Uint8Array(fileBuffer), {
+    return new Response(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         "Content-Type": contentType,
@@ -79,6 +79,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("Document assembly route error:", error);
-    return NextResponse.json({ error: error.message || "Document assembly failed" }, { status: 500 });
+    return new Response(JSON.stringify({ error: error.message || "Document assembly failed", stack: error.stack }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }
