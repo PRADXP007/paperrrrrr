@@ -62,7 +62,7 @@ export default function PaperrrrrrApp() {
   const [docType, setDocType] = useState("Research Report");
   const [tone, setTone] = useState("Academic & Analytical");
   const [audience, setAudience] = useState("Students & Researchers");
-  const [targetLength, setTargetLength] = useState("Detailed (~2,000 words)");
+  const [targetLength, setTargetLength] = useState("Unlimited & Exhaustive (Comprehensive In-Depth)");
   const [researchDepth, setResearchDepth] = useState<"standard" | "deep">("standard");
 
   // Reference File / Notes Intake
@@ -975,9 +975,10 @@ export default function PaperrrrrrApp() {
                   onChange={(e) => setTargetLength(e.target.value)}
                   className="w-full p-2.5 border border-[var(--surface-border)] rounded-lg bg-[var(--surface-muted)] text-[var(--on-background)] outline-none"
                 >
-                  <option>Detailed (~2,000 words)</option>
-                  <option>Standard (~1,200 words)</option>
-                  <option>Concise (~800 words)</option>
+                  <option>Unlimited & Exhaustive (Comprehensive In-Depth)</option>
+                  <option>Detailed (~3,500+ words)</option>
+                  <option>Standard (~2,000 words)</option>
+                  <option>Concise (~1,000 words)</option>
                 </select>
               </div>
             </div>

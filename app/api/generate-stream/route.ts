@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
                 outline.title,
                 section,
                 filteredSources,
-                { customGeminiKey, customOpenAIKey, docType, tone, referenceNotes }
+                { customGeminiKey, customOpenAIKey, docType, tone, referenceNotes, format, targetLength }
               );
             } catch (sectionErr: any) {
               console.error(`[Stream Pipeline] ❌ Error drafting Section ${i + 1} ("${section.title}"):`, sectionErr);

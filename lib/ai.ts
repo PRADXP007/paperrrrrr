@@ -348,15 +348,28 @@ export async function generateSectionProse(
   docTitle: string,
   section: OutlineSection,
   filteredSources: ResearchSnippet[],
-  customKeys?: { customGeminiKey?: string; customOpenAIKey?: string; referenceNotes?: string; docType?: string; tone?: string }
+  customKeys?: {
+    customGeminiKey?: string;
+    customOpenAIKey?: string;
+    referenceNotes?: string;
+    docType?: string;
+    tone?: string;
+    format?: string;
+    targetLength?: string;
+  }
 ): Promise<string> {
   const geminiApiKey = customKeys?.customGeminiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   const tone = customKeys?.tone || "Academic & Analytical";
   const docType = customKeys?.docType || "Research Report";
+  const format = customKeys?.format || "docx";
+  const targetLength = customKeys?.targetLength || "Unlimited & Exhaustive (Comprehensive In-Depth)";
+  const isExhaustive = format === "docx" || format === "pdf" || targetLength.toLowerCase().includes("unlimited");
 
-  const prompt = `Write publication-grade prose for the following section:
+  const prompt = `Write publication-grade, rigorous prose for the following section:
 Document Title: ${docTitle}
 Document Type: ${docType}
+Target Format: ${format}
+Target Length: ${targetLength}
 Tone: ${tone}
 Section Title: ${section.title}
 Section Brief: ${section.brief}
@@ -369,8 +382,12 @@ ${JSON.stringify(filteredSources, null, 2)}
 
 Instructions:
 - Adapt the prose structure to the document type (${docType}) and tone (${tone}).
-- Write 2-4 comprehensive, articulate paragraphs.
-- Include markdown citations like [Source: Title](URL).
+${
+  isExhaustive
+    ? `- UNLIMITED & EXHAUSTIVE DEPTH: For Word (.docx) and PDF (.pdf) publication documents, write extensive, comprehensive, and exhaustive in-depth prose (4 to 7 articulate, deeply detailed paragraphs). Do NOT artificially truncate, summarize, or brevity-cap. Fully unpack each key point, explore theoretical frameworks, analyze empirical statistics and case studies, address nuances and counter-arguments, and present strategic recommendations.`
+    : `- Write 3-5 comprehensive, articulate paragraphs.`
+}
+- Include markdown citations like [Source: Title](URL) embedded naturally into the text.
 - Ground the prose in specific empirical figures, percentages, and institutional frameworks.
 - Output ONLY the section body markdown.`;
 
@@ -430,11 +447,14 @@ Instructions:
     `Primary operational benchmarks confirm that scaling in this area requires structured governance, robust technical integration, and consistent stakeholder alignment.`;
 
   const paragraph2 = (filteredSources[1]?.snippet ? `Furthermore, verified data indicates: "${filteredSources[1].snippet}" ` : "") +
-    `Addressing the critical variables—specifically ${section.keyPoints.slice(0, 2).join(" as well as ")}—provides the necessary foundation for execution velocity and system reliability.`;
+    `Addressing the critical variables—specifically ${section.keyPoints.slice(0, 2).join(" as well as ")}—provides the necessary foundation for execution velocity and system reliability across varied operational environments.`;
 
-  const paragraph3 = `In summary, executing against the strategic priorities for ${section.title.toLowerCase()} necessitates aligning immediate tactical deployments with long-term infrastructure resilience. Comprehensive policy oversight and continuous performance audits remain essential for sustained institutional impact.`;
+  const paragraph3 = (filteredSources[2]?.snippet ? `Detailed ecosystem analysis reveals: "${filteredSources[2].snippet}" ` : "") +
+    `Structural alignment across institutional partners and technical stakeholders accelerates deployment while minimizing system-wide integration friction.`;
 
-  return `${paragraph1}\n\n${paragraph2}\n\n${paragraph3}`;
+  const paragraph4 = `In summary, executing against the strategic priorities for ${section.title.toLowerCase()} necessitates aligning immediate tactical deployments with long-term infrastructure resilience. Comprehensive policy oversight, granular empirical tracking, and continuous performance audits remain essential for sustained institutional impact.`;
+
+  return `${paragraph1}\n\n${paragraph2}\n\n${paragraph3}\n\n${paragraph4}`;
 }
 
 /**
