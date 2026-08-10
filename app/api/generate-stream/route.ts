@@ -3,10 +3,23 @@ import { executeTavilyResearch } from "@/lib/tavily";
 import { generateStructuredOutline, generateSectionProse } from "@/lib/ai";
 import { connectToDatabase } from "@/lib/mongodb";
 import { extractAuthUser } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
 import Document from "@/models/Document";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 60; // Max execution for Vercel Serverless
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rateLimit = checkRateLimit(`stream:${ip}`, { limit: 12, windowMs: 60 * 1000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Please wait ${rateLimit.resetInSeconds}s before initiating another live stream.` },
+        { status: 429 }
+      );
+    }
+
     const authUser = await extractAuthUser(req);
     const body = await req.json();
     const {

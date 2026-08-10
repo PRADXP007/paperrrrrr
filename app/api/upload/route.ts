@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractAuthUser } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rateLimit = checkRateLimit(`upload:${ip}`, { limit: 15, windowMs: 60 * 1000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Please wait ${rateLimit.resetInSeconds}s before uploading more files.` },
+        { status: 429 }
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 

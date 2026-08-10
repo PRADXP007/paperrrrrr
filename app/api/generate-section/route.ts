@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateSectionProse, regenerateSingleSection } from "@/lib/ai";
 import { connectToDatabase } from "@/lib/mongodb";
+import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
 import Document from "@/models/Document";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rateLimit = checkRateLimit(`section:${ip}`, { limit: 25, windowMs: 60 * 1000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Please wait ${rateLimit.resetInSeconds}s before refining more sections.` },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const {
       docId,

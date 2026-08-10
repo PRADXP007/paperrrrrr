@@ -9,6 +9,9 @@ import {
 import { connectToDatabase } from "@/lib/mongodb";
 import Document from "@/models/Document";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const body: AssembleDocumentInput & { docId?: string } = await req.json();
