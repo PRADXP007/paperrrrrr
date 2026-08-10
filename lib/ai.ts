@@ -35,20 +35,109 @@ export interface GenerateOutlineOptions {
 /**
  * Builds a dynamic, docType-specific outline directly from user input and research bundle
  */
-function buildDynamicOutline(
+export function buildDynamicOutline(
   prompt: string,
-  options: GenerateOutlineOptions,
-  research?: ResearchBundle
+  options: GenerateOutlineOptions = {},
+  researchBundle?: ResearchBundle
 ): GeneratedOutline {
-  const cleanTitle = prompt.trim().replace(/^a report on\s+/i, "").replace(/^an essay on\s+/i, "").replace(/^a review on\s+/i, "");
+  const cleanTitle = prompt.replace(/\.$/, "").trim();
   const capitalizedTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
-  const srcCount = (research?.results || []).length;
   const docType = options.docType || "Research Report";
+  const srcCount = researchBundle?.results?.length || 1;
+  const isExhaustive = (options.targetLength || "").toLowerCase().includes("unlimited") || (options.targetLength || "").toLowerCase().includes("detailed") || options.format === "docx" || options.format === "pdf";
 
-  let sections: OutlineSection[] = [];
   let subtitle = "";
+  let sections: OutlineSection[] = [];
 
-  if (docType === "Academic Essay") {
+  if (isExhaustive) {
+    subtitle = `An Exhaustive Multi-Chapter Strategic, Empirical & Methodological Treatise (${options.tone || "Academic & Analytical"})`;
+    sections = [
+      {
+        id: "sec_1",
+        title: "1. Executive Abstract & Foundational Baseline",
+        brief: `Comprehensive executive overview of baseline metrics, scope, and foundational significance for ${cleanTitle}.`,
+        keyPoints: [`Core adoption and volume metrics for ${cleanTitle}`, "High-level institutional indicators", "Scope and methodology framework"],
+        relevantSourceIndices: [1]
+      },
+      {
+        id: "sec_2",
+        title: "2. Historical Genesis & Evolution",
+        brief: `Chronological analysis of the origin, historical inflection points, and structural maturation of ${cleanTitle}.`,
+        keyPoints: ["Early developmental phases and policy catalysts", "Key structural pivots over the past decade", "Evolution of market and user adoption curves"],
+        relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1]
+      },
+      {
+        id: "sec_3",
+        title: "3. Theoretical Framework & Conceptual Taxonomy",
+        brief: `Theoretical models, scholarly taxonomy, and conceptual lenses governing ${cleanTitle}.`,
+        keyPoints: ["Academic paradigms and economic models", "Thematic categorization of ecosystem dynamics", "Taxonomy of primary and secondary variables"],
+        relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1]
+      },
+      {
+        id: "sec_4",
+        title: "4. Methodological Scope & Data Metrics",
+        brief: `Systematic selection criteria, measurement protocols, and quantitative evaluation indices for ${cleanTitle}.`,
+        keyPoints: ["Sampling protocols and dataset verification", "Key quantitative indicators and CAGR tracking", "Empirical boundary conditions and error tolerances"],
+        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1]
+      },
+      {
+        id: "sec_5",
+        title: "5. Operational Architecture & Technical Infrastructure",
+        brief: `Technical infrastructure, systems integration, and operational workflows supporting ${cleanTitle}.`,
+        keyPoints: ["System architecture and protocol design", "Infrastructure scalability and uptime resilience", "Data pipelines and latency optimization"],
+        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1]
+      },
+      {
+        id: "sec_6",
+        title: "6. Granular Empirical Findings & Quantitative Indicators",
+        brief: `Deep data synthesis of verified figures, institutional benchmarks, and performance metrics for ${cleanTitle}.`,
+        keyPoints: ["Granular statistical distributions and benchmarks", "Demographic and regional performance variations", "Comparative unit economics and growth velocity"],
+        relevantSourceIndices: srcCount >= 4 ? [3, 4] : [srcCount]
+      },
+      {
+        id: "sec_7",
+        title: "7. Comparative Global Benchmarks & Case Studies",
+        brief: `Cross-regional case evaluations, international parallels, and operational case studies on ${cleanTitle}.`,
+        keyPoints: ["Cross-border comparative analysis", "Institutional implementation case studies", "Lessons learned and transferable operational models"],
+        relevantSourceIndices: srcCount >= 4 ? [3, 4] : [srcCount]
+      },
+      {
+        id: "sec_8",
+        title: "8. Policy, Governance & Regulatory Frameworks",
+        brief: `Legal oversight, statutory compliance, institutional governance, and policy dynamics impacting ${cleanTitle}.`,
+        keyPoints: ["Government policies, mandates, and statutory standards", "Regulatory compliance and consumer protections", "Cross-jurisdictional harmonization priorities"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 2, 4] : [1]
+      },
+      {
+        id: "sec_9",
+        title: "9. Economic Models & Unit Economics Analysis",
+        brief: `Financial viability, cost-benefit modeling, capital allocation, and commercial incentives for ${cleanTitle}.`,
+        keyPoints: ["Cost structures, capital intensity, and ROI models", "Direct vs indirect economic dividends", "Monetization and pricing sustainability"],
+        relevantSourceIndices: srcCount >= 4 ? [2, 3, 4] : [1, 2]
+      },
+      {
+        id: "sec_10",
+        title: "10. Structural Bottlenecks & Risk Mitigation Vectors",
+        brief: `Critical assessment of operational vulnerabilities, friction points, security threats, and failure modes in ${cleanTitle}.`,
+        keyPoints: ["Hardware, network, and supply chain friction", "Security vulnerabilities and compliance risks", "Comprehensive mitigation and disaster recovery protocols"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 3, 4] : [1, 2]
+      },
+      {
+        id: "sec_11",
+        title: "11. Emerging Horizons & Future Forecast (2026–2035)",
+        brief: `Predictive modeling, technological innovations, and forward-looking trajectory for ${cleanTitle}.`,
+        keyPoints: ["Next-generation technological breakthroughs", "Anticipated market transformations over the next decade", "Pivotal inflection triggers to monitor"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
+      },
+      {
+        id: "sec_12",
+        title: "12. Strategic Roadmap, Governance & Scholarly Conclusion",
+        brief: `Actionable strategic roadmap, phased implementation timeline, and concluding synthesis on ${cleanTitle}.`,
+        keyPoints: ["Phased tactical roadmap (Near, Medium, Long term)", "Resource allocation and governance oversight metrics", "Synthesized scholarly conclusions and future research agenda"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
+      }
+    ];
+  } else if (docType === "Academic Essay") {
     subtitle = `A Rigorous Critical Essay (${options.tone || "Academic & Analytical"}) — Prepared for ${options.audience || "Students & Researchers"}`;
     sections = [
       {
@@ -182,7 +271,6 @@ function buildDynamicOutline(
       }
     ];
   } else {
-    // Default: "Research Report"
     subtitle = `A Comprehensive Strategic & Operational Assessment (${options.tone || "Academic & Analytical"})`;
     sections = [
       {
@@ -237,7 +325,7 @@ function buildDynamicOutline(
     subtitle,
     docType,
     format: (options.format as any) || "docx",
-    targetLength: options.targetLength || "Detailed (~2,000 words)",
+    targetLength: options.targetLength || "Unlimited & Exhaustive (Comprehensive In-Depth)",
     sections
   };
 }
@@ -275,6 +363,8 @@ export async function generateStructuredOutline(
   ]
 }`;
 
+  const isExhaustive = (options.targetLength || "").toLowerCase().includes("unlimited") || (options.targetLength || "").toLowerCase().includes("detailed") || options.format === "docx" || options.format === "pdf";
+
   const userMessage = `Create a structured document outline for the following prompt:
 "${prompt}"
 
@@ -282,7 +372,7 @@ Document Type: ${docType} (${docTypePromptInstructions[docType] || docTypePrompt
 Target Format: ${options.format || "docx"}
 Target Tone: ${options.tone || "Academic & Analytical"}
 Target Audience: ${options.audience || "Researchers & Practitioners"}
-Target Length: ${options.targetLength || "Detailed (~2,000 words)"}
+Target Length: ${options.targetLength || "Unlimited & Exhaustive (Comprehensive In-Depth)"}
 
 ${options.referenceNotes ? `User Provided Background / Reference Notes:\n${options.referenceNotes}\n` : ""}
 
@@ -291,8 +381,13 @@ ${JSON.stringify(researchBundle?.results || [], null, 2)}
 
 Ensure:
 1. Genuinely reflect the requested Document Type (${docType}) in section titles, briefs, and analytical structure.
-2. Link each section to relevant research source indices.
-3. Every section has 3-4 specific key points directly addressing the prompt and reference notes.`;
+${
+  isExhaustive
+    ? `2. CHAPTER COUNT: Generate 10 to 14 comprehensive, discrete chapters/sections (e.g. Chapter 1 through Chapter 12+) covering every facet: Executive Abstract, Historical Genesis, Theoretical Models, Methodological Metrics, Technical Architecture, Quantitative Empirical Data, Case Studies & Global Benchmarks, Regulatory & Policy Frameworks, Economic Feasibility, Risk Vectors & Bottlenecks, Emerging Horizons (2026-2035), and Strategic Implementation Roadmap with Conclusion.`
+    : `2. Generate 4 to 6 focused, high-impact sections.`
+}
+3. Link each section to relevant research source indices.
+4. Every section has 3-4 specific key points directly addressing the prompt and reference notes.`;
 
   // 1. Primary AI Provider: Gemini Flash (@google/genai)
   if (geminiApiKey) {

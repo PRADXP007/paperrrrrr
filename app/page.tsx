@@ -110,6 +110,37 @@ export default function PaperrrrrrApp() {
   const timelineEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Auto-typing live code animation during outline/research generation loader
+  const [typedCodeLines, setTypedCodeLines] = useState<string[]>([]);
+  useEffect(() => {
+    if (step !== "generating_outline") {
+      setTypedCodeLines([]);
+      return;
+    }
+
+    const codeSequence = [
+      `>> [COMPILER_INIT] Initializing PaperLoop Neural Document Engine v2.0...`,
+      `>> [AUTH_LAYER] Context Window: 1,000,000 tokens (Gemini 2.5 Flash allocated)`,
+      `>> [TAVILY_AGENT] Querying live neural search vectors: "${prompt.slice(0, 42)}..."`,
+      `>> [HTTP/2 200] Ingesting multi-vector web citations and empirical tables...`,
+      `>> [SCHEMA_GEN] Allocating 12 discrete publication chapters (Word .docx OpenXML)...`,
+      `>> [AST_COMPILER] Writing node: <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">`,
+      `>> [TAXONOMY] Synthesizing Chapter 1 to Chapter 12 deep structural briefs...`,
+      `>> [VALIDATOR] Verifying citation anchors, CAGR statistics, and policy frameworks...`,
+      `>> [STREAM_READY] Ready to initialize Server-Sent Events live prose stream...`
+    ];
+
+    let currentIdx = 0;
+    const interval = setInterval(() => {
+      if (currentIdx < codeSequence.length) {
+        setTypedCodeLines((prev) => [...prev, codeSequence[currentIdx]]);
+        currentIdx++;
+      }
+    }, 400);
+
+    return () => clearInterval(interval);
+  }, [step, prompt]);
+
   // Initialize theme from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem("paperrrrrr_theme") as "light" | "dark" | null;
@@ -1026,46 +1057,74 @@ export default function PaperrrrrrApp() {
         {/* SCREEN 1.5: DEDICATED RESEARCH & OUTLINE GENERATION LOADER   */}
         {/* ============================================================ */}
         {step === "generating_outline" && (
-          <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center gap-8 py-16 text-center">
-            {/* Animated Beacon */}
-            <div className="relative flex items-center justify-center">
-              <div className="w-24 h-24 rounded-full bg-[var(--primary-fixed)] animate-ping opacity-75" />
-              <div className="absolute w-20 h-20 rounded-full bg-[var(--primary)] flex items-center justify-center text-white text-3xl shadow-xl">
-                <span className="material-symbols-outlined text-4xl animate-spin">sync</span>
+          <div className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center gap-6 py-10 text-center">
+            {/* Animated Beacon & Header */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full bg-[var(--primary-fixed)] animate-ping opacity-75" />
+                <div className="absolute w-16 h-16 rounded-full bg-[var(--primary)] flex items-center justify-center text-white text-2xl shadow-xl">
+                  <span className="material-symbols-outlined text-3xl animate-spin">sync</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1 max-w-md">
+                <span className="text-xs font-bold uppercase tracking-widest text-[var(--primary)] bg-[var(--primary-fixed)] px-3 py-1 rounded-full w-max mx-auto">
+                  ⚡ Compiling 12-Chapter Exhaustive Document
+                </span>
+                <h2 className="font-serif text-2xl sm:text-3xl text-[var(--on-background)] font-bold">
+                  {streamStatusText}
+                </h2>
               </div>
             </div>
 
-            {/* Dynamic Status Text */}
-            <div className="flex flex-col gap-2 max-w-md">
-              <span className="text-xs font-bold uppercase tracking-widest text-[var(--primary)] bg-[var(--primary-fixed)] px-3 py-1 rounded-full w-max mx-auto">
-                ⚡ Active Synthesis Pipeline
-              </span>
-              <h2 className="font-serif text-2xl sm:text-3xl text-[var(--on-background)] font-bold">
-                {streamStatusText}
-              </h2>
-              <p className="text-sm text-[var(--text-muted)]">
-                Conducting live Tavily web research and structuring manuscript sections with Gemini 2.5 Flash.
-              </p>
-            </div>
-
-            {/* Progress Bar & Timeline Feed Preview */}
-            <div className="w-full bg-[var(--surface-card)] border border-[var(--surface-border)] p-6 rounded-2xl paper-shadow flex flex-col gap-4 text-left">
-              <div className="flex justify-between items-center text-xs font-mono text-[var(--text-subtle)]">
-                <span>Pipeline Engine</span>
-                <span className="text-[var(--primary)] font-bold">Tavily Web Search &amp; Gemini 2.5 Flash Active</span>
-              </div>
-              <div className="w-full h-2.5 bg-[var(--surface-muted)] border border-[var(--surface-border)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--primary)] rounded-full animate-pulse w-3/4" />
+            {/* Live Auto-Typing Code Execution Console */}
+            <div className="w-full bg-[#0D1117] border border-[#30363D] rounded-2xl overflow-hidden terminal-glow text-left shadow-2xl flex flex-col">
+              {/* Terminal Title Bar */}
+              <div className="bg-[#161B22] border-b border-[#30363D] px-4 py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-[#FF5F56] inline-block" />
+                    <span className="w-3 h-3 rounded-full bg-[#FFBD2E] inline-block" />
+                    <span className="w-3 h-3 rounded-full bg-[#27C93F] inline-block" />
+                  </div>
+                  <span className="text-xs font-mono font-bold text-gray-300 ml-2">
+                    compiler-runtime.ts — Live Code Execution
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
+                  <span className="text-[11px] font-mono text-green-400 font-bold">LIVE COMPILER ACTIVE</span>
+                </div>
               </div>
 
-              {/* Mini Activity Feed during synthesis */}
-              <div className="space-y-2 pt-2 border-t border-[var(--surface-border)] text-xs">
-                {streamTimelineEvents.map((ev) => (
-                  <div key={ev.id} className="flex items-center gap-2 text-[var(--text-muted)]">
-                    <span className="text-[var(--primary)] font-bold">✓</span>
-                    <span className="font-medium text-[var(--on-background)]">{ev.title}</span>
+              {/* Terminal Code Body */}
+              <div className="p-5 font-mono text-xs text-gray-300 space-y-2 max-h-[300px] overflow-y-auto bg-[#090D13]">
+                {typedCodeLines.map((line, idx) => (
+                  <div key={idx} className="leading-relaxed flex items-start gap-2.5 animate-in fade-in duration-300">
+                    <span className="text-gray-600 select-none text-[11px]">{(idx + 1).toString().padStart(2, "0")}</span>
+                    <span className={
+                      line.includes("INIT") || line.includes("AUTH") ? "text-[#58A6FF]" :
+                      line.includes("TAVILY") || line.includes("HTTP") ? "text-[#D2A8FF]" :
+                      line.includes("SCHEMA") || line.includes("AST") ? "text-[#79C0FF]" :
+                      line.includes("VALIDATOR") || line.includes("READY") ? "text-[#7EE787]" :
+                      "text-gray-300"
+                    }>
+                      {line}
+                    </span>
                   </div>
                 ))}
+                <div className="flex items-center gap-2 text-green-400 pt-1">
+                  <span className="text-green-500">▶</span>
+                  <span>Executing AST grammar &amp; synthesizing 12 discrete chapters...</span>
+                  <span className="inline-block w-2 h-4 bg-green-400 cursor-blink" />
+                </div>
+              </div>
+
+              {/* Terminal Footer Status */}
+              <div className="bg-[#161B22] border-t border-[#30363D] px-4 py-2 flex justify-between items-center text-[11px] font-mono text-gray-400">
+                <span>Model: <strong>Gemini 2.5 Flash</strong></span>
+                <span>Web Sources: <strong>Tavily Search API</strong></span>
+                <span>Output: <strong>12-Chapter Word / PDF Manuscript</strong></span>
               </div>
             </div>
           </div>
