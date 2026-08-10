@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ["docx", "pptxgenjs", "exceljs", "pdfkit", "mongoose"]
+  serverExternalPackages: ["mongoose"]
 };
 
 export default nextConfig;
