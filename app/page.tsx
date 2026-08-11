@@ -1586,7 +1586,7 @@ export default function PaperrrrrrApp() {
 
                 {/* Tab Content 1: Terminal Logs Stream */}
                 {terminalTab === "terminal" && (
-                  <div className="p-4 font-mono text-xs text-gray-300 max-h-[500px] overflow-y-auto space-y-2.5">
+                  <div className="p-4 font-mono text-xs text-gray-300 h-[480px] lg:h-[calc(100vh-320px)] max-h-[620px] overflow-y-auto custom-scrollbar space-y-2.5">
                     <div className="text-gray-500 text-[11px]">
                       // PaperLoop Runtime v2.0 • Gemini 2.5 Flash • Tavily Neural Search
                     </div>
@@ -1629,7 +1629,7 @@ export default function PaperrrrrrApp() {
 
                 {/* Tab Content 2: Raw Code / Markdown Stream */}
                 {terminalTab === "code" && (
-                  <div className="p-4 font-mono text-xs text-[#79C0FF] max-h-[500px] overflow-y-auto bg-[#090D13]">
+                  <div className="p-4 font-mono text-xs text-[#79C0FF] h-[480px] lg:h-[calc(100vh-320px)] max-h-[620px] overflow-y-auto custom-scrollbar bg-[#090D13]">
                     <pre className="whitespace-pre-wrap leading-relaxed text-[11px] text-gray-200">
                       {`# ${outline.title}\n*${outline.subtitle}*\n\n` +
                         outline.sections.map((s, idx) => {
@@ -1646,7 +1646,7 @@ export default function PaperrrrrrApp() {
             {/* -------------------------------------------------------- */}
             {/* RIGHT COLUMN: 58% WIDTH - AUTHENTIC MS WORD DOCUMENT PREVIEW */}
             {/* -------------------------------------------------------- */}
-            <div className="w-full lg:w-[58%] flex flex-col gap-4">
+            <div className="w-full lg:w-[58%] flex flex-col gap-3">
               {/* Sticky Action Bar */}
               <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-3.5 paper-shadow flex flex-wrap gap-2 justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -1704,107 +1704,165 @@ export default function PaperrrrrrApp() {
                 </div>
               </div>
 
-              {/* Realistic Microsoft Word Document Paper Canvas (Always Pure Black on Pure White Times New Roman 12pt A4) */}
-              <div className="ms-word-canvas bg-white text-black border border-gray-300 rounded-sm p-8 sm:p-14 min-h-[900px] max-w-[850px] mx-auto flex flex-col gap-6 shadow-2xl font-['Times_New_Roman',_Times,_serif]">
-                {/* Word Ruler / Print Layout Header */}
-                <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-500 border-b border-gray-300 pb-3">
-                  <span>A4 Print Layout • Times New Roman 12pt • 1" Margins</span>
-                  <span>30–50 Pages Depth • 100% Zoom</span>
-                </div>
-
-                {/* Word Document Title Header */}
-                <div className="text-center pb-6 border-b border-black flex flex-col gap-2">
-                  <h1 className="font-['Times_New_Roman',_Times,_serif] text-2xl sm:text-3xl text-black font-bold uppercase tracking-wide leading-tight">
-                    {outline.title}
-                  </h1>
-                  <p className="text-sm text-gray-700 italic font-['Times_New_Roman',_Times,_serif]">{outline.subtitle}</p>
-                  <div className="text-xs text-gray-600 mt-2 flex items-center justify-center gap-2 font-['Times_New_Roman',_Times,_serif]">
-                    <span>Prepared for: <strong>Academic & Corporate Review</strong></span>
-                    <span>•</span>
-                    <span>{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
-                  </div>
-                </div>
-
-                {/* Table of Contents Section */}
-                <div className="bg-gray-50 p-5 rounded border border-gray-300 text-xs font-['Times_New_Roman',_Times,_serif]">
-                  <div className="font-bold uppercase tracking-wider text-black text-center text-sm mb-3">TABLE OF CONTENTS</div>
-                  <div className="space-y-2 text-black">
+              {/* Contained Document Viewing Box (Scrollable Viewport Window) */}
+              <div 
+                id="doc-viewer-container"
+                className="bg-[#E4E6EA] dark:bg-[#0B0E14] border border-gray-300 dark:border-[#262C3A] rounded-xl p-3 sm:p-6 h-[650px] lg:h-[calc(100vh-210px)] max-h-[850px] overflow-y-auto custom-scrollbar flex flex-col items-center shadow-inner relative"
+              >
+                {/* Floating Jump & Quick-Scroll Dock */}
+                <div className="sticky top-2 z-20 mb-4 bg-white/95 dark:bg-[#181B24]/95 backdrop-blur-md border border-gray-300 dark:border-gray-700 rounded-full px-4 py-1.5 shadow-lg flex items-center gap-3 text-xs">
+                  <span className="text-gray-500 font-mono text-[11px] hidden sm:inline">Navigate:</span>
+                  <select
+                    onChange={(e) => {
+                      const target = document.getElementById(e.target.value);
+                      if (target) {
+                        target.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }
+                    }}
+                    className="bg-transparent text-gray-800 dark:text-gray-200 font-medium text-xs outline-none cursor-pointer max-w-[180px] sm:max-w-[240px] truncate"
+                  >
+                    <option value="doc-top">Jump to: Top of Document</option>
                     {outline.sections.map((s, idx) => (
-                      <div key={idx} className="flex justify-between items-baseline gap-2">
-                        <span className="font-medium truncate">{s.title}</span>
-                        <span className="flex-1 border-b border-dotted border-gray-400 min-w-8" />
-                        <span className="text-[11px] text-gray-700 font-mono">Page {idx * 2 + 1}</span>
-                      </div>
+                      <option key={idx} value={`chapter-sec-${idx}`}>
+                        {idx + 1}. {s.title.replace(/^\d+\.\s*/, "")}
+                      </option>
                     ))}
-                  </div>
+                  </select>
+                  <div className="h-3.5 w-px bg-gray-300 dark:bg-gray-700" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const container = document.getElementById("doc-viewer-container");
+                      if (container) container.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    title="Scroll to Top"
+                    className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white font-bold cursor-pointer flex items-center gap-0.5 text-[11px]"
+                  >
+                    ↑ Top
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const container = document.getElementById("doc-viewer-container");
+                      if (container) container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+                    }}
+                    title="Scroll to Bottom"
+                    className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white font-bold cursor-pointer flex items-center gap-0.5 text-[11px]"
+                  >
+                    ↓ End
+                  </button>
                 </div>
 
-                {/* Full Continuous Manuscript Prose */}
-                <div className="space-y-8 text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
-                  {outline.sections.map((sec, idx) => {
-                    const proseContent = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[sec.title];
-                    const isDraftingNow = isStreaming && activeGeneratingSectionIndex === idx && !proseContent;
-                    const isSectionRegenerating = regeneratingSectionId === sec.id;
+                {/* Realistic Microsoft Word Document Paper Canvas (Always Pure Black on Pure White Times New Roman 12pt A4) */}
+                <div id="doc-top" className="ms-word-canvas bg-white text-black border border-gray-300 rounded-sm p-8 sm:p-14 w-full max-w-[780px] flex flex-col gap-6 shadow-2xl font-['Times_New_Roman',_Times,_serif] self-center">
+                  {/* Word Ruler / Print Layout Header */}
+                  <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-500 border-b border-gray-300 pb-3">
+                    <span>A4 Print Layout • Times New Roman 12pt • 1" Margins</span>
+                    <span>30–50 Pages Depth • 100% Zoom</span>
+                  </div>
 
-                    return (
-                      <div key={sec.id || idx} className="space-y-4 group">
-                        {/* Word Heading 1 */}
-                        <div className="flex items-center justify-between border-b border-gray-300 pb-1.5 pt-6">
-                          <h2 className="text-[16pt] font-bold text-black font-['Times_New_Roman',_Times,_serif]">
-                            {idx + 1}. {sec.title.replace(/^\d+\.\s*/, "")}
-                          </h2>
-                          <div className="flex items-center gap-2">
-                            {proseContent && !isStreaming && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveRegenSection(sec);
-                                  setSectionRevisionInstruction("");
-                                }}
-                                className="text-[11px] text-[#004085] hover:underline font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer"
-                              >
-                                🔄 Refine Section
-                              </button>
-                            )}
-                            {isDraftingNow || isSectionRegenerating ? (
-                              <span className="text-[11px] bg-black text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm font-sans">
-                                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                                ⚡ Drafting...
-                              </span>
-                            ) : null}
+                  {/* Word Document Title Header */}
+                  <div className="text-center pb-6 border-b border-black flex flex-col gap-2">
+                    <h1 className="font-['Times_New_Roman',_Times,_serif] text-2xl sm:text-3xl text-black font-bold uppercase tracking-wide leading-tight">
+                      {outline.title}
+                    </h1>
+                    <p className="text-sm text-gray-700 italic font-['Times_New_Roman',_Times,_serif]">{outline.subtitle}</p>
+                    <div className="text-xs text-gray-600 mt-2 flex items-center justify-center gap-2 font-['Times_New_Roman',_Times,_serif]">
+                      <span>Prepared for: <strong>Academic & Corporate Review</strong></span>
+                      <span>•</span>
+                      <span>{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                    </div>
+                  </div>
+
+                  {/* Table of Contents Section (Interactive Jump) */}
+                  <div className="bg-gray-50 p-5 rounded border border-gray-300 text-xs font-['Times_New_Roman',_Times,_serif]">
+                    <div className="font-bold uppercase tracking-wider text-black text-center text-sm mb-3">TABLE OF CONTENTS</div>
+                    <div className="space-y-2 text-black">
+                      {outline.sections.map((s, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            const target = document.getElementById(`chapter-sec-${idx}`);
+                            if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }}
+                          className="w-full flex justify-between items-baseline gap-2 text-left hover:text-[#004085] hover:underline cursor-pointer"
+                        >
+                          <span className="font-medium truncate">{s.title}</span>
+                          <span className="flex-1 border-b border-dotted border-gray-400 min-w-8" />
+                          <span className="text-[11px] text-gray-700 font-mono">Page {idx * 2 + 1}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Full Continuous Manuscript Prose */}
+                  <div className="space-y-8 text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
+                    {outline.sections.map((sec, idx) => {
+                      const proseContent = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[sec.title];
+                      const isDraftingNow = isStreaming && activeGeneratingSectionIndex === idx && !proseContent;
+                      const isSectionRegenerating = regeneratingSectionId === sec.id;
+
+                      return (
+                        <div key={sec.id || idx} id={`chapter-sec-${idx}`} className="space-y-4 group scroll-mt-16">
+                          {/* Word Heading 1 */}
+                          <div className="flex items-center justify-between border-b border-gray-300 pb-1.5 pt-6">
+                            <h2 className="text-[16pt] font-bold text-black font-['Times_New_Roman',_Times,_serif]">
+                              {idx + 1}. {sec.title.replace(/^\d+\.\s*/, "")}
+                            </h2>
+                            <div className="flex items-center gap-2">
+                              {proseContent && !isStreaming && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveRegenSection(sec);
+                                    setSectionRevisionInstruction("");
+                                  }}
+                                  className="text-[11px] text-[#004085] hover:underline font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer font-sans"
+                                >
+                                  🔄 Refine Section
+                                </button>
+                              )}
+                              {isDraftingNow || isSectionRegenerating ? (
+                                <span className="text-[11px] bg-black text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm font-sans">
+                                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                  ⚡ Drafting...
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
+
+                          {/* Chapter Abstract / Scope */}
+                          {sec.brief && (
+                            <p className="italic text-gray-700 text-xs border-l-2 border-gray-400 pl-3 my-2">
+                              <strong>Chapter Scope:</strong> {sec.brief}
+                            </p>
+                          )}
+
+                          {/* Paragraph Content */}
+                          {proseContent ? (
+                            <div className="text-[12pt] leading-[1.6] text-black text-justify whitespace-pre-wrap font-['Times_New_Roman',_Times,_serif]">
+                              {proseContent}
+                            </div>
+                          ) : isDraftingNow || isSectionRegenerating ? (
+                            <div className="space-y-3 py-3">
+                              <div className="text-xs text-gray-500 italic">
+                                Synthesizing chapter prose and empirical research data...
+                              </div>
+                              <div className="space-y-2">
+                                <div className="h-3.5 shimmer-skeleton rounded w-full" />
+                                <div className="h-3.5 shimmer-skeleton rounded w-[92%]" />
+                                <div className="h-3.5 shimmer-skeleton rounded w-[96%]" />
+                                <div className="h-3.5 shimmer-skeleton rounded w-[75%]" />
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400 italic">{sec.brief}</p>
+                          )}
                         </div>
-
-                        {/* Chapter Abstract / Scope */}
-                        {sec.brief && (
-                          <p className="italic text-gray-700 text-xs border-l-2 border-gray-400 pl-3 my-2">
-                            <strong>Chapter Scope:</strong> {sec.brief}
-                          </p>
-                        )}
-
-                        {/* Paragraph Content */}
-                        {proseContent ? (
-                          <div className="text-[12pt] leading-[1.6] text-black text-justify whitespace-pre-wrap font-['Times_New_Roman',_Times,_serif]">
-                            {proseContent}
-                          </div>
-                        ) : isDraftingNow || isSectionRegenerating ? (
-                          <div className="space-y-3 py-3">
-                            <div className="text-xs text-gray-500 italic">
-                              Synthesizing chapter prose and empirical research data...
-                            </div>
-                            <div className="space-y-2">
-                              <div className="h-3.5 shimmer-skeleton rounded w-full" />
-                              <div className="h-3.5 shimmer-skeleton rounded w-[92%]" />
-                              <div className="h-3.5 shimmer-skeleton rounded w-[96%]" />
-                              <div className="h-3.5 shimmer-skeleton rounded w-[75%]" />
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-gray-400 italic">{sec.brief}</p>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
