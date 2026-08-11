@@ -17,9 +17,15 @@ if (!global.mongooseCache) {
   global.mongooseCache = cached;
 }
 
+// Disable Mongoose global buffering so unconfigured DB calls fail immediately with 0 delay
+mongoose.set("bufferCommands", false);
+
+export function isDbConfigured(): boolean {
+  return Boolean(MONGODB_URI && MONGODB_URI.trim() !== "");
+}
+
 export async function connectToDatabase() {
-  if (!MONGODB_URI) {
-    console.warn("⚠️ MONGODB_URI is not set in environment or .env.local. In-memory document storage active.");
+  if (!isDbConfigured()) {
     return null;
   }
 
@@ -30,18 +36,18 @@ export async function connectToDatabase() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 4000,
-      connectTimeoutMS: 4000
+      serverSelectionTimeoutMS: 2000,
+      connectTimeoutMS: 2000
     };
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => m);
+    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((m) => m);
   }
 
   try {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
-    console.error("MongoDB connection failure:", e);
-    throw e;
+    console.warn("MongoDB connection could not be established; continuing in-memory mode:", e);
+    return null;
   }
 
   return cached.conn;

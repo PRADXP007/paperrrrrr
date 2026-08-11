@@ -25,13 +25,15 @@ export async function POST(req: NextRequest) {
 
     if (docId) {
       try {
-        await connectToDatabase();
-        await (Document as any).findByIdAndUpdate(docId, {
-          title: outline.title,
-          subtitle: outline.subtitle,
-          outline: outline.sections.map((s: any) => ({ ...s, status: "pending", content: "" })),
-          status: "outline_approved"
-        });
+        const db = await connectToDatabase();
+        if (db) {
+          await (Document as any).findByIdAndUpdate(docId, {
+            title: outline.title,
+            subtitle: outline.subtitle,
+            outline: outline.sections.map((s: any) => ({ ...s, status: "pending", content: "" })),
+            status: "outline_approved"
+          });
+        }
       } catch (dbErr) {
         console.warn("MongoDB document update skipped:", dbErr);
       }

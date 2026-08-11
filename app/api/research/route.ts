@@ -37,19 +37,21 @@ export async function POST(req: NextRequest) {
 
     let docId = null;
     try {
-      await connectToDatabase();
-      const doc = await (Document as any).create({
-        prompt,
-        format,
-        tone,
-        audience,
-        targetLength,
-        title: prompt.charAt(0).toUpperCase() + prompt.slice(1),
-        researchSummary: researchBundle.answer || "",
-        researchSources: researchBundle.results,
-        status: "researched"
-      });
-      docId = doc._id.toString();
+      const db = await connectToDatabase();
+      if (db) {
+        const doc = await (Document as any).create({
+          prompt,
+          format,
+          tone,
+          audience,
+          targetLength,
+          title: prompt.charAt(0).toUpperCase() + prompt.slice(1),
+          researchSummary: researchBundle.answer || "",
+          researchSources: researchBundle.results,
+          status: "researched"
+        });
+        docId = doc._id.toString();
+      }
     } catch (dbErr) {
       console.warn("MongoDB document save skipped:", dbErr);
     }

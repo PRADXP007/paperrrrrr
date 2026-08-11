@@ -54,16 +54,18 @@ export async function POST(req: NextRequest) {
 
     if (docId) {
       try {
-        await connectToDatabase();
-        await (Document as any).updateOne(
-          { _id: docId, "outline.id": section.id },
-          {
-            $set: {
-              "outline.$.content": content,
-              "outline.$.status": "completed"
+        const db = await connectToDatabase();
+        if (db) {
+          await (Document as any).updateOne(
+            { _id: docId, "outline.id": section.id },
+            {
+              $set: {
+                "outline.$.content": content,
+                "outline.$.status": "completed"
+              }
             }
-          }
-        );
+          );
+        }
       } catch (dbErr) {
         console.warn("MongoDB section update skipped:", dbErr);
       }

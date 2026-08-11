@@ -1748,18 +1748,19 @@ export default function PaperrrrrrApp() {
             {/* RIGHT COLUMN: 58% WIDTH - AUTHENTIC MS WORD DOCUMENT PREVIEW */}
             {/* -------------------------------------------------------- */}
             <div className="w-full lg:w-[58%] flex flex-col gap-3">
-              {/* Sticky Action Bar with Multi-Format Downloads */}
+              {/* Sticky Action Bar with Prominent Word (.docx) & PDF Downloads */}
               <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-3 paper-shadow flex flex-wrap gap-2 justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] bg-[var(--primary-fixed)] px-2.5 py-1 rounded">
-                    📄 30–50 Pages A4
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#2B579A] bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-3 py-1 rounded-md flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm">description</span>
+                    Word &amp; PDF Manuscript
                   </span>
                   <span className="text-xs font-bold text-[var(--text-muted)]">
                     {readySectionsCount} of {outline.sections.length} chapters
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={handleCopyMarkdown}
@@ -1776,47 +1777,48 @@ export default function PaperrrrrrApp() {
                   >
                     Outline
                   </button>
+                  {/* Prominent Microsoft Word (.docx) Download Button */}
                   <button
                     type="button"
                     onClick={() => handleDownloadFormat("docx")}
                     disabled={readySectionsCount === 0}
-                    title="Download Microsoft Word (.docx)"
-                    className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow transition-all cursor-pointer ${
+                    title="Download Editable Microsoft Word Document (.docx)"
+                    className={`text-xs font-bold px-4 py-1.5 rounded-lg flex items-center gap-1.5 shadow-md transition-all cursor-pointer ${
                       readySectionsCount > 0
-                        ? "bg-[#2B579A] text-white hover:bg-[#1E3E6D]"
+                        ? "bg-[#2B579A] text-white hover:bg-[#1E3E6D] ring-2 ring-[#2B579A]/20 scale-100 hover:scale-[1.02]"
                         : "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
                     }`}
                   >
                     <span className="material-symbols-outlined text-sm">description</span>
-                    DOCX
+                    Download Word (.docx)
                   </button>
+                  {/* Direct PDF Download Button */}
                   <button
                     type="button"
                     onClick={() => handleDownloadFormat("pdf")}
                     disabled={readySectionsCount === 0}
-                    title="Download Direct PDF (.pdf)"
-                    className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow transition-all cursor-pointer ${
+                    title="Download Direct Printable PDF (.pdf)"
+                    className={`text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow transition-all cursor-pointer ${
                       readySectionsCount > 0
                         ? "bg-[#C93B2B] text-white hover:bg-[#A32A1C]"
                         : "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
                     }`}
                   >
                     <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
-                    PDF
+                    Download PDF
                   </button>
+                  {/* Export PowerPoint Presentation (.pptx) */}
                   <button
                     type="button"
                     onClick={() => handleDownloadFormat("pptx")}
                     disabled={readySectionsCount === 0}
-                    title="Download College & Corporate Presentation (.pptx)"
-                    className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow transition-all cursor-pointer ${
-                      readySectionsCount > 0
-                        ? "bg-[#D97706] text-white hover:bg-[#B45309]"
-                        : "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+                    title="Export College & Corporate Presentation Deck (.pptx)"
+                    className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 border border-amber-300 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-all cursor-pointer ${
+                      readySectionsCount > 0 ? "" : "opacity-50 cursor-not-allowed"
                     }`}
                   >
                     <span className="material-symbols-outlined text-sm">slideshow</span>
-                    PPTX
+                    Export PPT
                   </button>
                 </div>
               </div>

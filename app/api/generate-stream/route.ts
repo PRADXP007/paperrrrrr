@@ -74,8 +74,8 @@ export async function POST(req: NextRequest) {
 
           // Save / Create initial document record in DB if connected
           try {
-            await connectToDatabase();
-            if (!docId) {
+            const db = await connectToDatabase();
+            if (db && !docId) {
               const doc = await (Document as any).create({
                 userId: authUser?.id || undefined,
                 userEmail: authUser?.email || undefined,
@@ -118,7 +118,8 @@ export async function POST(req: NextRequest) {
             });
 
             try {
-              if (docId) {
+              const db = await connectToDatabase();
+              if (db && docId) {
                 await (Document as any).findByIdAndUpdate(docId, {
                   title: outline.title,
                   subtitle: outline.subtitle,
@@ -195,7 +196,8 @@ export async function POST(req: NextRequest) {
 
             // Update MongoDB section status incrementally
             try {
-              if (docId) {
+              const db = await connectToDatabase();
+              if (db && docId) {
                 await (Document as any).updateOne(
                   { _id: docId, "outline.id": normSectionId },
                   {

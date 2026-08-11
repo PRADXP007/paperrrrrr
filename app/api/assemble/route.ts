@@ -60,8 +60,10 @@ export async function POST(req: NextRequest) {
 
     if (docId) {
       try {
-        await connectToDatabase();
-        await (Document as any).findByIdAndUpdate(docId, { status: "completed" });
+        const db = await connectToDatabase();
+        if (db) {
+          await (Document as any).findByIdAndUpdate(docId, { status: "completed" });
+        }
       } catch (dbErr) {
         console.warn("MongoDB status update skipped:", dbErr);
       }
