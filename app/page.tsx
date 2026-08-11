@@ -330,32 +330,32 @@ export default function PaperrrrrrApp() {
       subtitle: `An Exhaustive Multi-Chapter Strategic, Empirical & Methodological Treatise (${tone})`,
       docType: dType,
       format: (fmt as any) || "docx",
-      targetLength: tLen || "Unlimited & Exhaustive (Comprehensive In-Depth)",
+      targetLength: tLen || "Unlimited & Exhaustive (Comprehensive In-Depth, 30–50 Pages)",
       sections: [
         {
           id: "sec_1",
-          title: "1. Executive Abstract & Foundational Baseline",
+          title: "1. Executive Abstract, Empirical Baseline & Foundational Scope",
           brief: `Comprehensive executive overview of baseline metrics, scope, and foundational significance for ${cleanTitle}.`,
           keyPoints: [`Core adoption and volume metrics for ${cleanTitle}`, "High-level institutional indicators", "Scope and methodology framework"],
           relevantSourceIndices: [1]
         },
         {
           id: "sec_2",
-          title: "2. Historical Genesis & Evolution",
+          title: "2. Historical Genesis, Inflection Points & Evolutionary Chronology",
           brief: `Chronological analysis of the origin, historical inflection points, and structural maturation of ${cleanTitle}.`,
           keyPoints: ["Early developmental phases and policy catalysts", "Key structural pivots over the past decade", "Evolution of market and user adoption curves"],
           relevantSourceIndices: [1, 2]
         },
         {
           id: "sec_3",
-          title: "3. Theoretical Framework & Conceptual Taxonomy",
+          title: "3. Theoretical Frameworks, Scholarly Taxonomy & Conceptual Models",
           brief: `Theoretical models, scholarly taxonomy, and conceptual lenses governing ${cleanTitle}.`,
           keyPoints: ["Academic paradigms and economic models", "Thematic categorization of ecosystem dynamics", "Taxonomy of primary and secondary variables"],
           relevantSourceIndices: [1, 2]
         },
         {
           id: "sec_4",
-          title: "4. Methodological Scope & Data Metrics",
+          title: "4. Methodological Design, Empirical Scope & Sampling Protocols",
           brief: `Systematic selection criteria, measurement protocols, and quantitative evaluation indices for ${cleanTitle}.`,
           keyPoints: ["Sampling protocols and dataset verification", "Key quantitative indicators and CAGR tracking", "Empirical boundary conditions and error tolerances"],
           relevantSourceIndices: [2, 3]
@@ -376,44 +376,86 @@ export default function PaperrrrrrApp() {
         },
         {
           id: "sec_7",
-          title: "7. Comparative Global Benchmarks & Case Studies",
+          title: "7. Comparative Global Benchmarks & International Case Studies",
           brief: `Cross-regional case evaluations, international parallels, and operational case studies on ${cleanTitle}.`,
           keyPoints: ["Cross-border comparative analysis", "Institutional implementation case studies", "Lessons learned and transferable operational models"],
           relevantSourceIndices: [3, 4]
         },
         {
           id: "sec_8",
-          title: "8. Policy, Governance & Regulatory Frameworks",
+          title: "8. Institutional Policy, Governance & Regulatory Compliance Mandates",
           brief: `Legal oversight, statutory compliance, institutional governance, and policy dynamics impacting ${cleanTitle}.`,
           keyPoints: ["Government policies, mandates, and statutory standards", "Regulatory compliance and consumer protections", "Cross-jurisdictional harmonization priorities"],
           relevantSourceIndices: [1, 2, 4]
         },
         {
           id: "sec_9",
-          title: "9. Economic Models & Unit Economics Analysis",
+          title: "9. Advanced Economic Modeling, Unit Economics & Cost-Benefit Ratios",
           brief: `Financial viability, cost-benefit modeling, capital allocation, and commercial incentives for ${cleanTitle}.`,
           keyPoints: ["Cost structures, capital intensity, and ROI models", "Direct vs indirect economic dividends", "Monetization and pricing sustainability"],
           relevantSourceIndices: [2, 3, 4]
         },
         {
           id: "sec_10",
-          title: "10. Structural Bottlenecks & Risk Mitigation Vectors",
+          title: "10. Operational Vulnerabilities, Friction Points & Systemic Failure Modes",
           brief: `Critical assessment of operational vulnerabilities, friction points, security threats, and failure modes in ${cleanTitle}.`,
           keyPoints: ["Hardware, network, and supply chain friction", "Security vulnerabilities and compliance risks", "Comprehensive mitigation and disaster recovery protocols"],
           relevantSourceIndices: [1, 3, 4]
         },
         {
           id: "sec_11",
-          title: "11. Emerging Horizons & Future Forecast (2026–2035)",
-          brief: `Predictive modeling, technological innovations, and forward-looking trajectory for ${cleanTitle}.`,
+          title: "11. Enterprise Security, Threat Modeling & Data Protection Vectors",
+          brief: `Cybersecurity protocols, data sovereignty, encryption standards, and threat modeling for ${cleanTitle}.`,
+          keyPoints: ["Threat surface minimization and vulnerability scoring", "Encryption, identity management, and access controls", "Data privacy compliance and audit readiness"],
+          relevantSourceIndices: [1, 2, 4]
+        },
+        {
+          id: "sec_12",
+          title: "12. Sociotechnical Dynamics, Workforce Evolution & Institutional Adoption",
+          brief: `Human capital, workforce adaptation, cultural implications, and institutional adoption vectors for ${cleanTitle}.`,
+          keyPoints: ["Workforce skilling and operational change management", "Consumer psychology and behavioral adoption patterns", "Institutional transformation milestones"],
+          relevantSourceIndices: [2, 3, 4]
+        },
+        {
+          id: "sec_13",
+          title: "13. Environmental, Social & Governance (ESG) Life-Cycle Assessments",
+          brief: `Sustainability footprints, carbon accounting, social equity dividends, and governance transparency in ${cleanTitle}.`,
+          keyPoints: ["Life-cycle carbon and environmental metrics", "Social equity and inclusion benchmarks", "Corporate governance and reporting standards"],
+          relevantSourceIndices: [1, 3, 4]
+        },
+        {
+          id: "sec_14",
+          title: "14. Cross-Industry Interoperability Standards & Protocol Harmonization",
+          brief: `API standardization, cross-platform protocols, and ecosystem interoperability frameworks for ${cleanTitle}.`,
+          keyPoints: ["Standardization protocols and open architecture", "Cross-system API integration benchmarks", "Friction reduction across legacy infrastructure"],
+          relevantSourceIndices: [2, 4]
+        },
+        {
+          id: "sec_15",
+          title: "15. Frontier Technological Innovations & Emerging Horizons (2026–2035)",
+          brief: `Predictive modeling, artificial intelligence integration, and forward-looking technological horizon for ${cleanTitle}.`,
           keyPoints: ["Next-generation technological breakthroughs", "Anticipated market transformations over the next decade", "Pivotal inflection triggers to monitor"],
           relevantSourceIndices: [1, 2, 3, 4]
         },
         {
-          id: "sec_12",
-          title: "12. Strategic Roadmap, Governance & Scholarly Conclusion",
-          brief: `Actionable strategic roadmap, phased implementation timeline, and concluding synthesis on ${cleanTitle}.`,
-          keyPoints: ["Phased tactical roadmap (Near, Medium, Long term)", "Resource allocation and governance oversight metrics", "Synthesized scholarly conclusions and future research agenda"],
+          id: "sec_16",
+          title: "16. Strategic Execution Roadmap, Phased Timelines & Milestone Matrix",
+          brief: `Actionable phased implementation timeline, capital deployment sequencing, and governance checkpoints for ${cleanTitle}.`,
+          keyPoints: ["Near-term tactical rollout (Months 1–12)", "Medium-term scaling & optimization (Years 2–3)", "Long-term institutional governance and global leadership"],
+          relevantSourceIndices: [1, 2, 3, 4]
+        },
+        {
+          id: "sec_17",
+          title: "17. Risk Governance Matrix & Contingency Protocol Framework",
+          brief: `Systematic risk mitigation matrix, regulatory defense strategies, and business continuity frameworks for ${cleanTitle}.`,
+          keyPoints: ["High-impact low-probability scenario modeling", "Operational redundancy and fault tolerance", "Continuous compliance monitoring protocols"],
+          relevantSourceIndices: [1, 3, 4]
+        },
+        {
+          id: "sec_18",
+          title: "18. Scholarly Synthesis, Open Research Inquiries & Final Conclusion",
+          brief: `Synthesized resolution of core findings, academic contributions, and prospective research agenda on ${cleanTitle}.`,
+          keyPoints: ["Integrated theoretical and empirical summary", "Key open academic questions for prospective investigators", "Final strategic verdict and policy recommendations"],
           relevantSourceIndices: [1, 2, 3, 4]
         }
       ]
@@ -877,6 +919,44 @@ export default function PaperrrrrrApp() {
     if (!followUpInstruction.trim()) return;
     setFollowUpNotes((prev) => [...prev, followUpInstruction.trim()]);
     setFollowUpInstruction("");
+  };
+
+  const handleDownloadFormat = async (requestedFormat: "docx" | "pdf") => {
+    if (!outline) return;
+    try {
+      const compiledSections = outline.sections.map((s, idx) => ({
+        title: s.title,
+        brief: s.brief,
+        content: generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[s.title] || s.brief
+      }));
+
+      const res = await fetch("/api/assemble", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          docId,
+          title: outline.title,
+          subtitle: outline.subtitle,
+          format: requestedFormat,
+          sections: compiledSections
+        })
+      });
+
+      if (!res.ok) throw new Error("Assembly failed");
+      const blob = await res.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const safeTitle = (outline.title || "Document").replace(/[^a-zA-Z0-9_\-]/g, "_");
+      const filename = `Paperrrrrr_${safeTitle}.${requestedFormat}`;
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err: any) {
+      alert("Download failed: " + err.message);
+    }
   };
 
   const handleDownloadFile = () => {
@@ -1571,15 +1651,16 @@ export default function PaperrrrrrApp() {
               <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl p-3.5 paper-shadow flex flex-wrap gap-2 justify-between items-center">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] bg-[var(--primary-fixed)] px-2.5 py-1 rounded">
-                    📄 {format.toUpperCase()} Manuscript
+                    📄 30–50 Pages A4 Treatise
                   </span>
                   <span className="text-xs font-bold text-[var(--text-muted)]">
-                    {readySectionsCount} of {outline.sections.length} sections live
+                    {readySectionsCount} of {outline.sections.length} chapters generated
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={handleCopyMarkdown}
                     title="Copy Markdown with Citations"
                     className="text-xs font-semibold px-3 py-1.5 border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-muted)] transition-colors flex items-center gap-1 cursor-pointer"
@@ -1588,89 +1669,105 @@ export default function PaperrrrrrApp() {
                     {copySuccess ? "Copied!" : "Copy Markdown"}
                   </button>
                   <button
+                    type="button"
                     onClick={() => setStep("outline")}
                     className="text-xs font-semibold px-3 py-1.5 border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-muted)] transition-colors cursor-pointer"
                   >
                     Outline
                   </button>
                   <button
-                    onClick={handleDownloadFile}
-                    disabled={!isAssembledReady}
-                    className={`text-xs font-bold px-4 py-1.5 rounded-lg flex items-center gap-1.5 shadow transition-all ${
-                      isAssembledReady
-                        ? "bg-[var(--primary)] text-white hover:bg-[var(--primary-container)] cursor-pointer"
+                    type="button"
+                    onClick={() => handleDownloadFormat("docx")}
+                    disabled={readySectionsCount === 0}
+                    className={`text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow transition-all cursor-pointer ${
+                      readySectionsCount > 0
+                        ? "bg-[#2B579A] text-white hover:bg-[#1E3E6D]"
                         : "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-sm">download</span>
-                    Download {format.toUpperCase()}
+                    <span className="material-symbols-outlined text-sm">description</span>
+                    Download DOCX
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadFormat("pdf")}
+                    disabled={readySectionsCount === 0}
+                    className={`text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow transition-all cursor-pointer ${
+                      readySectionsCount > 0
+                        ? "bg-[#C93B2B] text-white hover:bg-[#A32A1C]"
+                        : "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+                    Download PDF
                   </button>
                 </div>
               </div>
 
-              {/* Realistic Microsoft Word Document Paper Canvas */}
-              <div className="ms-word-canvas bg-white dark:bg-[#181B24] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-[#2E3444] rounded-sm p-8 sm:p-14 min-h-[850px] flex flex-col gap-6 shadow-2xl">
+              {/* Realistic Microsoft Word Document Paper Canvas (Always Pure Black on Pure White Times New Roman 12pt A4) */}
+              <div className="ms-word-canvas bg-white text-black border border-gray-300 rounded-sm p-8 sm:p-14 min-h-[900px] max-w-[850px] mx-auto flex flex-col gap-6 shadow-2xl font-['Times_New_Roman',_Times,_serif]">
                 {/* Word Ruler / Print Layout Header */}
-                <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-400 border-b border-gray-200 dark:border-gray-800 pb-3">
-                  <span>Microsoft Word Print Layout • 1" Margins</span>
-                  <span>{format.toUpperCase()} • 100% Zoom</span>
+                <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-500 border-b border-gray-300 pb-3">
+                  <span>A4 Print Layout • Times New Roman 12pt • 1" Margins</span>
+                  <span>30–50 Pages Depth • 100% Zoom</span>
                 </div>
 
                 {/* Word Document Title Header */}
-                <div className="text-left pb-4 border-b border-gray-200 dark:border-gray-800 flex flex-col gap-2">
-                  <h1 className="font-serif text-2xl sm:text-4xl text-[#1B1C1A] dark:text-white font-bold leading-tight tracking-tight">
+                <div className="text-center pb-6 border-b border-black flex flex-col gap-2">
+                  <h1 className="font-['Times_New_Roman',_Times,_serif] text-2xl sm:text-3xl text-black font-bold uppercase tracking-wide leading-tight">
                     {outline.title}
                   </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">{outline.subtitle}</p>
-                  <div className="text-xs text-gray-400 mt-1 flex items-center gap-2">
-                    <span>Generated by <strong>Paperrrrrr Document Studio</strong></span>
+                  <p className="text-sm text-gray-700 italic font-['Times_New_Roman',_Times,_serif]">{outline.subtitle}</p>
+                  <div className="text-xs text-gray-600 mt-2 flex items-center justify-center gap-2 font-['Times_New_Roman',_Times,_serif]">
+                    <span>Prepared for: <strong>Academic & Corporate Review</strong></span>
                     <span>•</span>
-                    <span>{new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>
+                    <span>{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
                   </div>
                 </div>
 
                 {/* Table of Contents Section */}
-                <div className="bg-gray-50 dark:bg-[#1E2230] p-4 rounded-lg border border-gray-200 dark:border-gray-800 text-xs">
-                  <div className="font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-2">Table of Contents</div>
-                  <div className="space-y-1.5 text-gray-700 dark:text-gray-300 font-serif">
+                <div className="bg-gray-50 p-5 rounded border border-gray-300 text-xs font-['Times_New_Roman',_Times,_serif]">
+                  <div className="font-bold uppercase tracking-wider text-black text-center text-sm mb-3">TABLE OF CONTENTS</div>
+                  <div className="space-y-2 text-black">
                     {outline.sections.map((s, idx) => (
                       <div key={idx} className="flex justify-between items-baseline gap-2">
                         <span className="font-medium truncate">{s.title}</span>
-                        <span className="flex-1 border-b border-dotted border-gray-300 dark:border-gray-700 min-w-8" />
-                        <span className="text-[10px] text-gray-400 font-mono">Page {idx + 1}</span>
+                        <span className="flex-1 border-b border-dotted border-gray-400 min-w-8" />
+                        <span className="text-[11px] text-gray-700 font-mono">Page {idx * 2 + 1}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Full Continuous Manuscript Prose */}
-                <div className="space-y-8 text-sm leading-[1.75] text-gray-800 dark:text-gray-200">
+                <div className="space-y-8 text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
                   {outline.sections.map((sec, idx) => {
                     const proseContent = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[sec.title];
                     const isDraftingNow = isStreaming && activeGeneratingSectionIndex === idx && !proseContent;
                     const isSectionRegenerating = regeneratingSectionId === sec.id;
 
                     return (
-                      <div key={sec.id || idx} className="space-y-3 group">
+                      <div key={sec.id || idx} className="space-y-4 group">
                         {/* Word Heading 1 */}
-                        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-1.5 pt-4">
-                          <h2 className="font-serif text-xl font-bold text-[#1B1C1A] dark:text-[#F1F3F7]">
-                            {sec.title}
+                        <div className="flex items-center justify-between border-b border-gray-300 pb-1.5 pt-6">
+                          <h2 className="text-[16pt] font-bold text-black font-['Times_New_Roman',_Times,_serif]">
+                            {idx + 1}. {sec.title.replace(/^\d+\.\s*/, "")}
                           </h2>
                           <div className="flex items-center gap-2">
                             {proseContent && !isStreaming && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   setActiveRegenSection(sec);
                                   setSectionRevisionInstruction("");
                                 }}
-                                className="text-[11px] text-[var(--primary)] hover:underline font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer"
+                                className="text-[11px] text-[#004085] hover:underline font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer"
                               >
                                 🔄 Refine Section
                               </button>
                             )}
                             {isDraftingNow || isSectionRegenerating ? (
-                              <span className="text-[11px] bg-[var(--primary)] text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm">
+                              <span className="text-[11px] bg-black text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm font-sans">
                                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                                 ⚡ Drafting...
                               </span>
@@ -1678,15 +1775,22 @@ export default function PaperrrrrrApp() {
                           </div>
                         </div>
 
+                        {/* Chapter Abstract / Scope */}
+                        {sec.brief && (
+                          <p className="italic text-gray-700 text-xs border-l-2 border-gray-400 pl-3 my-2">
+                            <strong>Chapter Scope:</strong> {sec.brief}
+                          </p>
+                        )}
+
                         {/* Paragraph Content */}
                         {proseContent ? (
-                          <div className="prose dark:prose-invert text-sm leading-relaxed text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                          <div className="text-[12pt] leading-[1.6] text-black text-justify whitespace-pre-wrap font-['Times_New_Roman',_Times,_serif]">
                             {proseContent}
                           </div>
                         ) : isDraftingNow || isSectionRegenerating ? (
                           <div className="space-y-3 py-3">
                             <div className="text-xs text-gray-500 italic">
-                              Synthesizing section prose and empirical research data...
+                              Synthesizing chapter prose and empirical research data...
                             </div>
                             <div className="space-y-2">
                               <div className="h-3.5 shimmer-skeleton rounded w-full" />
