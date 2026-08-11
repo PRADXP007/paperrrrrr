@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
       filteredSources = [],
       userInstruction,
       customGeminiKey,
-      customOpenAIKey
+      customOpenAIKey,
+      geminiModel = "gemini-3.6-flash"
     } = body;
 
     if (!section || !section.id) {
@@ -40,14 +41,14 @@ export async function POST(req: NextRequest) {
         section,
         filteredSources,
         userInstruction,
-        { customGeminiKey, customOpenAIKey }
+        { customGeminiKey, customOpenAIKey, geminiModel }
       );
     } else {
       content = await generateSectionProse(
         docTitle || "Untitled Document",
         section,
         filteredSources,
-        { customGeminiKey, customOpenAIKey }
+        { customGeminiKey, customOpenAIKey, geminiModel }
       );
     }
 

@@ -29,6 +29,7 @@ export interface GenerateOutlineOptions {
   docType?: string;
   customGeminiKey?: string;
   customOpenAIKey?: string;
+  geminiModel?: string;
   referenceNotes?: string;
 }
 
@@ -431,26 +432,39 @@ ${
 3. Link each section to relevant research source indices.
 4. Every section has 3-4 specific key points directly addressing the prompt and reference notes.`;
 
-  // 1. Primary AI Provider: Gemini Flash (@google/genai)
+  // 1. Primary AI Provider: Google Gemini (@google/genai)
   if (geminiApiKey) {
+    const requestedModel = options.geminiModel || "gemini-3.6-flash";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `${systemPrompt}\n\n${userMessage}`,
-        config: {
-          responseMimeType: "application/json"
-        }
-      });
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: requestedModel,
+          contents: `${systemPrompt}\n\n${userMessage}`,
+          config: {
+            responseMimeType: "application/json"
+          }
+        });
+      } catch (modelErr) {
+        console.warn(`Gemini model "${requestedModel}" failed, falling back to gemini-2.5-flash:`, modelErr);
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `${systemPrompt}\n\n${userMessage}`,
+          config: {
+            responseMimeType: "application/json"
+          }
+        });
+      }
 
-      if (response.text) {
+      if (response && response.text) {
         const parsed = JSON.parse(response.text);
         if (parsed.sections && Array.isArray(parsed.sections)) {
           return parsed as GeneratedOutline;
         }
       }
     } catch (e) {
-      console.warn("Gemini Flash API call failed for outline, checking secondary provider:", e);
+      console.warn("Gemini API call failed for outline, checking secondary provider:", e);
     }
   }
 
@@ -488,6 +502,7 @@ export async function generateSectionProse(
   customKeys?: {
     customGeminiKey?: string;
     customOpenAIKey?: string;
+    geminiModel?: string;
     referenceNotes?: string;
     docType?: string;
     tone?: string;
@@ -535,20 +550,30 @@ ${
 }
 - Output ONLY the section body markdown.`;
 
-  // 1. Primary AI Provider: Gemini Flash (@google/genai)
+  // 1. Primary AI Provider: Google Gemini (@google/genai)
   if (geminiApiKey) {
+    const requestedModel = customKeys?.geminiModel || "gemini-3.6-flash";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt
-      });
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: requestedModel,
+          contents: prompt
+        });
+      } catch (modelErr) {
+        console.warn(`Gemini model "${requestedModel}" failed for section, falling back to gemini-2.5-flash:`, modelErr);
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt
+        });
+      }
 
-      if (response.text) {
+      if (response && response.text) {
         return response.text;
       }
     } catch (e) {
-      console.warn("Gemini Flash section generation failed, checking secondary provider:", e);
+      console.warn("Gemini section generation failed, checking secondary provider:", e);
     }
   }
 
@@ -609,7 +634,7 @@ export async function regenerateSingleSection(
   section: OutlineSection,
   filteredSources: ResearchSnippet[],
   userInstruction: string,
-  customKeys?: { customGeminiKey?: string; customOpenAIKey?: string; docType?: string; tone?: string }
+  customKeys?: { customGeminiKey?: string; customOpenAIKey?: string; geminiModel?: string; docType?: string; tone?: string }
 ): Promise<string> {
   const geminiApiKey = customKeys?.customGeminiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   const prompt = `You are revising an individual section of a research document:
@@ -628,13 +653,23 @@ Instructions:
 - Return ONLY the revised markdown prose.`;
 
   if (geminiApiKey) {
+    const requestedModel = customKeys?.geminiModel || "gemini-3.6-flash";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt
-      });
-      if (response.text) return response.text;
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: requestedModel,
+          contents: prompt
+        });
+      } catch (modelErr) {
+        console.warn(`Gemini model "${requestedModel}" failed for regeneration, falling back to gemini-2.5-flash:`, modelErr);
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt
+        });
+      }
+      if (response && response.text) return response.text;
     } catch (e) {
       console.warn("Gemini section regeneration failed:", e);
     }

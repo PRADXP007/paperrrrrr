@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
       approvedOutline,
       referenceNotes,
       customGeminiKey,
-      customOpenAIKey
+      customOpenAIKey,
+      geminiModel = "gemini-3.6-flash"
     } = body;
 
     if (!prompt && !approvedOutline) {
@@ -100,12 +101,12 @@ export async function POST(req: NextRequest) {
             sendEvent({
               type: "status",
               step: "outline_start",
-              message: "Structuring JSON outline with Gemini 2.5 Flash..."
+              message: `Structuring JSON outline with Google Gemini (${geminiModel})...`
             });
 
             outline = await generateStructuredOutline(
               prompt,
-              { format, tone, audience, targetLength, docType, referenceNotes, customGeminiKey, customOpenAIKey },
+              { format, tone, audience, targetLength, docType, referenceNotes, customGeminiKey, customOpenAIKey, geminiModel },
               researchBundle
             );
 
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
           const sections = outline.sections || [];
           const compiledSections: Array<{ id: string; title: string; brief: string; content: string }> = [];
 
-          console.log(`[Stream Pipeline] Initiating prose generation for ${sections.length} approved sections...`);
+          console.log(`[Stream Pipeline] Initiating prose generation for ${sections.length} approved sections using ${geminiModel}...`);
 
           for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
@@ -164,7 +165,7 @@ export async function POST(req: NextRequest) {
                 outline.title,
                 section,
                 filteredSources,
-                { customGeminiKey, customOpenAIKey, docType, tone, referenceNotes, format, targetLength }
+                { customGeminiKey, customOpenAIKey, geminiModel, docType, tone, referenceNotes, format, targetLength }
               );
             } catch (sectionErr: any) {
               console.error(`[Stream Pipeline] ❌ Error drafting Section ${i + 1} ("${section.title}"):`, sectionErr);

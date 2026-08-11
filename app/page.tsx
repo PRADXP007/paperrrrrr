@@ -48,6 +48,7 @@ export default function PaperrrrrrApp() {
 
   // BYOK Settings State
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [geminiModel, setGeminiModel] = useState<string>("gemini-3.6-flash");
   const [customGeminiKeyInput, setCustomGeminiKeyInput] = useState("");
   const [customOpenAIKeyInput, setCustomOpenAIKeyInput] = useState("");
   const [hasCustomGeminiKey, setHasCustomGeminiKey] = useState(false);
@@ -565,7 +566,8 @@ export default function PaperrrrrrApp() {
             targetLength,
             docType,
             referenceNotes: referenceNotes || undefined,
-            customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined
+            customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined,
+            geminiModel
           },
           researchBundle: activeResearchBundle
         })
@@ -682,7 +684,8 @@ export default function PaperrrrrrApp() {
           approvedOutline: targetOutline,
           researchBundle: targetBundle || researchBundle,
           referenceNotes: referenceNotes || undefined,
-          customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined
+          customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined,
+          geminiModel
         })
       });
 
@@ -845,7 +848,8 @@ export default function PaperrrrrrApp() {
           section: sec,
           filteredSources,
           userInstruction: sectionRevisionInstruction,
-          customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined
+          customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined,
+          geminiModel
         })
       });
 
@@ -1117,24 +1121,24 @@ export default function PaperrrrrrApp() {
               {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
             </button>
 
-            {/* BYOK Settings Button & Badge */}
+            {/* Model & BYOK Settings Button */}
             <button
               onClick={() => setShowSettingsModal(true)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
                 hasCustomGeminiKey || hasCustomOpenAIKey
-                  ? "bg-[var(--primary-fixed)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-sm"
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm"
                   : "border-[var(--surface-border)] text-[var(--text-muted)] hover:border-[var(--primary)] bg-[var(--surface-muted)]"
               }`}
             >
-              <span className="material-symbols-outlined text-sm">key</span>
+              <span className="text-xs">✨</span>
               <span className="hidden sm:inline">
                 {hasCustomGeminiKey
-                  ? `Gemini Key (${geminiKeyMasked})`
-                  : hasCustomOpenAIKey
-                  ? `OpenAI Key (${openaiKeyMasked})`
-                  : "API Keys"}
+                  ? `Gemini 3.6 (${geminiKeyMasked})`
+                  : geminiModel === "gemini-3.6-flash"
+                  ? "Gemini 3.6 Flash"
+                  : geminiModel}
               </span>
-              <span className="sm:hidden">{hasCustomGeminiKey ? "Key" : "Keys"}</span>
+              <span className="sm:hidden">{hasCustomGeminiKey ? "3.6 Key" : "Model"}</span>
             </button>
 
             {/* Auth Button / Profile */}
@@ -2129,35 +2133,73 @@ export default function PaperrrrrrApp() {
             </div>
 
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              Your API keys are encrypted with <strong>AES-256-GCM</strong> and used exclusively for your synthesis sessions.
+              Configure your preferred <strong>AI Model Architecture</strong> and use your own encrypted API keys for unlimited high-speed document synthesis.
             </p>
 
             <div className="space-y-4">
+              {/* Model Architecture Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-muted)] flex justify-between">
-                  <span>Google Gemini API Key</span>
-                  {hasCustomGeminiKey && <span className="text-green-600">Active ({geminiKeyMasked})</span>}
+                <label className="text-xs font-bold text-[var(--text-muted)] flex justify-between items-center">
+                  <span>Selected AI Engine</span>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full">
+                    {geminiModel === "gemini-3.6-flash" ? "✨ Gemini 3.6" : geminiModel}
+                  </span>
                 </label>
+                <select
+                  value={geminiModel}
+                  onChange={(e) => setGeminiModel(e.target.value)}
+                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)] font-medium cursor-pointer"
+                >
+                  <option value="gemini-3.6-flash">✨ Google Gemini 3.6 Flash (Next-Gen Ultra Fast & Deep Synthesis)</option>
+                  <option value="gemini-2.5-flash">⚡ Google Gemini 2.5 Flash (Production Standard)</option>
+                  <option value="gemini-1.5-pro">🧠 Google Gemini 1.5 Pro (Deep Research & 2M Context)</option>
+                  <option value="gpt-4o-mini">🤖 OpenAI GPT-4o-mini (Secondary Engine)</option>
+                </select>
+                <p className="text-[11px] text-gray-500 italic">
+                  Automatic fallback to Gemini 2.5 Flash is enabled if the experimental endpoint is unreachable.
+                </p>
+              </div>
+
+              {/* Google Gemini API Key */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-[var(--text-muted)]">
+                    Google Gemini API Key
+                  </label>
+                  {hasCustomGeminiKey ? (
+                    <span className="text-[11px] text-emerald-600 font-bold">Active ({geminiKeyMasked})</span>
+                  ) : (
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-[var(--primary)] hover:underline font-medium"
+                    >
+                      Get Free Gemini Key ↗
+                    </a>
+                  )}
+                </div>
                 <input
                   type="password"
                   placeholder={hasCustomGeminiKey ? "Enter new key to update..." : "AIzaSy..."}
                   value={customGeminiKeyInput}
                   onChange={(e) => setCustomGeminiKeyInput(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)]"
+                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)] font-mono"
                 />
               </div>
 
+              {/* OpenAI API Key */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[var(--text-muted)] flex justify-between">
                   <span>OpenAI API Key (Optional Fallback)</span>
-                  {hasCustomOpenAIKey && <span className="text-green-600">Active ({openaiKeyMasked})</span>}
+                  {hasCustomOpenAIKey && <span className="text-[11px] text-emerald-600 font-bold">Active ({openaiKeyMasked})</span>}
                 </label>
                 <input
                   type="password"
                   placeholder={hasCustomOpenAIKey ? "Enter new key to update..." : "sk-proj-..."}
                   value={customOpenAIKeyInput}
                   onChange={(e) => setCustomOpenAIKeyInput(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)]"
+                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)] font-mono"
                 />
               </div>
             </div>
