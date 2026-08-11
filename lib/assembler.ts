@@ -13,7 +13,11 @@ import {
   convertInchesToTwip,
   ExternalHyperlink,
   UnderlineType,
-  ShadingType
+  ShadingType,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType
 } from "docx";
 import pptxgen from "pptxgenjs";
 import ExcelJS from "exceljs";
@@ -34,15 +38,60 @@ export interface AssembleDocumentInput {
   sections: AssembleSection[];
 }
 
-/**
- * Parses Markdown paragraphs and transforms embedded citations
- * like [Source: Title](https://...) into real Word ExternalHyperlink nodes.
- */
-/**
- * Parses Markdown paragraphs and transforms embedded citations
- * like [Source: Title](https://...) into real Word ExternalHyperlink nodes.
- * Strictly formatted in Times New Roman 12pt pure black text.
- */
+function isMarkdownTable(blockText: string): boolean {
+  const lines = blockText.trim().split("\n");
+  return lines.length >= 2 && lines[0].includes("|") && lines[1].includes("|") && lines[1].includes("-");
+}
+
+function parseMarkdownTableToDocx(blockText: string): Table {
+  const lines = blockText.trim().split("\n").filter(l => l.includes("|"));
+  const tableRows: TableRow[] = [];
+
+  lines.forEach((line, rowIdx) => {
+    // Skip Markdown separator line like |---|---|
+    if (/^\|?(\s*:?-+:?\s*\|?)+\s*$/.test(line.trim())) return;
+
+    const rawCells = line.split("|").slice(1, -1);
+    const isHeader = rowIdx === 0;
+
+    const rowCells = rawCells.map((cellText) => {
+      const trimmed = cellText.trim();
+      return new TableCell({
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: trimmed,
+                bold: isHeader,
+                font: "Times New Roman",
+                size: isHeader ? 22 : 20, // 11pt bold header / 10pt body
+                color: "000000"
+              })
+            ],
+            alignment: isHeader ? AlignmentType.CENTER : AlignmentType.LEFT,
+            spacing: { before: 80, after: 80 }
+          })
+        ],
+        shading: isHeader ? { type: ShadingType.CLEAR, fill: "F0F2F5" } : undefined,
+        margins: {
+          top: convertInchesToTwip(0.08),
+          bottom: convertInchesToTwip(0.08),
+          left: convertInchesToTwip(0.12),
+          right: convertInchesToTwip(0.12)
+        }
+      });
+    });
+
+    if (rowCells.length > 0) {
+      tableRows.push(new TableRow({ children: rowCells }));
+    }
+  });
+
+  return new Table({
+    rows: tableRows,
+    width: { size: 100, type: WidthType.PERCENTAGE }
+  });
+}
 function parseParagraphRunsWithHyperlinks(rawText: string): Array<TextRun | ExternalHyperlink> {
   const elements: Array<TextRun | ExternalHyperlink> = [];
   const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
@@ -193,6 +242,18 @@ export async function assembleWordDocument(input: AssembleDocumentInput): Promis
     blocks.forEach((blockText) => {
       if (!blockText.trim()) return;
 
+      // Handle Markdown Tables as Native Word Tables
+      if (isMarkdownTable(blockText)) {
+        try {
+          const docxTable = parseMarkdownTableToDocx(blockText);
+          docChildren.push(docxTable);
+          docChildren.push(new Paragraph({ spacing: { after: 240 } }));
+          return;
+        } catch (tableErr) {
+          console.warn("Docx table parse fallback to text:", tableErr);
+        }
+      }
+
       // Handle Markdown Subheadings
       if (blockText.startsWith("### ")) {
         docChildren.push(
@@ -320,41 +381,77 @@ export async function assembleWordDocument(input: AssembleDocumentInput): Promis
   return await Packer.toBuffer(doc);
 }
 
-// 2. PowerPoint (.pptx) Assembler - Multi-Layout Widescreen Engine
+// 2. PowerPoint (.pptx) Assembler - Neat College & Corporate Presentation Deck
 export async function assemblePowerPoint(input: AssembleDocumentInput): Promise<Buffer> {
   const PptxClass = typeof pptxgen === "function" ? pptxgen : (pptxgen as any).default;
   const ppt = new PptxClass();
   ppt.layout = "LAYOUT_16x9";
   ppt.title = input.title;
 
-  // Slide 1: Title Cover Slide
+  // Slide 1: Executive Title Cover Slide
   const slide1 = ppt.addSlide();
-  slide1.background = { color: "FAF9F5" };
+  slide1.background = { color: "0F172A" }; // Deep Corporate Navy
 
-  // Top Accent Bar
-  slide1.addShape(ppt.ShapeType.rect, {
-    x: 0.8, y: 0.8, w: 11.7, h: 0.1, fill: { color: "97422C" }
+  // Top Accent Pill
+  slide1.addShape(ppt.ShapeType.roundRect, {
+    x: 0.8, y: 0.8, w: 3.2, h: 0.35, fill: { color: "1E293B" }, line: { color: "38BDF8", width: 1 }
+  });
+  slide1.addText("ACADEMIC & CORPORATE TREATISE", {
+    x: 0.8, y: 0.8, w: 3.2, h: 0.35,
+    fontFace: "Arial", fontSize: 10, color: "38BDF8", bold: true, align: "center"
   });
 
   slide1.addText(input.title, {
-    x: 0.8, y: 1.6, w: 11.5, h: 1.8,
-    fontFace: "Georgia", fontSize: 32, color: "97422C", bold: true, wrap: true
+    x: 0.8, y: 1.6, w: 11.5, h: 2.0,
+    fontFace: "Georgia", fontSize: 34, color: "FFFFFF", bold: true, wrap: true
   });
 
   slide1.addText(input.subtitle, {
-    x: 0.8, y: 3.5, w: 11.5, h: 0.9,
-    fontFace: "Arial", fontSize: 16, color: "55423E", italic: true, wrap: true
+    x: 0.8, y: 3.8, w: 11.5, h: 0.9,
+    fontFace: "Arial", fontSize: 15, color: "94A3B8", italic: true, wrap: true
   });
 
-  // Footer & Author
-  slide1.addText(`Generated by Paperrrrrr • ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, {
-    x: 0.8, y: 5.6, w: 10.0, h: 0.4,
-    fontFace: "Arial", fontSize: 12, color: "88726D"
+  // Divider Line
+  slide1.addShape(ppt.ShapeType.line, {
+    x: 0.8, y: 5.0, w: 11.5, h: 0.0, line: { color: "334155", width: 1 }
   });
 
-  let slideCounter = 1;
+  // Footer & Author Meta
+  slide1.addText(`Prepared by: ${input.author || "Academic & Corporate Review"}  |  Date: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, {
+    x: 0.8, y: 5.4, w: 11.5, h: 0.4,
+    fontFace: "Arial", fontSize: 11, color: "64748B"
+  });
 
-  // Content Slides: Two-Column Card Layout with Overflow Splitting
+  // Slide 2: Executive Agenda & Taxonomy
+  const slide2 = ppt.addSlide();
+  slide2.background = { color: "F8FAFC" };
+
+  slide2.addShape(ppt.ShapeType.rect, {
+    x: 0.8, y: 0.6, w: 11.7, h: 0.08, fill: { color: "0F172A" }
+  });
+
+  slide2.addText("Executive Agenda & Content Taxonomy", {
+    x: 0.8, y: 0.8, w: 11.5, h: 0.6,
+    fontFace: "Georgia", fontSize: 22, color: "0F172A", bold: true
+  });
+
+  const agendaColumns = 2;
+  const itemsPerCol = Math.ceil(input.sections.length / agendaColumns);
+  input.sections.slice(0, 16).forEach((sec, idx) => {
+    const colIdx = Math.floor(idx / itemsPerCol);
+    const rowIdx = idx % itemsPerCol;
+    const posX = colIdx === 0 ? 0.8 : 6.8;
+    const posY = 1.6 + (rowIdx * 0.55);
+
+    slide2.addText(`${idx + 1}. ${sec.title.replace(/^\d+\.\s*/, "")}`, {
+      x: posX, y: posY, w: 5.6, h: 0.45,
+      fontFace: "Arial", fontSize: 11, color: "334155", bold: true
+    });
+  });
+
+  let slideCounter = 2;
+
+  // Content Slides: Clean Structured Corporate Layout
   input.sections.forEach((sec, idx) => {
     const rawParagraphs = (sec.content || sec.brief || "")
       .split("\n\n")
@@ -363,11 +460,12 @@ export async function assemblePowerPoint(input: AssembleDocumentInput): Promise<
 
     const bulletItems: string[] = [];
     rawParagraphs.forEach((para) => {
+      if (isMarkdownTable(para)) return; // Tables handled separately
       const cleaned = para.replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1");
       const sentences = cleaned.split(/(?<=[.?!])\s+/);
       let currentBullet = "";
       sentences.forEach((sent) => {
-        if ((currentBullet + " " + sent).length < 240) {
+        if ((currentBullet + " " + sent).length < 220) {
           currentBullet += (currentBullet ? " " : "") + sent;
         } else {
           if (currentBullet) bulletItems.push(currentBullet);
@@ -383,48 +481,51 @@ export async function assemblePowerPoint(input: AssembleDocumentInput): Promise<
     for (let part = 0; part < totalSlideParts; part++) {
       slideCounter++;
       const slide = ppt.addSlide();
-      slide.background = { color: "FAF9F5" };
+      slide.background = { color: "F8FAFC" };
 
-      // Top Consistent Accent Bar
+      // Top Consistent Header Bar
       slide.addShape(ppt.ShapeType.rect, {
-        x: 0.8, y: 0.5, w: 11.7, h: 0.08, fill: { color: "97422C" }
+        x: 0.8, y: 0.5, w: 11.7, h: 0.06, fill: { color: "0284C7" }
       });
 
-      // Section Title
       const displayTitle = totalSlideParts > 1
         ? `${idx + 1}. ${sec.title.replace(/^\d+\.\s*/, "")} (Part ${part + 1}/${totalSlideParts})`
         : `${idx + 1}. ${sec.title.replace(/^\d+\.\s*/, "")}`;
 
       slide.addText(displayTitle, {
         x: 0.8, y: 0.7, w: 11.5, h: 0.6,
-        fontFace: "Georgia", fontSize: 20, color: "97422C", bold: true
+        fontFace: "Georgia", fontSize: 20, color: "0F172A", bold: true
       });
 
-      // Left Column: Scope Focus Card
+      // Left Column: Executive Scope Card
       slide.addShape(ppt.ShapeType.rect, {
         x: 0.8, y: 1.5, w: 3.6, h: 4.8,
-        fill: { color: "FFFFFF" }, line: { color: "DBC1BA", width: 1 }
+        fill: { color: "FFFFFF" }, line: { color: "CBD5E1", width: 1 }
       });
 
-      slide.addText("EXECUTIVE FOCUS", {
-        x: 1.0, y: 1.8, w: 3.2, h: 0.4,
-        fontFace: "Arial", fontSize: 11, color: "97422C", bold: true
+      slide.addShape(ppt.ShapeType.rect, {
+        x: 0.8, y: 1.5, w: 0.1, h: 4.8, fill: { color: "0284C7" }
+      });
+
+      slide.addText("EXECUTIVE FOCUS & SCOPE", {
+        x: 1.1, y: 1.8, w: 3.1, h: 0.4,
+        fontFace: "Arial", fontSize: 10, color: "0284C7", bold: true
       });
 
       slide.addText(sec.brief, {
-        x: 1.0, y: 2.3, w: 3.2, h: 3.6,
-        fontFace: "Arial", fontSize: 13, color: "55423E", italic: true, lineSpacing: 20
+        x: 1.1, y: 2.3, w: 3.1, h: 3.6,
+        fontFace: "Arial", fontSize: 12.5, color: "334155", italic: true, lineSpacing: 18
       });
 
       // Right Column: Empirical Takeaways Card
       slide.addShape(ppt.ShapeType.rect, {
         x: 4.7, y: 1.5, w: 7.8, h: 4.8,
-        fill: { color: "FFFFFF" }, line: { color: "DBC1BA", width: 1 }
+        fill: { color: "FFFFFF" }, line: { color: "CBD5E1", width: 1 }
       });
 
-      slide.addText("STRATEGIC TAKEAWAYS & EMPIRICAL FINDINGS", {
+      slide.addText("EMPIRICAL FINDINGS & STRATEGIC INSIGHTS", {
         x: 5.0, y: 1.8, w: 7.2, h: 0.4,
-        fontFace: "Arial", fontSize: 11, color: "97422C", bold: true
+        fontFace: "Arial", fontSize: 10, color: "0F172A", bold: true
       });
 
       const currentChunk = bulletItems.slice(part * itemsPerSlide, (part + 1) * itemsPerSlide);
@@ -433,10 +534,10 @@ export async function assemblePowerPoint(input: AssembleDocumentInput): Promise<
         options: {
           bullet: true,
           fontFace: "Arial",
-          fontSize: 12.5,
-          color: "1B1C1A",
-          lineSpacing: 19,
-          paraSpaceAfter: 12
+          fontSize: 12,
+          color: "1E293B",
+          lineSpacing: 18,
+          paraSpaceAfter: 10
         }
       }));
 
@@ -446,11 +547,31 @@ export async function assemblePowerPoint(input: AssembleDocumentInput): Promise<
       });
 
       // Footer Slide Number
-      slide.addText(`Paperrrrrr • Slide ${slideCounter}`, {
+      slide.addText(`Paperrrrrr Academic Deck  |  Slide ${slideCounter}`, {
         x: 0.8, y: 6.8, w: 11.7, h: 0.3,
-        fontFace: "Arial", fontSize: 10, color: "88726D", align: "right"
+        fontFace: "Arial", fontSize: 9.5, color: "94A3B8", align: "right"
       });
     }
+  });
+
+  // Concluding Slide
+  slideCounter++;
+  const finalSlide = ppt.addSlide();
+  finalSlide.background = { color: "0F172A" };
+
+  finalSlide.addText("Synthesis & Strategic Verdict", {
+    x: 0.8, y: 1.5, w: 11.5, h: 1.2,
+    fontFace: "Georgia", fontSize: 30, color: "FFFFFF", bold: true
+  });
+
+  finalSlide.addText("Rigorous empirical synthesis complete. Prepared for institutional and academic evaluation.", {
+    x: 0.8, y: 2.8, w: 11.5, h: 0.8,
+    fontFace: "Arial", fontSize: 15, color: "94A3B8", italic: true
+  });
+
+  finalSlide.addText("Thank You • Questions & Discussion", {
+    x: 0.8, y: 4.8, w: 11.5, h: 0.6,
+    fontFace: "Arial", fontSize: 18, color: "38BDF8", bold: true
   });
 
   const buffer = (await ppt.stream()) as Buffer;
@@ -671,6 +792,56 @@ export async function assemblePdfDocument(input: AssembleDocumentInput): Promise
       const paragraphs = (sec.content || sec.brief || "").split("\n\n");
       paragraphs.forEach((pText) => {
         if (!pText.trim()) return;
+
+        // Handle Markdown Tables in PDF
+        if (isMarkdownTable(pText)) {
+          if (doc.y > 660) doc.addPage();
+          const tableLines = pText.trim().split("\n").filter(l => l.includes("|"));
+          const validRows: string[][] = [];
+          tableLines.forEach((l) => {
+            if (/^\|?(\s*:?-+:?\s*\|?)+\s*$/.test(l.trim())) return;
+            const cells = l.split("|").slice(1, -1).map(c => c.trim());
+            if (cells.length > 0) validRows.push(cells);
+          });
+
+          if (validRows.length > 0) {
+            const colCount = validRows[0].length;
+            const colWidth = 451 / colCount;
+            const startX = 72;
+
+            validRows.forEach((row, rIdx) => {
+              if (doc.y > 720) doc.addPage();
+              const isHeader = rIdx === 0;
+              const rowY = doc.y;
+              const rowHeight = 22;
+
+              // Row background
+              if (isHeader) {
+                doc.rect(startX, rowY, 451, rowHeight).fillColor("#F0F2F5").fill();
+              } else if (rIdx % 2 === 0) {
+                doc.rect(startX, rowY, 451, rowHeight).fillColor("#FAF9F5").fill();
+              }
+
+              // Row borders
+              doc.rect(startX, rowY, 451, rowHeight).strokeColor("#CBD5E1").lineWidth(0.5).stroke();
+
+              // Cell text
+              row.forEach((cellText, cIdx) => {
+                doc.fillColor("#000000")
+                  .font(isHeader ? "Times-Bold" : "Times-Roman")
+                  .fontSize(isHeader ? 10 : 9.5)
+                  .text(cellText, startX + (cIdx * colWidth) + 4, rowY + 5, {
+                    width: colWidth - 8,
+                    align: isHeader ? "center" : "left"
+                  });
+              });
+
+              doc.y = rowY + rowHeight;
+            });
+            doc.moveDown(0.6);
+            return;
+          }
+        }
 
         // Subheadings
         if (pText.startsWith("### ")) {

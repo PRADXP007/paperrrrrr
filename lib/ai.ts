@@ -519,17 +519,19 @@ ${JSON.stringify(filteredSources, null, 2)}
 
 Instructions:
 - Adapt the prose structure to the document type (${docType}) and tone (${tone}).
+- ORIGINALITY & CITATIONS (Plagiarism Index < 10%): Synthesize all factual findings through independent scholarly argumentation, comparative critiques, and original domain synthesis. Never copy-paste verbatim sentences. Embed direct markdown citations like [Source: Organization/Paper](URL) after empirical statistics and claims.
+- NATURAL HUMAN SYNTAX (AI Detection Score < 6%): Avoid stereotypical AI boilerplate phrases ('delve into', 'in conclusion', 'in this fast-paced world', 'testament to', 'crucial to note', 'beacon of', 'vibrant tapestry', 'it goes without saying'). Use genuine academic human tone with varied rhythm and burstiness (mix 6–10 word assertions with complex, multi-clause analytical sentences), concrete operational metrics, and nuanced critiques.
 ${
   isExhaustive
-    ? `- UNLIMITED & EXHAUSTIVE 30–50 PAGE PUBLICATION DEPTH: For Word (.docx) and PDF (.pdf) publication treatises, write exhaustive, multi-subsection prose (1,200 to 1,800+ words per chapter).
+    ? `- UNLIMITED & EXHAUSTIVE 30–50 PAGE PUBLICATION DEPTH: For Word (.docx), PDF (.pdf), and PowerPoint (.pptx) treatises, write exhaustive, multi-subsection prose (1,200 to 1,800+ words per chapter).
 - Divide the chapter into formal analytical subsections using:
   ### A. Empirical Baseline & Theoretical Foundations
   ### B. Structural Framework & Quantitative Synthesis
   ### C. Case Evidence & Comparative Benchmarking
   ### D. Institutional Governance & Strategic Policy Directives
-- Include detailed markdown data tables, statistical percentages, and embedded citations ([Source: Title](URL)).
+- Include structured Markdown Data Tables (e.g. | Key Variable | 2024 Baseline | 2026 Target | Variance (%) | Strategic Impact |) to present empirical distributions and benchmarks cleanly.
 - Do NOT truncate or brevity-cap. Fully articulate each subsection so the complete multi-chapter document naturally reaches 30 to 50 printed pages.`
-    : `- Write 3-5 comprehensive, articulate paragraphs.`
+    : `- Write 3-5 comprehensive, articulate paragraphs with structured points.`
 }
 - Output ONLY the section body markdown.`;
 
