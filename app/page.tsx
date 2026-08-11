@@ -121,7 +121,7 @@ export default function PaperrrrrrApp() {
     const codeSequence = [
       `>> [COMPILER_INIT] Initializing PaperLoop Neural Document Engine v2.0...`,
       `>> [AUTH_LAYER] Context Window: 1,000,000 tokens (Gemini 2.5 Flash allocated)`,
-      `>> [TAVILY_AGENT] Querying live neural search vectors: "${prompt.slice(0, 42)}..."`,
+      `>> [TAVILY_AGENT] Querying live neural search vectors: "${(prompt || "Document Analysis").slice(0, 42)}..."`,
       `>> [HTTP/2 200] Ingesting multi-vector web citations and empirical tables...`,
       `>> [SCHEMA_GEN] Allocating 12 discrete publication chapters (Word .docx OpenXML)...`,
       `>> [AST_COMPILER] Writing node: <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">`,
@@ -133,10 +133,15 @@ export default function PaperrrrrrApp() {
     let currentIdx = 0;
     const interval = setInterval(() => {
       if (currentIdx < codeSequence.length) {
-        setTypedCodeLines((prev) => [...prev, codeSequence[currentIdx]]);
+        const nextLine = codeSequence[currentIdx];
+        if (nextLine) {
+          setTypedCodeLines((prev) => [...prev, nextLine]);
+        }
         currentIdx++;
+      } else {
+        clearInterval(interval);
       }
-    }, 400);
+    }, 350);
 
     return () => clearInterval(interval);
   }, [step, prompt]);
@@ -1240,20 +1245,23 @@ export default function PaperrrrrrApp() {
 
               {/* Terminal Code Body */}
               <div className="p-5 font-mono text-xs text-gray-300 space-y-2 max-h-[300px] overflow-y-auto bg-[#090D13]">
-                {typedCodeLines.map((line, idx) => (
-                  <div key={idx} className="leading-relaxed flex items-start gap-2.5 animate-in fade-in duration-300">
-                    <span className="text-gray-600 select-none text-[11px]">{(idx + 1).toString().padStart(2, "0")}</span>
-                    <span className={
-                      line.includes("INIT") || line.includes("AUTH") ? "text-[#58A6FF]" :
-                      line.includes("TAVILY") || line.includes("HTTP") ? "text-[#D2A8FF]" :
-                      line.includes("SCHEMA") || line.includes("AST") ? "text-[#79C0FF]" :
-                      line.includes("VALIDATOR") || line.includes("READY") ? "text-[#7EE787]" :
-                      "text-gray-300"
-                    }>
-                      {line}
-                    </span>
-                  </div>
-                ))}
+                {typedCodeLines.map((line, idx) => {
+                  if (!line || typeof line !== "string") return null;
+                  return (
+                    <div key={idx} className="leading-relaxed flex items-start gap-2.5 animate-in fade-in duration-300">
+                      <span className="text-gray-600 select-none text-[11px]">{(idx + 1).toString().padStart(2, "0")}</span>
+                      <span className={
+                        line.includes("INIT") || line.includes("AUTH") ? "text-[#58A6FF]" :
+                        line.includes("TAVILY") || line.includes("HTTP") ? "text-[#D2A8FF]" :
+                        line.includes("SCHEMA") || line.includes("AST") ? "text-[#79C0FF]" :
+                        line.includes("VALIDATOR") || line.includes("READY") ? "text-[#7EE787]" :
+                        "text-gray-300"
+                      }>
+                        {line}
+                      </span>
+                    </div>
+                  );
+                })}
                 <div className="flex items-center gap-2 text-green-400 pt-1">
                   <span className="text-green-500">▶</span>
                   <span>Executing AST grammar &amp; synthesizing 12 discrete chapters...</span>
