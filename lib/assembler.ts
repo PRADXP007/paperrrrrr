@@ -8,6 +8,7 @@ import {
   Header,
   Footer,
   PageNumber,
+  PageBreak,
   AlignmentType,
   BorderStyle,
   convertInchesToTwip,
@@ -198,17 +199,29 @@ export async function assembleWordDocument(input: AssembleDocumentInput): Promis
       headingStyleRange: "1-3"
     }),
 
-    new Paragraph({ spacing: { after: 800 } })
+    new Paragraph({
+      children: [new PageBreak()],
+      spacing: { after: 400 }
+    })
   );
 
-  // Chapters & Subsections
+  // Chapters & Subsections with Clean A4 Page Separations
   input.sections.forEach((sec, idx) => {
+    if (idx > 0) {
+      docChildren.push(
+        new Paragraph({
+          children: [new PageBreak()],
+          spacing: { after: 200 }
+        })
+      );
+    }
+
     docChildren.push(
       new Paragraph({
         text: `${idx + 1}. ${sec.title.replace(/^\d+\.\s*/, "")}`,
         heading: HeadingLevel.HEADING_1,
         alignment: AlignmentType.LEFT,
-        spacing: { before: 600, after: 200 }
+        spacing: { before: 400, after: 200 }
       })
     );
 
