@@ -8,3 +8,5 @@ export * from "./Modal";
 export * from "./Tabs";
 export * from "./Alert";
 export * from "./MetricCard";
+export * from "./PPTXDeckViewer";
+export * from "./ExcelSheetViewer";

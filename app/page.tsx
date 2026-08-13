@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Badge,
   BadgeGroup,
@@ -13,10 +13,14 @@ import {
   Tabs,
   Alert,
   MetricCard,
+  PPTXDeckViewer,
+  ExcelSheetViewer,
   type ProgressStepItem,
   type StreamEvent,
 } from "@/components/untitledui";
 import {
+  LayoutGrid,
+  Table,
   Sparkles,
   Search,
   FileText,
@@ -112,6 +116,42 @@ export default function PaperrrrrrApp() {
   const [audience, setAudience] = useState("Students & Researchers");
   const [targetLength, setTargetLength] = useState("Unlimited & Exhaustive (Comprehensive In-Depth)");
   const [researchDepth, setResearchDepth] = useState<"standard" | "deep">("standard");
+
+  // Autonomous AI Agent Format Detection from Natural Language
+  const detectedFormat = useMemo<"docx" | "pptx" | "xlsx" | "pdf">(() => {
+    const p = prompt.toLowerCase();
+    if (
+      p.includes("slide") ||
+      p.includes("deck") ||
+      p.includes("presentation") ||
+      p.includes("powerpoint") ||
+      p.includes("ppt") ||
+      p.includes("pitch")
+    ) {
+      return "pptx";
+    }
+    if (
+      p.includes("excel") ||
+      p.includes("spreadsheet") ||
+      p.includes("sheet") ||
+      p.includes("xlsx") ||
+      p.includes("csv") ||
+      p.includes("financial model") ||
+      p.includes("data table") ||
+      p.includes("budget") ||
+      p.includes("kpi table") ||
+      p.includes("tracker")
+    ) {
+      return "xlsx";
+    }
+    if (p.includes("pdf")) {
+      return "pdf";
+    }
+    return "docx";
+  }, [prompt]);
+
+  // Multi-Format Canvas Viewer Mode: 'word' | 'ppt' | 'excel'
+  const [activeViewerMode, setActiveViewerMode] = useState<"word" | "ppt" | "excel">("word");
 
   // Reference File / Notes Intake
   const [showFileIntake, setShowFileIntake] = useState(false);
@@ -689,6 +729,13 @@ export default function PaperrrrrrApp() {
     targetDocId?: string | null
   ) => {
     setStep("workspace");
+    if (targetOutline.format === "pptx") {
+      setActiveViewerMode("ppt");
+    } else if (targetOutline.format === "xlsx") {
+      setActiveViewerMode("excel");
+    } else {
+      setActiveViewerMode("word");
+    }
     setIsStreaming(true);
     setIsAssembledReady(false);
     setGeneratedSections({});
@@ -961,7 +1008,7 @@ export default function PaperrrrrrApp() {
     setFollowUpInstruction("");
   };
 
-  const handleDownloadFormat = async (requestedFormat: "docx" | "pdf" | "pptx") => {
+  const handleDownloadFormat = async (requestedFormat: "docx" | "pptx" | "xlsx" | "pdf") => {
     if (!outline) return;
     try {
       const compiledSections = outline.sections.map((s, idx) => ({
@@ -1293,22 +1340,90 @@ export default function PaperrrrrrApp() {
             </div>
 
             {/* Prominent Prompt Textarea Centerpiece */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
+              {/* Autonomous AI Agent Format Detection Indicator */}
+              {prompt.trim().length > 3 && (
+                <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-gradient-to-r from-[#7F56D9]/15 via-[#9E77ED]/10 to-transparent border border-[#7F56D9]/30 rounded-xl text-xs">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="brand" size="sm" pulse>
+                      AI Agent Intent
+                    </Badge>
+                    <span className="text-gray-300 font-medium">
+                      Detected Format:{" "}
+                      <strong className="text-white">
+                        {detectedFormat === "pptx"
+                          ? "PowerPoint Presentation Deck (.pptx)"
+                          : detectedFormat === "xlsx"
+                          ? "Excel Analytical Model & Spreadsheet (.xlsx)"
+                          : detectedFormat === "pdf"
+                          ? "Printable Document (.pdf)"
+                          : "Word Document (.docx)"}
+                      </strong>
+                    </span>
+                  </div>
+                  {format !== detectedFormat && (
+                    <button
+                      type="button"
+                      onClick={() => setFormat(detectedFormat)}
+                      className="text-xs font-bold text-[#9E77ED] hover:text-white underline cursor-pointer"
+                    >
+                      Apply {detectedFormat.toUpperCase()} Format →
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div className="relative rounded-2xl bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 focus-within:border-[#7F56D9] dark:focus-within:border-[#9E77ED] focus-within:ring-4 focus-within:ring-[#7F56D9]/10 transition-all shadow-md overflow-hidden">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={4}
-                  placeholder="e.g., A comprehensive analysis of renewable energy adoption in India, or a pitch deck on AI document pipelines..."
+                  placeholder="e.g., Make a 12-slide pitch deck on AI document pipelines, an Excel financial model for SaaS, or a 30-page research paper on renewable energy..."
                   className="w-full p-5 bg-transparent outline-none text-gray-900 dark:text-white text-base sm:text-lg leading-relaxed placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none font-medium"
                 />
                 <div className="flex justify-between items-center px-5 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-300">
                   <div className="flex items-center gap-1.5 font-medium">
                     <Sparkles className="size-3.5 text-[#7F56D9] dark:text-[#9E77ED]" />
-                    <span>Gemini 3.6 1M context token allocated</span>
+                    <span>AI Agent Multi-Format Compiler (Word, PPT, Excel, PDF)</span>
                   </div>
                   <span className="font-mono text-xs font-semibold">{prompt.length} characters</span>
                 </div>
+              </div>
+
+              {/* Quick AI Agent Action Starter Prompts */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">
+                  Quick Prompts:
+                </span>
+                {[
+                  {
+                    label: "📊 12-Slide Pitch Deck (.pptx)",
+                    promptText: "Create a 12-slide investor pitch deck on an AI document studio with market size, TAM/SAM/SOM, and competitive moat",
+                    fmt: "pptx"
+                  },
+                  {
+                    label: "📈 6-Sheet SaaS Financial Model (.xlsx)",
+                    promptText: "Generate an Excel financial model for a B2B SaaS company with 5-year revenue forecasts, COGS, EBITDA, and KPI metrics",
+                    fmt: "xlsx"
+                  },
+                  {
+                    label: "📄 30-Page Market Treatise (.docx)",
+                    promptText: "A comprehensive analytical treatise on renewable energy infrastructure and solar grid adoption in India (2024-2035)",
+                    fmt: "docx"
+                  }
+                ].map((starter, sIdx) => (
+                  <button
+                    key={sIdx}
+                    type="button"
+                    onClick={() => {
+                      setPrompt(starter.promptText);
+                      setFormat(starter.fmt as any);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-800 text-[11px] font-medium text-gray-300 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {starter.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -1503,147 +1618,187 @@ export default function PaperrrrrrApp() {
         {/* ============================================================ */}
         {/* SCREEN 2: OUTLINE REVIEW & EDIT (STEP 2)                     */}
         {/* ============================================================ */}
-        {step === "outline" && outline && (
-          <div className="w-full max-w-3xl mx-auto flex flex-col gap-6 py-4 animate-in fade-in duration-300">
-            <div className="border-b border-gray-200 dark:border-gray-800 pb-5 flex flex-wrap justify-between items-start gap-4">
-              <div>
-                <Badge variant="brand" size="sm" dot>
-                  Step 2 of 3 • Outline Architect
-                </Badge>
-                <h1 className="font-serif text-2xl sm:text-3xl text-[#101828] dark:text-white font-bold mt-2">
-                  Review &amp; Approve Outline
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-0.5 font-medium">
-                  Edit chapter titles, briefs, or add new sections before launching the live generation engine.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {researchBundle && (
-                  <Button
-                    variant="secondary_gray"
-                    size="sm"
-                    onClick={() => setShowSourcesModal(true)}
-                    iconLeading={<Search className="size-3.5 text-[#7F56D9] dark:text-[#9E77ED]" />}
-                  >
-                    Inspect Sources ({researchBundle.results.length})
-                  </Button>
-                )}
-                <Badge variant="brand" size="md">
-                  {outline.sections.length} Chapters
-                </Badge>
-              </div>
-            </div>
-
-            {/* Document Title Header Input */}
-            <div className="p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs flex flex-col gap-3">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Document Title &amp; Subtitle
-              </label>
-              <input
-                type="text"
-                value={outline.title}
-                onChange={(e) => setOutline({ ...outline, title: e.target.value })}
-                className="font-serif text-lg sm:text-xl font-bold text-gray-900 dark:text-white p-3 border border-gray-300 dark:border-gray-700 rounded-xl focus:border-[#7F56D9] outline-none bg-gray-50 dark:bg-gray-950"
-              />
-              <input
-                type="text"
-                value={outline.subtitle}
-                onChange={(e) => setOutline({ ...outline, subtitle: e.target.value })}
-                className="text-xs text-gray-700 dark:text-gray-300 italic p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-950 font-medium"
-                placeholder="Subtitle..."
-              />
-            </div>
-
-            {/* Editable Sections List */}
-            <div className="space-y-4">
-              {outline.sections.map((sec, idx) => (
-                <div
-                  key={sec.id || idx}
-                  className="p-4 sm:p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs flex flex-col gap-3.5 transition-all hover:border-gray-300 dark:hover:border-gray-700"
-                >
-                  <div className="flex justify-between items-center">
-                    <Badge variant="brand" size="sm">
-                      Chapter {idx + 1}
-                    </Badge>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSection(idx)}
-                      className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline cursor-pointer font-bold flex items-center gap-1"
-                    >
-                      <Trash2 className="size-3.5" />
-                      Remove
-                    </button>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-gray-700 dark:text-gray-300 font-bold">
-                      Chapter Title
-                    </label>
-                    <input
-                      type="text"
-                      value={sec.title}
-                      onChange={(e) => handleSectionTitleChange(idx, e.target.value)}
-                      className="w-full font-serif text-base font-bold text-gray-900 dark:text-white p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl mt-1 bg-gray-50 dark:bg-gray-950 outline-none focus:border-[#7F56D9]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-gray-700 dark:text-gray-300 font-bold">
-                      Synthesis Brief &amp; Focal Points
-                    </label>
-                    <input
-                      type="text"
-                      value={sec.brief}
-                      onChange={(e) => handleSectionBriefChange(idx, e.target.value)}
-                      className="w-full text-xs text-gray-800 dark:text-gray-200 p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl mt-1 bg-gray-50 dark:bg-gray-950 outline-none focus:border-[#7F56D9] font-medium"
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5 items-center pt-2 border-t border-gray-100 dark:border-gray-800">
-                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mr-1">Sources Attached:</span>
-                    {(sec.relevantSourceIndices || [1]).map((srcIdx: number) => (
-                      <Badge key={srcIdx} variant="gray" size="sm">
-                        Source #{srcIdx}
-                      </Badge>
-                    ))}
-                  </div>
+        {step === "outline" && outline && (() => {
+          const unitName = outline.format === "pptx" ? "Slide" : outline.format === "xlsx" ? "Sheet" : "Chapter";
+          return (
+            <div className="w-full max-w-3xl mx-auto flex flex-col gap-6 py-4 animate-in fade-in duration-300">
+              <div className="border-b border-gray-200 dark:border-gray-800 pb-5 flex flex-wrap justify-between items-start gap-4">
+                <div>
+                  <Badge variant="brand" size="sm" dot>
+                    Step 2 of 3 • {unitName} Architect
+                  </Badge>
+                  <h1 className="font-serif text-2xl sm:text-3xl text-[#101828] dark:text-white font-bold mt-2">
+                    Review &amp; Approve {unitName} Blueprint
+                  </h1>
+                  <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-0.5 font-medium">
+                    Edit {unitName.toLowerCase()} titles, briefs, or add new items before launching the AI generation engine.
+                  </p>
                 </div>
-              ))}
+                <div className="flex items-center gap-2">
+                  {researchBundle && (
+                    <Button
+                      variant="secondary_gray"
+                      size="sm"
+                      onClick={() => setShowSourcesModal(true)}
+                      iconLeading={<Search className="size-3.5 text-[#7F56D9] dark:text-[#9E77ED]" />}
+                    >
+                      Inspect Sources ({researchBundle.results.length})
+                    </Button>
+                  )}
+                  <Badge variant="brand" size="md">
+                    {outline.sections.length} {unitName}s
+                  </Badge>
+                </div>
+              </div>
 
-              <Button
-                variant="secondary_gray"
-                size="lg"
-                onClick={handleAddSection}
-                iconLeading={<Plus className="size-4 text-[#7F56D9]" />}
-                className="w-full py-3.5 border-dashed border-2 font-bold"
-              >
-                Add Chapter Section
-              </Button>
-            </div>
+              {/* Format Switcher Pill Bar on Outline */}
+              <div className="flex items-center justify-between gap-3 p-3 bg-gray-900 border border-gray-800 rounded-2xl text-xs">
+                <span className="font-bold text-gray-400">Target Format:</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[
+                    { key: "docx", label: "Word (.docx)", icon: <FileText className="size-3.5 text-blue-400" /> },
+                    { key: "pptx", label: "PowerPoint (.pptx)", icon: <Presentation className="size-3.5 text-amber-400" /> },
+                    { key: "xlsx", label: "Excel (.xlsx)", icon: <FileSpreadsheet className="size-3.5 text-emerald-400" /> },
+                    { key: "pdf", label: "PDF (.pdf)", icon: <FileCheck className="size-3.5 text-rose-400" /> },
+                  ].map((fmtOption) => {
+                    const isFmtActive = (outline.format || format) === fmtOption.key;
+                    return (
+                      <button
+                        key={fmtOption.key}
+                        type="button"
+                        onClick={() => {
+                          setFormat(fmtOption.key as any);
+                          setOutline({ ...outline, format: fmtOption.key as any });
+                        }}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                          isFmtActive
+                            ? "bg-[#7F56D9] text-white shadow-xs"
+                            : "bg-gray-800 text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        {fmtOption.icon}
+                        <span>{fmtOption.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-            {/* Approval CTAs */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
-              <Button
-                variant="secondary_gray"
-                size="lg"
-                onClick={() => setStep("intake")}
-                iconLeading={<ArrowLeft className="size-4" />}
-                className="font-bold"
-              >
-                Back
-              </Button>
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleApproveAndLaunchLiveWorkspace}
-                iconTrailing={<ArrowRight className="size-4" />}
-                className="flex-1 shadow-md font-bold"
-              >
-                Approve Outline &amp; Open Live Split-Screen Workspace →
-              </Button>
+              {/* Document Title Header Input */}
+              <div className="p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs flex flex-col gap-3">
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Title &amp; Subtitle
+                </label>
+                <input
+                  type="text"
+                  value={outline.title}
+                  onChange={(e) => setOutline({ ...outline, title: e.target.value })}
+                  className="font-serif text-lg sm:text-xl font-bold text-gray-900 dark:text-white p-3 border border-gray-300 dark:border-gray-700 rounded-xl focus:border-[#7F56D9] outline-none bg-gray-50 dark:bg-gray-950"
+                />
+                <input
+                  type="text"
+                  value={outline.subtitle}
+                  onChange={(e) => setOutline({ ...outline, subtitle: e.target.value })}
+                  className="text-xs text-gray-700 dark:text-gray-300 italic p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-950 font-medium"
+                  placeholder="Subtitle..."
+                />
+              </div>
+
+              {/* Editable Sections List */}
+              <div className="space-y-4">
+                {outline.sections.map((sec, idx) => (
+                  <div
+                    key={sec.id || idx}
+                    className="p-4 sm:p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs flex flex-col gap-3.5 transition-all hover:border-gray-300 dark:hover:border-gray-700"
+                  >
+                    <div className="flex justify-between items-center">
+                      <Badge variant="brand" size="sm">
+                        {unitName} {idx + 1}
+                      </Badge>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSection(idx)}
+                        className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline cursor-pointer font-bold flex items-center gap-1"
+                      >
+                        <Trash2 className="size-3.5" />
+                        Remove
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-gray-700 dark:text-gray-300 font-bold">
+                        {unitName} Title
+                      </label>
+                      <input
+                        type="text"
+                        value={sec.title}
+                        onChange={(e) => handleSectionTitleChange(idx, e.target.value)}
+                        className="w-full font-serif text-base font-bold text-gray-900 dark:text-white p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl mt-1 bg-gray-50 dark:bg-gray-950 outline-none focus:border-[#7F56D9]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-gray-700 dark:text-gray-300 font-bold">
+                        {outline.format === "pptx"
+                          ? "Slide Focus & Presenter Brief"
+                          : outline.format === "xlsx"
+                          ? "Worksheet Scope & Formula Metrics"
+                          : "Synthesis Brief & Focal Points"}
+                      </label>
+                      <input
+                        type="text"
+                        value={sec.brief}
+                        onChange={(e) => handleSectionBriefChange(idx, e.target.value)}
+                        className="w-full text-xs text-gray-800 dark:text-gray-200 p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl mt-1 bg-gray-50 dark:bg-gray-950 outline-none focus:border-[#7F56D9] font-medium"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 items-center pt-2 border-t border-gray-100 dark:border-gray-800">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mr-1">Sources Attached:</span>
+                      {(sec.relevantSourceIndices || [1]).map((srcIdx: number) => (
+                        <Badge key={srcIdx} variant="gray" size="sm">
+                          Source #{srcIdx}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                <Button
+                  variant="secondary_gray"
+                  size="lg"
+                  onClick={handleAddSection}
+                  iconLeading={<Plus className="size-4 text-[#7F56D9]" />}
+                  className="w-full py-3.5 border-dashed border-2 font-bold"
+                >
+                  Add {unitName}
+                </Button>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+                <Button
+                  variant="tertiary_gray"
+                  size="lg"
+                  onClick={() => setStep("intake")}
+                  iconLeading={<ArrowLeft className="size-4" />}
+                >
+                  Back to Intake
+                </Button>
+
+                <Button
+                  variant="primary"
+                  size="xl"
+                  onClick={handleApproveAndLaunchLiveWorkspace}
+                  iconLeading={<Zap className="size-4" />}
+                  className="w-full sm:w-auto px-8 shadow-md font-bold"
+                >
+                  Approve Outline &amp; Launch {unitName} Stream →
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ============================================================ */}
         {/* SCREEN 3: SPLIT-SCREEN WORKSPACE (42% CODE ENGINE / 58% MS WORD) */}
@@ -1822,15 +1977,46 @@ export default function PaperrrrrrApp() {
             {/* RIGHT COLUMN: 58% WIDTH - AUTHENTIC MS WORD DOCUMENT PREVIEW */}
             {/* -------------------------------------------------------- */}
             <div className="w-full lg:w-[58%] flex flex-col gap-3.5">
-              {/* Sticky Action Bar with Prominent Word (.docx) & PDF Downloads */}
+              {/* Sticky Action Bar with Multi-Format Canvas Switcher & Direct Downloads */}
               <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-wrap gap-2.5 justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Badge variant="blue" size="md" icon={<FileText className="size-3.5 text-blue-600" />}>
-                    Word &amp; PDF Manuscript
-                  </Badge>
-                  <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                    {readySectionsCount} of {outline.sections.length} chapters
-                  </span>
+                {/* Format Viewer Mode Switcher */}
+                <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1 border border-gray-200 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => setActiveViewerMode("word")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      activeViewerMode === "word"
+                        ? "bg-[#185ABD] text-white shadow-xs"
+                        : "text-gray-600 dark:text-gray-300 hover:text-white"
+                    }`}
+                  >
+                    <FileText className="size-3.5" />
+                    <span>Word Canvas</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveViewerMode("ppt")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      activeViewerMode === "ppt"
+                        ? "bg-amber-600 text-white shadow-xs"
+                        : "text-gray-600 dark:text-gray-300 hover:text-white"
+                    }`}
+                  >
+                    <Presentation className="size-3.5" />
+                    <span>PowerPoint Deck</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveViewerMode("excel")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      activeViewerMode === "excel"
+                        ? "bg-[#107C41] text-white shadow-xs"
+                        : "text-gray-600 dark:text-gray-300 hover:text-white"
+                    }`}
+                  >
+                    <FileSpreadsheet className="size-3.5" />
+                    <span>Excel Grid</span>
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1848,9 +2034,10 @@ export default function PaperrrrrrApp() {
                     size="sm"
                     onClick={() => setStep("outline")}
                   >
-                    Outline
+                    Blueprint
                   </Button>
-                  {/* Microsoft Word (.docx) Download Button */}
+
+                  {/* Word (.docx) */}
                   <Button
                     variant="primary"
                     size="sm"
@@ -1859,29 +2046,43 @@ export default function PaperrrrrrApp() {
                     iconLeading={<FileText className="size-3.5" />}
                     className="shadow-sm font-bold bg-[#185ABD] hover:bg-[#104896] border-[#185ABD]"
                   >
-                    Download Word (.docx)
+                    Word (.docx)
                   </Button>
-                  {/* Direct PDF Download Button */}
-                  <Button
-                    variant="secondary_gray"
-                    size="sm"
-                    onClick={() => handleDownloadFormat("pdf")}
-                    disabled={readySectionsCount === 0}
-                    iconLeading={<Download className="size-3.5 text-rose-600" />}
-                    className="font-bold text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60 bg-rose-50/50 dark:bg-rose-950/30"
-                  >
-                    PDF
-                  </Button>
-                  {/* Export PowerPoint Presentation (.pptx) */}
+
+                  {/* PowerPoint (.pptx) */}
                   <Button
                     variant="secondary_gray"
                     size="sm"
                     onClick={() => handleDownloadFormat("pptx")}
                     disabled={readySectionsCount === 0}
-                    iconLeading={<Presentation className="size-3.5 text-amber-600" />}
+                    iconLeading={<Presentation className="size-3.5 text-amber-500" />}
                     className="font-bold text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/30"
                   >
-                    PPT
+                    PPT (.pptx)
+                  </Button>
+
+                  {/* Excel (.xlsx) */}
+                  <Button
+                    variant="secondary_gray"
+                    size="sm"
+                    onClick={() => handleDownloadFormat("xlsx")}
+                    disabled={readySectionsCount === 0}
+                    iconLeading={<FileSpreadsheet className="size-3.5 text-emerald-500" />}
+                    className="font-bold text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/30"
+                  >
+                    Excel (.xlsx)
+                  </Button>
+
+                  {/* PDF (.pdf) */}
+                  <Button
+                    variant="secondary_gray"
+                    size="sm"
+                    onClick={() => handleDownloadFormat("pdf")}
+                    disabled={readySectionsCount === 0}
+                    iconLeading={<Download className="size-3.5 text-rose-500" />}
+                    className="font-bold text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60 bg-rose-50/50 dark:bg-rose-950/30"
+                  >
+                    PDF
                   </Button>
                 </div>
               </div>
@@ -1903,167 +2104,192 @@ export default function PaperrrrrrApp() {
                 </div>
               </div>
 
-              {/* Contained Document Viewing Box (Scrollable Viewport Window) */}
-              <div 
-                id="doc-viewer-container"
-                className="bg-[#E4E6EA] dark:bg-[#0B0E14] border border-gray-300 dark:border-[#262C3A] rounded-2xl p-3 sm:p-6 h-[650px] lg:h-[calc(100vh-280px)] max-h-[850px] overflow-y-auto custom-scrollbar flex flex-col items-center shadow-inner relative"
-              >
-                {/* Floating Jump & Quick-Scroll Dock */}
-                <div className="sticky top-2 z-20 mb-4 bg-white/95 dark:bg-[#181B24]/95 backdrop-blur-md border border-gray-300 dark:border-gray-700 rounded-full px-4 py-1.5 shadow-lg flex items-center gap-3 text-xs">
-                  <span className="text-gray-600 dark:text-gray-300 font-mono text-[11px] hidden sm:inline font-semibold">Navigate:</span>
-                  <select
-                    onChange={(e) => {
-                      const target = document.getElementById(e.target.value);
-                      if (target) {
-                        target.scrollIntoView({ behavior: "smooth", block: "start" });
-                      }
-                    }}
-                    className="bg-transparent text-gray-900 dark:text-gray-100 font-bold text-xs outline-none cursor-pointer max-w-[180px] sm:max-w-[240px] truncate"
-                  >
-                    <option value="doc-top">Jump to: Top of Document</option>
-                    {outline.sections.map((s, idx) => (
-                      <option key={idx} value={`chapter-sec-${idx}`}>
-                        {idx + 1}. {s.title.replace(/^\d+\.\s*/, "")}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="h-3.5 w-px bg-gray-300 dark:bg-gray-700" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const container = document.getElementById("doc-viewer-container");
-                      if (container) container.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    title="Scroll to Top"
-                    className="text-gray-800 dark:text-gray-200 hover:text-black dark:hover:text-white font-bold cursor-pointer flex items-center gap-0.5 text-[11px]"
-                  >
-                    ↑ Top
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const container = document.getElementById("doc-viewer-container");
-                      if (container) container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
-                    }}
-                    title="Scroll to Bottom"
-                    className="text-gray-800 dark:text-gray-200 hover:text-black dark:hover:text-white font-bold cursor-pointer flex items-center gap-0.5 text-[11px]"
-                  >
-                    ↓ End
-                  </button>
+              {/* Multi-Format Canvas Viewport */}
+              {activeViewerMode === "ppt" ? (
+                <div className="bg-[#0B0E14] border border-gray-800 rounded-2xl p-3 sm:p-5 shadow-inner">
+                  <PPTXDeckViewer
+                    title={outline.title}
+                    subtitle={outline.subtitle}
+                    sections={outline.sections}
+                    generatedSections={generatedSections}
+                    isStreaming={isStreaming}
+                    onDownload={() => handleDownloadFormat("pptx")}
+                  />
                 </div>
-
-                {/* Realistic Microsoft Word Document Paper Canvas */}
-                <div id="doc-top" className="ms-word-canvas bg-white text-black border border-gray-300 rounded-sm p-8 sm:p-14 w-full max-w-[780px] flex flex-col gap-6 shadow-2xl font-['Times_New_Roman',_Times,_serif] self-center">
-                  {/* Word Ruler / Print Layout Header */}
-                  <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-600 border-b border-gray-300 pb-3 font-semibold">
-                    <span>A4 Print Layout • Times New Roman 12pt • 1" Margins</span>
-                    <span>30–50 Pages Depth • 100% Zoom</span>
-                  </div>
-
-                  {/* Word Document Title Header */}
-                  <div className="text-center pb-6 border-b border-black flex flex-col gap-2">
-                    <h1 className="font-['Times_New_Roman',_Times,_serif] text-2xl sm:text-3xl text-black font-bold uppercase tracking-wide leading-tight">
-                      {outline.title}
-                    </h1>
-                    <p className="text-sm text-gray-800 italic font-['Times_New_Roman',_Times,_serif]">{outline.subtitle}</p>
-                    <div className="text-xs text-gray-700 mt-2 flex items-center justify-center gap-2 font-['Times_New_Roman',_Times,_serif]">
-                      <span>Prepared for: <strong>Academic &amp; Corporate Review</strong></span>
-                      <span>•</span>
-                      <span>{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
-                    </div>
-                  </div>
-
-                  {/* Table of Contents Section (Interactive Jump) */}
-                  <div className="bg-gray-50 p-5 rounded border border-gray-300 text-xs font-['Times_New_Roman',_Times,_serif]">
-                    <div className="font-bold uppercase tracking-wider text-black text-center text-sm mb-3">TABLE OF CONTENTS</div>
-                    <div className="space-y-2 text-black">
+              ) : activeViewerMode === "excel" ? (
+                <div className="bg-[#0B0E14] border border-gray-800 rounded-2xl p-3 sm:p-5 shadow-inner">
+                  <ExcelSheetViewer
+                    title={outline.title}
+                    subtitle={outline.subtitle}
+                    sections={outline.sections}
+                    generatedSections={generatedSections}
+                    isStreaming={isStreaming}
+                    onDownload={() => handleDownloadFormat("xlsx")}
+                  />
+                </div>
+              ) : (
+                /* Contained Document Viewing Box (Scrollable Viewport Window) */
+                <div 
+                  id="doc-viewer-container"
+                  className="bg-[#E4E6EA] dark:bg-[#0B0E14] border border-gray-300 dark:border-[#262C3A] rounded-2xl p-3 sm:p-6 h-[650px] lg:h-[calc(100vh-280px)] max-h-[850px] overflow-y-auto custom-scrollbar flex flex-col items-center shadow-inner relative"
+                >
+                  {/* Floating Jump & Quick-Scroll Dock */}
+                  <div className="sticky top-2 z-20 mb-4 bg-white/95 dark:bg-[#181B24]/95 backdrop-blur-md border border-gray-300 dark:border-gray-700 rounded-full px-4 py-1.5 shadow-lg flex items-center gap-3 text-xs">
+                    <span className="text-gray-600 dark:text-gray-300 font-mono text-[11px] hidden sm:inline font-semibold">Navigate:</span>
+                    <select
+                      onChange={(e) => {
+                        const target = document.getElementById(e.target.value);
+                        if (target) {
+                          target.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                      }}
+                      className="bg-transparent text-gray-900 dark:text-gray-100 font-bold text-xs outline-none cursor-pointer max-w-[180px] sm:max-w-[240px] truncate"
+                    >
+                      <option value="doc-top">Jump to: Top of Document</option>
                       {outline.sections.map((s, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            const target = document.getElementById(`chapter-sec-${idx}`);
-                            if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-                          }}
-                          className="w-full flex justify-between items-baseline gap-2 text-left hover:text-[#004085] hover:underline cursor-pointer"
-                        >
-                          <span className="font-medium truncate">{s.title}</span>
-                          <span className="flex-1 border-b border-dotted border-gray-400 min-w-8" />
-                          <span className="text-[11px] text-gray-800 font-mono font-semibold">Page {idx * 2 + 1}</span>
-                        </button>
+                        <option key={idx} value={`chapter-sec-${idx}`}>
+                          {idx + 1}. {s.title.replace(/^\d+\.\s*/, "")}
+                        </option>
                       ))}
+                    </select>
+                    <div className="h-3.5 w-px bg-gray-300 dark:bg-gray-700" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const container = document.getElementById("doc-viewer-container");
+                        if (container) container.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      title="Scroll to Top"
+                      className="text-gray-800 dark:text-gray-200 hover:text-black dark:hover:text-white font-bold cursor-pointer flex items-center gap-0.5 text-[11px]"
+                    >
+                      ↑ Top
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const container = document.getElementById("doc-viewer-container");
+                        if (container) container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+                      }}
+                      title="Scroll to Bottom"
+                      className="text-gray-800 dark:text-gray-200 hover:text-black dark:hover:text-white font-bold cursor-pointer flex items-center gap-0.5 text-[11px]"
+                    >
+                      ↓ End
+                    </button>
+                  </div>
+
+                  {/* Realistic Microsoft Word Document Paper Canvas */}
+                  <div id="doc-top" className="ms-word-canvas bg-white text-black border border-gray-300 rounded-sm p-8 sm:p-14 w-full max-w-[780px] flex flex-col gap-6 shadow-2xl font-['Times_New_Roman',_Times,_serif] self-center">
+                    {/* Word Ruler / Print Layout Header */}
+                    <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-600 border-b border-gray-300 pb-3 font-semibold">
+                      <span>A4 Print Layout • Times New Roman 12pt • 1" Margins</span>
+                      <span>30–50 Pages Depth • 100% Zoom</span>
+                    </div>
+
+                    {/* Word Document Title Header */}
+                    <div className="text-center pb-6 border-b border-black flex flex-col gap-2">
+                      <h1 className="font-['Times_New_Roman',_Times,_serif] text-2xl sm:text-3xl text-black font-bold uppercase tracking-wide leading-tight">
+                        {outline.title}
+                      </h1>
+                      <p className="text-sm text-gray-800 italic font-['Times_New_Roman',_Times,_serif]">{outline.subtitle}</p>
+                      <div className="text-xs text-gray-700 mt-2 flex items-center justify-center gap-2 font-['Times_New_Roman',_Times,_serif]">
+                        <span>Prepared for: <strong>Academic &amp; Corporate Review</strong></span>
+                        <span>•</span>
+                        <span>{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                      </div>
+                    </div>
+
+                    {/* Table of Contents Section (Interactive Jump) */}
+                    <div className="bg-gray-50 p-5 rounded border border-gray-300 text-xs font-['Times_New_Roman',_Times,_serif]">
+                      <div className="font-bold uppercase tracking-wider text-black text-center text-sm mb-3">TABLE OF CONTENTS</div>
+                      <div className="space-y-2 text-black">
+                        {outline.sections.map((s, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              const target = document.getElementById(`chapter-sec-${idx}`);
+                              if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                            className="w-full flex justify-between items-baseline gap-2 text-left hover:text-[#004085] hover:underline cursor-pointer"
+                          >
+                            <span className="font-medium truncate">{s.title}</span>
+                            <span className="flex-1 border-b border-dotted border-gray-400 min-w-8" />
+                            <span className="text-[11px] text-gray-800 font-mono font-semibold">Page {idx * 2 + 1}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Full Continuous Manuscript Prose */}
+                    <div className="space-y-8 text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
+                      {outline.sections.map((sec, idx) => {
+                        const proseContent = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[sec.title];
+                        const isDraftingNow = isStreaming && activeGeneratingSectionIndex === idx && !proseContent;
+                        const isSectionRegenerating = regeneratingSectionId === sec.id;
+
+                        return (
+                          <div key={sec.id || idx} id={`chapter-sec-${idx}`} className="space-y-4 group scroll-mt-16">
+                            {/* Word Heading 1 */}
+                            <div className="flex items-center justify-between border-b border-gray-300 pb-1.5 pt-6">
+                              <h2 className="text-[16pt] font-bold text-black font-['Times_New_Roman',_Times,_serif]">
+                                {idx + 1}. {sec.title.replace(/^\d+\.\s*/, "")}
+                              </h2>
+                              <div className="flex items-center gap-2">
+                                {proseContent && !isStreaming && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveRegenSection(sec);
+                                      setSectionRevisionInstruction("");
+                                    }}
+                                    className="text-[11px] text-[#004085] hover:underline font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer font-sans"
+                                  >
+                                    🔄 Refine Section
+                                  </button>
+                                )}
+                                {isDraftingNow || isSectionRegenerating ? (
+                                  <span className="text-[11px] bg-black text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm font-sans">
+                                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                    ⚡ Drafting...
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            {/* Chapter Abstract / Scope */}
+                            {sec.brief && (
+                              <p className="italic text-gray-800 text-xs border-l-2 border-gray-400 pl-3 my-2">
+                                <strong>Chapter Scope:</strong> {sec.brief}
+                              </p>
+                            )}
+
+                            {/* Paragraph Content with Tables & Citations */}
+                            {proseContent ? (
+                              <div className="text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
+                                {renderFormattedManuscriptProse(proseContent)}
+                              </div>
+                            ) : isDraftingNow || isSectionRegenerating ? (
+                              <div className="space-y-3 py-3">
+                                <div className="text-xs text-gray-600 italic font-medium">
+                                  Synthesizing chapter prose and empirical research data...
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="h-3.5 shimmer-skeleton rounded w-full" />
+                                  <div className="h-3.5 shimmer-skeleton rounded w-[92%]" />
+                                  <div className="h-3.5 shimmer-skeleton rounded w-[96%]" />
+                                  <div className="h-3.5 shimmer-skeleton rounded w-[75%]" />
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-gray-500 italic font-medium">{sec.brief}</p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-
-                  {/* Full Continuous Manuscript Prose */}
-                  <div className="space-y-8 text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
-                    {outline.sections.map((sec, idx) => {
-                      const proseContent = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[sec.title];
-                      const isDraftingNow = isStreaming && activeGeneratingSectionIndex === idx && !proseContent;
-                      const isSectionRegenerating = regeneratingSectionId === sec.id;
-
-                      return (
-                        <div key={sec.id || idx} id={`chapter-sec-${idx}`} className="space-y-4 group scroll-mt-16">
-                          {/* Word Heading 1 */}
-                          <div className="flex items-center justify-between border-b border-gray-300 pb-1.5 pt-6">
-                            <h2 className="text-[16pt] font-bold text-black font-['Times_New_Roman',_Times,_serif]">
-                              {idx + 1}. {sec.title.replace(/^\d+\.\s*/, "")}
-                            </h2>
-                            <div className="flex items-center gap-2">
-                              {proseContent && !isStreaming && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveRegenSection(sec);
-                                    setSectionRevisionInstruction("");
-                                  }}
-                                  className="text-[11px] text-[#004085] hover:underline font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer font-sans"
-                                >
-                                  🔄 Refine Section
-                                </button>
-                              )}
-                              {isDraftingNow || isSectionRegenerating ? (
-                                <span className="text-[11px] bg-black text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm font-sans">
-                                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                                  ⚡ Drafting...
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          {/* Chapter Abstract / Scope */}
-                          {sec.brief && (
-                            <p className="italic text-gray-800 text-xs border-l-2 border-gray-400 pl-3 my-2">
-                              <strong>Chapter Scope:</strong> {sec.brief}
-                            </p>
-                          )}
-
-                          {/* Paragraph Content with Tables & Citations */}
-                          {proseContent ? (
-                            <div className="text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
-                              {renderFormattedManuscriptProse(proseContent)}
-                            </div>
-                          ) : isDraftingNow || isSectionRegenerating ? (
-                            <div className="space-y-3 py-3">
-                              <div className="text-xs text-gray-600 italic font-medium">
-                                Synthesizing chapter prose and empirical research data...
-                              </div>
-                              <div className="space-y-2">
-                                <div className="h-3.5 shimmer-skeleton rounded w-full" />
-                                <div className="h-3.5 shimmer-skeleton rounded w-[92%]" />
-                                <div className="h-3.5 shimmer-skeleton rounded w-[96%]" />
-                                <div className="h-3.5 shimmer-skeleton rounded w-[75%]" />
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-xs text-gray-500 italic font-medium">{sec.brief}</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}

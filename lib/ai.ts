@@ -50,7 +50,141 @@ export function buildDynamicOutline(
   let subtitle = "";
   let sections: OutlineSection[] = [];
 
-  if (isExhaustive) {
+  if (options.format === "pptx") {
+    subtitle = `Executive 16:9 Presentation Slide Deck (${options.tone || "Executive & Direct"})`;
+    sections = [
+      {
+        id: "slide_1",
+        title: "Slide 1: Executive Title & Strategic Thesis",
+        brief: `High-impact title slide framing the strategic thesis, core scope, and market context for ${cleanTitle}.`,
+        keyPoints: [`Strategic positioning statement for ${cleanTitle}`, "Executive authorship & date metadata", "Core presentation thesis"],
+        relevantSourceIndices: [1]
+      },
+      {
+        id: "slide_2",
+        title: "Slide 2: Market Landscape & Growth Opportunity",
+        brief: `Macro ecosystem dynamics, CAGR growth trajectory, and total addressable opportunity for ${cleanTitle}.`,
+        keyPoints: ["Global market size and 5-year CAGR metrics", "Macro economic tailwinds and regulatory drivers", "Key institutional and demographic segments"],
+        relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1]
+      },
+      {
+        id: "slide_3",
+        title: "Slide 3: Core Problem Statement & Market Inefficiencies",
+        brief: `Granular analysis of existing bottlenecks, cost friction, and systemic vulnerabilities addressed by ${cleanTitle}.`,
+        keyPoints: ["Top 3 friction points in current operations", "Quantified cost of inefficiency and legacy debt", "Emerging urgency and inflection triggers"],
+        relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1]
+      },
+      {
+        id: "slide_4",
+        title: "Slide 4: Strategic Solution & Architectural Paradigm",
+        brief: `Core value proposition, architectural innovation, and operational transformation delivered by ${cleanTitle}.`,
+        keyPoints: ["Pivotal functional capabilities", "Efficiency gains and performance multipliers", "Deployment flexibility across enterprise workflows"],
+        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1]
+      },
+      {
+        id: "slide_5",
+        title: "Slide 5: Technical Infrastructure & System Workflows",
+        brief: `High-level system topology, data integration pipelines, and scalability protocols supporting ${cleanTitle}.`,
+        keyPoints: ["Core technology stack and protocol standards", "Data latency, security, and uptime SLA parameters", "API interoperability and legacy integration"],
+        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1]
+      },
+      {
+        id: "slide_6",
+        title: "Slide 6: Empirical Benchmarks & Quantitative Impact",
+        brief: `Verified data points, institutional performance metrics, and measured outcomes in ${cleanTitle}.`,
+        keyPoints: ["Statistical performance improvements", "Unit economic optimization metrics", "Comparative efficiency against historical baselines"],
+        relevantSourceIndices: srcCount >= 4 ? [3, 4] : [srcCount]
+      },
+      {
+        id: "slide_7",
+        title: "Slide 7: Business Model, Monetization & Unit Economics",
+        brief: `Revenue mechanisms, pricing architecture, margin structure, and payback periods for ${cleanTitle}.`,
+        keyPoints: ["Primary and secondary monetization streams", "Gross margins and contribution economics", "Customer lifetime value (LTV) to CAC ratio"],
+        relevantSourceIndices: srcCount >= 4 ? [2, 3, 4] : [1, 2]
+      },
+      {
+        id: "slide_8",
+        title: "Slide 8: Competitive Matrix & Defensive Moat",
+        brief: `Market positioning, comparative quadrant analysis, and sustainable competitive advantages in ${cleanTitle}.`,
+        keyPoints: ["Feature-by-feature quadrant comparison", "Defensive network effects and proprietary IP", "Switching costs and distribution advantages"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 3, 4] : [1, 2]
+      },
+      {
+        id: "slide_9",
+        title: "Slide 9: Phased Execution Roadmap & Timelines",
+        brief: `Near-term milestones, mid-term scaling phases, and long-term ecosystem expansion for ${cleanTitle}.`,
+        keyPoints: ["Phase 1 (Months 1–6): Pilot & Validation", "Phase 2 (Months 7–18): Scaling & Enterprise Rollout", "Phase 3 (Months 19–36): Ecosystem Leadership & Expansion"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
+      },
+      {
+        id: "slide_10",
+        title: "Slide 10: Risk Governance & Mitigation Strategy",
+        brief: `Systematic risk scoring, compliance standards, and contingency playbooks for ${cleanTitle}.`,
+        keyPoints: ["Regulatory, operational, and security risk vectors", "Active mitigation and redundancy safeguards", "Ongoing compliance and audit framework"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 2, 4] : [1]
+      },
+      {
+        id: "slide_11",
+        title: "Slide 11: 5-Year Financial & Impact Projections",
+        brief: `Multi-year revenue forecasts, capital deployment requirements, and milestone target matrix for ${cleanTitle}.`,
+        keyPoints: ["5-year revenue and volume growth trajectories", "Operating expenditure vs capital investment", "Target ROI and break-even milestones"],
+        relevantSourceIndices: srcCount >= 4 ? [2, 3, 4] : [1, 2]
+      },
+      {
+        id: "slide_12",
+        title: "Slide 12: Executive Summary & Call to Action",
+        brief: `Synthesized key takeaways, strategic verdict, and definitive next steps for ${cleanTitle}.`,
+        keyPoints: ["Core strategic verdict summary", "Immediate resource and partner requirements", "Contact, Q&A, and governance checkpoints"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
+      }
+    ];
+  } else if (options.format === "xlsx") {
+    subtitle = `Comprehensive Financial, Empirical & KPI Analytical Model (${options.tone || "Technical & Architectural"})`;
+    sections = [
+      {
+        id: "sheet_1",
+        title: "Sheet 1: Executive KPI Dashboard & Core Indices",
+        brief: `Master executive summary table tracking baseline volume, growth rates, performance indices, and health metrics for ${cleanTitle}.`,
+        keyPoints: ["Top 8 baseline metrics & KPI targets", "Variance percentages and status flags", "Formula calculations for index weighting"],
+        relevantSourceIndices: [1]
+      },
+      {
+        id: "sheet_2",
+        title: "Sheet 2: Historical Financials & Revenue Breakdown",
+        brief: `Granular annual/quarterly financial table tracking revenue streams, gross margins, and segment contributions for ${cleanTitle}.`,
+        keyPoints: ["Multi-year revenue distributions", "Cost of goods sold (COGS) and gross margin percentages", "Segment contribution breakdown"],
+        relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1]
+      },
+      {
+        id: "sheet_3",
+        title: "Sheet 3: Market Sizing, Segmentation & Regional CAGR",
+        brief: `Regional and demographic market sizing table with CAGR projections, market share, and addressable volume for ${cleanTitle}.`,
+        keyPoints: ["Regional TAM/SAM/SOM breakdown", "5-year forecasted CAGR percentages", "Penetration rates across market tiers"],
+        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1]
+      },
+      {
+        id: "sheet_4",
+        title: "Sheet 4: Unit Economics, OPEX & Capital Allocation",
+        brief: `Operational expenditure, cost structures, headcount modeling, and capital expenditure breakdown for ${cleanTitle}.`,
+        keyPoints: ["Direct vs indirect cost drivers", "OPEX by department (R&D, Sales, Ops)", "Capital deployment allocation matrix"],
+        relevantSourceIndices: srcCount >= 4 ? [3, 4] : [srcCount]
+      },
+      {
+        id: "sheet_5",
+        title: "Sheet 5: 5-Year Financial Forecast & Sensitivity Matrix",
+        brief: `Comprehensive 5-year pro-forma forecast model with bull/base/bear sensitivity analysis and IRR/ROI calculations for ${cleanTitle}.`,
+        keyPoints: ["Base case vs Bull case vs Bear case scenarios", "EBITDA margin projections and net present value (NPV)", "Sensitivity table across variable shifts"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
+      },
+      {
+        id: "sheet_6",
+        title: "Sheet 6: Risk Scoring & Compliance Audit Matrix",
+        brief: `Quantitative risk scoring table with probability weights, financial impact estimation, and mitigation status for ${cleanTitle}.`,
+        keyPoints: ["Risk categorization and severity scoring", "Expected monetary value (EMV) calculations", "Audit status and mitigation ownership"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 2, 4] : [1]
+      }
+    ];
+  } else if (isExhaustive) {
     subtitle = `An Exhaustive Multi-Chapter Strategic, Empirical & Methodological Treatise (${options.tone || "Academic & Analytical"})`;
     sections = [
       {
@@ -515,7 +649,54 @@ export async function generateSectionProse(
   const docType = customKeys?.docType || "Research Report";
   const format = customKeys?.format || "docx";
   const targetLength = customKeys?.targetLength || "Unlimited & Exhaustive (Comprehensive In-Depth, 30–50 Pages)";
-  const isExhaustive = format === "docx" || format === "pdf" || targetLength.toLowerCase().includes("unlimited");
+  const isPptx = format === "pptx";
+  const isXlsx = format === "xlsx";
+  const isExhaustive = (format === "docx" || format === "pdf") && (targetLength.toLowerCase().includes("unlimited") || targetLength.toLowerCase().includes("detailed"));
+
+  let formatInstruction = "";
+  if (isPptx) {
+    formatInstruction = `- POWERPOINT PRESENTATION SLIDE FORMAT:
+Write high-impact, professional executive presentation content for this specific slide.
+Format the output as follows:
+### Slide Focus: ${section.title}
+* **Core Takeaway:** Concise, punchy bullet point summarizing the primary assertion.
+* **Key Empirical Metric:** Specific quantitative datum, benchmark, or market statistic with citation [Source: Organization](URL).
+* **Strategic Capability:** Operational impact, architectural mechanism, or capability.
+* **Execution Milestone:** Actionable timeline deliverable or strategic priority.
+
+> 💡 **KEY METRIC:** [Highlight statistic, e.g. $48.5B Market Opportunity by 2028 (+32.4% CAGR)]
+
+> 🎙️ **PRESENTER NOTES:** [2-3 sentences of articulate executive talking points and speaking guidance for the presenter].`;
+  } else if (isXlsx) {
+    formatInstruction = `- EXCEL SPREADSHEET ANALYTICAL MODEL FORMAT:
+Write a rich, comprehensive structured Markdown Data Table representing this analytical worksheet with headers, rows, numerical figures, percentages, currency metrics, and formula calculation summaries.
+Format the output as follows:
+### Worksheet: ${section.title}
+**Sheet Scope & Purpose:** ${section.brief}
+
+| Index | Metric / Line Item | Baseline (2023) | Current (2024) | Target (2025) | 5-Yr Forecast (2028) | Variance (%) | Status / Audit |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| 01 | [Specific KPI / Revenue Stream] | $12.4M | $18.9M | $28.5M | $54.2M | +48.6% | Verified |
+| 02 | [Operational Variable / Cost] | $8.1M | $11.2M | $14.8M | $22.6M | +32.1% | On Target |
+...
+| -- | **Summary Total / Average** | **$45.2M** | **$68.1M** | **$104.2M** | **$198.5M** | **+52.4%** | **Formula Verified** |
+
+**Underlying Mathematical Models & Formula Logic:**
+* \`Variance (%) = (Forecast - Current) / Current\`
+* \`Weighted CAGR = (2028 Value / 2023 Value)^(1/5) - 1\`
+* Data substantiated by institutional citations: ${filteredSources.map(s => `[${s.title}](${s.url})`).join(", ")}`;
+  } else if (isExhaustive) {
+    formatInstruction = `- UNLIMITED & EXHAUSTIVE 30–50 PAGE PUBLICATION DEPTH: For Word (.docx) and PDF (.pdf) treatises, write exhaustive, multi-subsection prose (1,200 to 1,800+ words per chapter).
+- Divide the chapter into formal analytical subsections using:
+  ### A. Empirical Baseline & Theoretical Foundations
+  ### B. Structural Framework & Quantitative Synthesis
+  ### C. Case Evidence & Comparative Benchmarking
+  ### D. Institutional Governance & Strategic Policy Directives
+- Include structured Markdown Data Tables (e.g. | Key Variable | 2024 Baseline | 2026 Target | Variance (%) | Strategic Impact |) to present empirical distributions and benchmarks cleanly.
+- Do NOT truncate or brevity-cap. Fully articulate each subsection so the complete multi-chapter document naturally reaches 30 to 50 printed pages.`;
+  } else {
+    formatInstruction = `- Write 3-5 comprehensive, articulate paragraphs with structured points.`;
+  }
 
   const prompt = `Write publication-grade, rigorous prose for the following section:
 Document Title: ${docTitle}
@@ -533,21 +714,10 @@ Filtered Research Snippets for this section ONLY:
 ${JSON.stringify(filteredSources, null, 2)}
 
 Instructions:
-- Adapt the prose structure to the document type (${docType}) and tone (${tone}).
+- Adapt the prose structure strictly to the target format (${format}) and tone (${tone}).
 - ORIGINALITY & CITATIONS (Plagiarism Index < 10%): Synthesize all factual findings through independent scholarly argumentation, comparative critiques, and original domain synthesis. Never copy-paste verbatim sentences. Embed direct markdown citations like [Source: Organization/Paper](URL) after empirical statistics and claims.
 - NATURAL HUMAN SYNTAX (AI Detection Score < 6%): Avoid stereotypical AI boilerplate phrases ('delve into', 'in conclusion', 'in this fast-paced world', 'testament to', 'crucial to note', 'beacon of', 'vibrant tapestry', 'it goes without saying'). Use genuine academic human tone with varied rhythm and burstiness (mix 6–10 word assertions with complex, multi-clause analytical sentences), concrete operational metrics, and nuanced critiques.
-${
-  isExhaustive
-    ? `- UNLIMITED & EXHAUSTIVE 30–50 PAGE PUBLICATION DEPTH: For Word (.docx), PDF (.pdf), and PowerPoint (.pptx) treatises, write exhaustive, multi-subsection prose (1,200 to 1,800+ words per chapter).
-- Divide the chapter into formal analytical subsections using:
-  ### A. Empirical Baseline & Theoretical Foundations
-  ### B. Structural Framework & Quantitative Synthesis
-  ### C. Case Evidence & Comparative Benchmarking
-  ### D. Institutional Governance & Strategic Policy Directives
-- Include structured Markdown Data Tables (e.g. | Key Variable | 2024 Baseline | 2026 Target | Variance (%) | Strategic Impact |) to present empirical distributions and benchmarks cleanly.
-- Do NOT truncate or brevity-cap. Fully articulate each subsection so the complete multi-chapter document naturally reaches 30 to 50 printed pages.`
-    : `- Write 3-5 comprehensive, articulate paragraphs with structured points.`
-}
+${formatInstruction}
 - Output ONLY the section body markdown.`;
 
   // 1. Primary AI Provider: Google Gemini (@google/genai)
