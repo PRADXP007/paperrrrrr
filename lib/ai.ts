@@ -534,7 +534,6 @@ ${JSON.stringify(filteredSources, null, 2)}
 
 Instructions:
 - Adapt the prose structure to the document type (${docType}) and tone (${tone}).
-- MANDATORY 100% FACTUAL GROUNDING & REAL-WORLD INTEGRITY: All metrics, statistical distributions, CAGR estimates, historical chronologies, legal regulations, and organizational benchmarks MUST be authentic, accurate, and verifiable. Absolutely NO hallucinated data, fictional researchers, or fabricated citations. Reference recognized institutional standards (e.g. IEEE, Nature, World Bank, RBI, NIST, ISO, SEC) and empirical sources.
 - ORIGINALITY & CITATIONS (Plagiarism Index < 10%): Synthesize all factual findings through independent scholarly argumentation, comparative critiques, and original domain synthesis. Never copy-paste verbatim sentences. Embed direct markdown citations like [Source: Organization/Paper](URL) after empirical statistics and claims.
 - NATURAL HUMAN SYNTAX (AI Detection Score < 6%): Avoid stereotypical AI boilerplate phrases ('delve into', 'in conclusion', 'in this fast-paced world', 'testament to', 'crucial to note', 'beacon of', 'vibrant tapestry', 'it goes without saying'). Use genuine academic human tone with varied rhythm and burstiness (mix 6–10 word assertions with complex, multi-clause analytical sentences), concrete operational metrics, and nuanced critiques.
 ${

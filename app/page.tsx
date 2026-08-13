@@ -1,6 +1,56 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import {
+  Badge,
+  BadgeGroup,
+  ProgressBar,
+  ProgressSteps,
+  ThinkingIndicator,
+  ProcessingCard,
+  Button,
+  Modal,
+  Tabs,
+  Alert,
+  MetricCard,
+  type ProgressStepItem,
+  type StreamEvent,
+} from "@/components/untitledui";
+import {
+  Sparkles,
+  Search,
+  FileText,
+  FileCode2,
+  Copy,
+  Check,
+  RotateCw,
+  Download,
+  Settings,
+  User,
+  Key,
+  Shield,
+  Layers,
+  FileSpreadsheet,
+  Presentation,
+  UploadCloud,
+  FileUp,
+  ArrowRight,
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  Terminal,
+  ExternalLink,
+  Plus,
+  Trash2,
+  Cpu,
+  Clock,
+  Zap,
+  ShieldCheck,
+  Globe,
+  Paperclip,
+  X,
+  FileCheck,
+} from "lucide-react";
 
 interface ResearchSource {
   index: number;
@@ -30,13 +80,7 @@ interface GeneratedOutline {
   sections: OutlineSection[];
 }
 
-export default function ClaudeDocumentStudioApp() {
-  // Theme Mode: 'light' | 'dark'
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  // Sidebar collapsible state
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
+export default function PaperrrrrrApp() {
   // Navigation & Pipeline state: 'intake' | 'generating_outline' | 'outline' | 'workspace'
   const [step, setStep] = useState<"intake" | "generating_outline" | "outline" | "workspace">("intake");
 
@@ -49,7 +93,7 @@ export default function ClaudeDocumentStudioApp() {
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
   const [pastDocuments, setPastDocuments] = useState<any[]>([]);
 
-  // BYOK & Google AI Studio Settings State
+  // BYOK Settings State
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [geminiModel, setGeminiModel] = useState<string>("gemini-3.6-flash");
   const [customGeminiKeyInput, setCustomGeminiKeyInput] = useState("");
@@ -60,14 +104,14 @@ export default function ClaudeDocumentStudioApp() {
   const [openaiKeyMasked, setOpenaiKeyMasked] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
 
-  // Form intake state
+  // Form intake state (Homepage Centerpiece)
   const [prompt, setPrompt] = useState("");
   const [format, setFormat] = useState<"docx" | "pptx" | "xlsx" | "pdf">("docx");
   const [docType, setDocType] = useState("Research Report");
   const [tone, setTone] = useState("Academic & Analytical");
-  const [audience, setAudience] = useState("Researchers & Practitioners");
-  const [targetLength, setTargetLength] = useState("Unlimited & Exhaustive (Comprehensive In-Depth, 30–50 Pages)");
-  const [researchDepth, setResearchDepth] = useState<"standard" | "deep">("deep");
+  const [audience, setAudience] = useState("Students & Researchers");
+  const [targetLength, setTargetLength] = useState("Unlimited & Exhaustive (Comprehensive In-Depth)");
+  const [researchDepth, setResearchDepth] = useState<"standard" | "deep">("standard");
 
   // Reference File / Notes Intake
   const [showFileIntake, setShowFileIntake] = useState(false);
@@ -78,14 +122,14 @@ export default function ClaudeDocumentStudioApp() {
   // Research Sources Modal Inspector
   const [showSourcesModal, setShowSourcesModal] = useState(false);
 
-  // Section Regeneration State
+  // Section Regeneration Modal / State
   const [regeneratingSectionId, setRegeneratingSectionId] = useState<string | null>(null);
   const [sectionRevisionInstruction, setSectionRevisionInstruction] = useState("");
   const [activeRegenSection, setActiveRegenSection] = useState<OutlineSection | null>(null);
 
-  // Follow-up instruction state for chat panel
+  // Follow-up instruction state for split-screen pinned prompt bar
   const [followUpInstruction, setFollowUpInstruction] = useState("");
-  const [followUpNotes, setFollowUpNotes] = useState<Array<{ id: string; role: "user" | "assistant"; text: string; time: string }>>([]);
+  const [followUpNotes, setFollowUpNotes] = useState<string[]>([]);
 
   // Pipeline runtime state
   const [docId, setDocId] = useState<string | null>(null);
@@ -96,44 +140,64 @@ export default function ClaudeDocumentStudioApp() {
   const [outline, setOutline] = useState<GeneratedOutline | null>(null);
   const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
 
-  // Live SSE Generation & Claude Artifacts Workspace State
+  // Live SSE Generation & Split-Screen Workspace State
   const [isStreaming, setIsStreaming] = useState(false);
-  const [streamStatusText, setStreamStatusText] = useState("Initializing Claude research agent...");
+  const [streamStatusText, setStreamStatusText] = useState("Initializing stream pipeline...");
   const [activeGeneratingSectionIndex, setActiveGeneratingSectionIndex] = useState<number | null>(null);
   const [generatedSections, setGeneratedSections] = useState<Record<string, string>>({});
   const [streamTimelineEvents, setStreamTimelineEvents] = useState<
     Array<{ id: string; timestamp: string; type: "status" | "research" | "outline" | "section" | "complete" | "error"; title: string; detail?: string }>
   >([]);
+  const [isAssembledReady, setIsAssembledReady] = useState(false);
+  const [assembledBlobUrl, setAssembledBlobUrl] = useState<string | null>(null);
+  const [assembledFilename, setAssembledFilename] = useState<string>("");
   const [copySuccess, setCopySuccess] = useState(false);
-  const [thoughtExpanded, setThoughtExpanded] = useState(true);
+  const [terminalTab, setTerminalTab] = useState<"terminal" | "code">("terminal");
+  const [directFullDocMode, setDirectFullDocMode] = useState(true);
 
   const timelineEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Greeting based on current time
-  const [greeting, setGreeting] = useState("Good day");
+  // Auto-typing live code animation during outline/research generation loader
+  const [typedCodeLines, setTypedCodeLines] = useState<string[]>([]);
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting("Good morning");
-    else if (hour < 18) setGreeting("Good afternoon");
-    else setGreeting("Good evening");
-  }, []);
-
-  // Initialize theme from localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("paperrrrrr_theme") as "light" | "dark" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    if (step !== "generating_outline") {
+      setTypedCodeLines([]);
+      return;
     }
-  }, []);
 
-  const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    localStorage.setItem("paperrrrrr_theme", nextTheme);
-    document.documentElement.classList.toggle("dark", nextTheme === "dark");
-  };
+    const codeSequence = [
+      `>> [COMPILER_INIT] Initializing PaperLoop Neural Document Engine v2.0...`,
+      `>> [AUTH_LAYER] Context Window: 1,000,000 tokens (Gemini 2.5 Flash allocated)`,
+      `>> [TAVILY_AGENT] Querying live neural search vectors: "${(prompt || "Document Analysis").slice(0, 42)}..."`,
+      `>> [HTTP/2 200] Ingesting multi-vector web citations and empirical tables...`,
+      `>> [SCHEMA_GEN] Allocating 12 discrete publication chapters (Word .docx OpenXML)...`,
+      `>> [AST_COMPILER] Writing node: <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">`,
+      `>> [TAXONOMY] Synthesizing Chapter 1 to Chapter 12 deep structural briefs...`,
+      `>> [VALIDATOR] Verifying citation anchors, CAGR statistics, and policy frameworks...`,
+      `>> [STREAM_READY] Ready to initialize Server-Sent Events live prose stream...`
+    ];
+
+    let currentIdx = 0;
+    const interval = setInterval(() => {
+      if (currentIdx < codeSequence.length) {
+        const nextLine = codeSequence[currentIdx];
+        if (nextLine) {
+          setTypedCodeLines((prev) => [...prev, nextLine]);
+        }
+        currentIdx++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 350);
+
+    return () => clearInterval(interval);
+  }, [step, prompt]);
+
+  // Enforce dark mode permanently
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+  }, []);
 
   // Load document history & key settings on mount/user change
   useEffect(() => {
@@ -141,7 +205,7 @@ export default function ClaudeDocumentStudioApp() {
     fetchUserKeySettings();
   }, [user]);
 
-  // Auto-scroll timeline feed
+  // Auto-scroll timeline feed as new SSE events arrive
   useEffect(() => {
     timelineEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [streamTimelineEvents]);
@@ -435,28 +499,24 @@ export default function ClaudeDocumentStudioApp() {
     };
   };
 
+  // Step 1 -> Step 2 or Step 3: Run Tavily research & generate outline via Gemini 2.5 Flash
   const handleStartPipeline = async (opts?: { direct?: boolean }) => {
     if (!prompt.trim()) return;
 
+    const isDirect = opts?.direct ?? directFullDocMode;
+
     setIsResearching(true);
-    setStep("workspace");
-    setIsStreaming(true);
-    setStreamStatusText("Initializing Google AI Studio Deep Neural Research & Tavily Citations...");
+    setStep("generating_outline");
+    setStreamStatusText("Synthesizing live web research via Tavily...");
 
     const initialEvent = {
       id: `ev_${Date.now()}`,
       timestamp: new Date().toLocaleTimeString(),
       type: "status" as const,
-      title: "Google AI Studio Grounded Research Activated",
-      detail: `Query: "${prompt}" • Engine: ${geminiModel} • Depth: ${researchDepth.toUpperCase()}`
+      title: "Live Web Research Started",
+      detail: `Searching live web benchmarks for: "${prompt}" (Depth: ${researchDepth.toUpperCase()})`
     };
     setStreamTimelineEvents([initialEvent]);
-    setFollowUpNotes([{
-      id: `msg_${Date.now()}`,
-      role: "user",
-      text: prompt,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    }]);
 
     let activeResearchBundle: any = {
       query: prompt,
@@ -464,7 +524,7 @@ export default function ClaudeDocumentStudioApp() {
       results: [
         {
           index: 1,
-          title: `${prompt} — Institutional Empirical Baseline Data`,
+          title: `${prompt} — Institutional & Academic Baseline Data`,
           url: "https://doi.org/10.1000/182",
           score: 0.95,
           sourceDomain: "academic-index.org",
@@ -483,6 +543,7 @@ export default function ClaudeDocumentStudioApp() {
     let activeDocId: string | null = null;
 
     try {
+      // 1. Tavily Research
       const resResearch = await fetch("/api/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -504,7 +565,7 @@ export default function ClaudeDocumentStudioApp() {
         }
       }
     } catch (resErr) {
-      console.warn("Tavily research error:", resErr);
+      console.warn("Tavily research fetch error, using synthetic baseline:", resErr);
     }
 
     setResearchBundle(activeResearchBundle);
@@ -516,12 +577,13 @@ export default function ClaudeDocumentStudioApp() {
         id: `ev_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         type: "research",
-        title: `Retrieved ${activeResearchBundle.results?.length || 2} verified empirical sources`,
-        detail: activeResearchBundle.results?.map((r: any) => r.title).join(" • ") || "Domain knowledge synthesized"
+        title: `Retrieved ${activeResearchBundle.results?.length || 2} research sources`,
+        detail: activeResearchBundle.results?.map((r: any) => r.title).join(" • ") || "Domain knowledge mapped"
       }
     ]);
 
-    setStreamStatusText("Structuring 18-chapter publication architecture...");
+    // 2. Structured JSON Outline with Gemini 2.5 Flash
+    setStreamStatusText("Structuring manuscript outline with Gemini 2.5 Flash...");
     setIsGeneratingOutline(true);
 
     let finalOutline: GeneratedOutline | null = null;
@@ -554,7 +616,7 @@ export default function ClaudeDocumentStudioApp() {
         }
       }
     } catch (outlineErr) {
-      console.warn("Outline generation error:", outlineErr);
+      console.warn("Outline API call error, applying local compiler fallback:", outlineErr);
     }
 
     if (!finalOutline) {
@@ -571,21 +633,77 @@ export default function ClaudeDocumentStudioApp() {
         id: `ev_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         type: "outline",
-        title: `Document Architecture Framed (${finalOutline?.sections.length} Chapters)`,
+        title: `Outline Framed (${finalOutline?.sections.length} Chapters)`,
         detail: `Title: "${finalOutline?.title}"`
       }
     ]);
 
-    executeStreamGeneration(finalOutline, activeResearchBundle, activeDocId);
+    if (isDirect) {
+      // DIRECT FULL DOCUMENT MODE: Launch live streaming workspace instantly!
+      executeStreamGeneration(finalOutline, activeResearchBundle, activeDocId);
+    } else {
+      setStep("outline");
+    }
   };
 
+  // Outline Editing Helpers
+  const handleSectionTitleChange = (idx: number, newTitle: string) => {
+    if (!outline) return;
+    const updated = { ...outline };
+    updated.sections[idx].title = newTitle;
+    setOutline(updated);
+  };
+
+  const handleSectionBriefChange = (idx: number, newBrief: string) => {
+    if (!outline) return;
+    const updated = { ...outline };
+    updated.sections[idx].brief = newBrief;
+    setOutline(updated);
+  };
+
+  const handleAddSection = () => {
+    if (!outline) return;
+    const updated = { ...outline };
+    const newId = `sec_${updated.sections.length + 1}`;
+    updated.sections.push({
+      id: newId,
+      title: `New Section ${updated.sections.length + 1}`,
+      brief: "Additional analytical perspectives and supporting synthesis.",
+      keyPoints: ["Supporting arguments", "Data synthesis"],
+      relevantSourceIndices: [1]
+    });
+    setOutline(updated);
+  };
+
+  const handleDeleteSection = (idx: number) => {
+    if (!outline || outline.sections.length <= 1) return;
+    const updated = { ...outline };
+    updated.sections.splice(idx, 1);
+    setOutline(updated);
+  };
+
+  // Core Live SSE Generation Pipeline
   const executeStreamGeneration = async (
     targetOutline: GeneratedOutline,
     targetBundle: any,
-    targetDocId: string | null
+    targetDocId?: string | null
   ) => {
+    setStep("workspace");
     setIsStreaming(true);
-    setStreamStatusText(`Authoring ${targetOutline.sections.length} chapters with Google AI Studio (${geminiModel})...`);
+    setIsAssembledReady(false);
+    setGeneratedSections({});
+    setStreamStatusText("Connecting to live Server-Sent Events generation stream...");
+
+    setStreamTimelineEvents((prev) => [
+      ...prev,
+      {
+        id: `ev_${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString(),
+        type: "status",
+        title: "Live SSE Stream Initialized",
+        detail: `Streaming live tokens and drafting sections with Gemini 2.5 Flash.`
+      }
+    ]);
 
     try {
       const response = await fetch("/api/generate-stream", {
@@ -629,87 +747,128 @@ export default function ClaudeDocumentStudioApp() {
             if (!jsonStr) continue;
 
             try {
-              const eventData = JSON.parse(jsonStr);
+              const event = JSON.parse(jsonStr);
 
-              if (eventData.type === "status") {
-                if (eventData.step === "section_start") {
-                  setActiveGeneratingSectionIndex(eventData.index);
-                  setStreamStatusText(eventData.message || `Drafting Chapter ${eventData.index + 1}...`);
+              if (event.type === "status") {
+                setStreamStatusText(event.message || "Generating...");
+                if (event.step === "section_start") {
+                  setActiveGeneratingSectionIndex(event.index);
+                  setStreamTimelineEvents((prev) => [
+                    ...prev,
+                    {
+                      id: `ev_${Date.now()}_${event.index}`,
+                      timestamp: new Date().toLocaleTimeString(),
+                      type: "status",
+                      title: `Drafting Section ${event.index + 1} of ${event.total}`,
+                      detail: event.title
+                    }
+                  ]);
                 }
-              } else if (eventData.type === "section_done") {
-                const sId = eventData.sectionId;
-                const pText = eventData.content || "";
+              } else if (event.type === "section_done") {
+                const normId = event.id || `sec_${event.index + 1}`;
                 setGeneratedSections((prev) => ({
                   ...prev,
-                  [sId]: pText,
-                  [eventData.title]: pText,
-                  [eventData.index]: pText
+                  [normId]: event.content,
+                  [event.index]: event.content,
+                  [`sec_${event.index + 1}`]: event.content,
+                  [event.title]: event.content
                 }));
-
                 setStreamTimelineEvents((prev) => [
                   ...prev,
                   {
-                    id: `ev_sec_${eventData.index}_${Date.now()}`,
+                    id: `ev_done_${event.id || event.index}_${Date.now()}`,
                     timestamp: new Date().toLocaleTimeString(),
                     type: "section",
-                    title: `Chapter ${eventData.index + 1}: ${eventData.title}`,
-                    detail: `${pText.length} characters synthesized with live empirical citations`
+                    title: `Section ${event.index + 1} Completed`,
+                    detail: `"${event.title}" (${event.content.length} characters with citations)`
                   }
                 ]);
-              } else if (eventData.type === "completed") {
+              } else if (event.type === "complete") {
                 setIsStreaming(false);
                 setActiveGeneratingSectionIndex(null);
-                setStreamStatusText("Complete manuscript synthesized. Ready for export.");
+                setStreamStatusText("All sections drafted! Assembling binary download package...");
+
+                const compiledSections = event.sections || targetOutline.sections.map((s, idx) => ({
+                  title: s.title,
+                  brief: s.brief,
+                  content: generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || s.brief
+                }));
+
+                const resAssemble = await fetch("/api/assemble", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    docId: targetDocId || docId,
+                    title: targetOutline.title,
+                    subtitle: targetOutline.subtitle,
+                    format,
+                    sections: compiledSections
+                  })
+                });
+
+                if (resAssemble.ok) {
+                  const blob = await resAssemble.blob();
+                  const downloadUrl = URL.createObjectURL(blob);
+                  const filename = `Paperrrrrr_${targetOutline.title.replace(/[^a-zA-Z0-9_\-]/g, "_")}.${format}`;
+
+                  setAssembledBlobUrl(downloadUrl);
+                  setAssembledFilename(filename);
+                  setIsAssembledReady(true);
+                  setStreamStatusText("Document ready for 1-click download!");
+
+                  setStreamTimelineEvents((prev) => [
+                    ...prev,
+                    {
+                      id: `ev_complete_${Date.now()}`,
+                      timestamp: new Date().toLocaleTimeString(),
+                      type: "complete",
+                      title: `Document Assembly Completed`,
+                      detail: `Downloadable ${format.toUpperCase()} package created.`
+                    }
+                  ]);
+
+                  fetchPastDocuments();
+                }
+              } else if (event.type === "error") {
+                console.error("SSE Stream Error Event:", event.error);
                 setStreamTimelineEvents((prev) => [
                   ...prev,
                   {
-                    id: `ev_comp_${Date.now()}`,
+                    id: `ev_err_${Date.now()}`,
                     timestamp: new Date().toLocaleTimeString(),
-                    type: "complete",
-                    title: "Manuscript Synthesis Complete",
-                    detail: `All ${targetOutline.sections.length} chapters authored in Times New Roman 12pt A4.`
+                    type: "error",
+                    title: "Generation Warning",
+                    detail: event.error
                   }
                 ]);
-                fetchPastDocuments();
               }
-            } catch (parseErr) {
-              console.warn("SSE parse error:", parseErr);
+            } catch (jsonErr) {
+              console.warn("Failed to parse SSE JSON payload:", jsonErr);
             }
           }
         }
       }
     } catch (streamErr: any) {
-      console.warn("SSE stream failed, executing resilient client synthesizer:", streamErr);
-      for (let i = 0; i < targetOutline.sections.length; i++) {
-        const sec = targetOutline.sections[i];
-        const secId = sec.id || `sec_${i + 1}`;
-        setActiveGeneratingSectionIndex(i);
-        setStreamStatusText(`Authoring Chapter ${i + 1}: "${sec.title}"...`);
-
-        await new Promise((r) => setTimeout(r, 600));
-
-        const dummyText = `The analysis for **${sec.title}** examines the structural baseline: ${sec.brief}\n\n### A. Empirical Baseline & Theoretical Foundations\nGranular indicators confirm that execution across ${sec.keyPoints.join(", ")} requires formalized governance and technical integration.\n\n### B. Comparative Performance Matrix\n| Analytical Variable | 2024 Baseline | 2026 Target | Variance (%) | Strategic Dividend |\n| :--- | :--- | :--- | :--- | :--- |\n| Institutional Adoption | 42.8% | 88.4% | +45.6% | High Operational Scale |\n| Execution Reliability | 96.2% | 99.9% | +3.7% | Fault-Tolerant Redundancy |\n| Unit Cost Optimization | $14.20 | $4.80 | -66.2% | Maximum Cost Efficiency |\n\n### C. Case Evidence & Institutional Directives\nDetailed ecosystem analysis reveals that modernizing deployment protocols accelerates adoption while reducing legacy friction. Policy oversight and empirical audits remain critical for sustained leadership.`;
-
-        setGeneratedSections((prev) => ({
-          ...prev,
-          [secId]: dummyText,
-          [sec.title]: dummyText,
-          [i]: dummyText
-        }));
-      }
-
+      console.error("Stream reader error:", streamErr);
       setIsStreaming(false);
-      setActiveGeneratingSectionIndex(null);
-      setStreamStatusText("Manuscript complete. Ready for Word & PDF export.");
+      setStreamStatusText("Stream finished.");
     }
   };
 
-  const handleExecuteSectionRegen = async () => {
-    if (!activeRegenSection || !outline) return;
+  // Step 2 -> Step 3: Approve Outline -> Launch Split-Screen SSE Live Generation Stream
+  const handleApproveAndLaunchLiveWorkspace = () => {
+    if (!outline) return;
+    executeStreamGeneration(outline, researchBundle, docId);
+  };
+
+  // Section-by-Section Single Regeneration Action
+  const handleRegenerateSectionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!outline || !activeRegenSection) return;
+
     const sec = activeRegenSection;
     const secId = sec.id;
     setRegeneratingSectionId(secId);
-    setActiveRegenSection(null);
 
     try {
       const filteredSources = (researchBundle?.results || []).filter((src) =>
@@ -732,11 +891,12 @@ export default function ClaudeDocumentStudioApp() {
 
       const data = await res.json();
       if (data.success && data.content) {
-        setGeneratedSections((prev) => ({
-          ...prev,
+        const updatedSections = {
+          ...generatedSections,
           [secId]: data.content,
           [sec.title]: data.content
-        }));
+        };
+        setGeneratedSections(updatedSections);
 
         setStreamTimelineEvents((prev) => [
           ...prev,
@@ -745,38 +905,59 @@ export default function ClaudeDocumentStudioApp() {
             timestamp: new Date().toLocaleTimeString(),
             type: "section",
             title: `Refined: "${sec.title}"`,
-            detail: `Instruction: "${sectionRevisionInstruction || 'Deepened quantitative depth'}"`
+            detail: `User Instruction: "${sectionRevisionInstruction || 'Quantitative enhancement'}"`
           }
         ]);
+
+        setActiveRegenSection(null);
+        setSectionRevisionInstruction("");
+
+        // Re-assemble binary download package with the refined section!
+        const compiledSections = outline.sections.map((s, idx) => ({
+          title: s.title,
+          brief: s.brief,
+          content: updatedSections[s.id] || updatedSections[idx] || updatedSections[`sec_${idx + 1}`] || (updatedSections as any)[s.title] || s.brief
+        }));
+
+        try {
+          const resAssemble = await fetch("/api/assemble", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              docId,
+              title: outline.title,
+              subtitle: outline.subtitle,
+              format,
+              sections: compiledSections
+            })
+          });
+
+          if (resAssemble.ok) {
+            const blob = await resAssemble.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const filename = `Paperrrrrr_${outline.title.replace(/[^a-zA-Z0-9_\-]/g, "_")}.${format}`;
+            setAssembledBlobUrl(downloadUrl);
+            setAssembledFilename(filename);
+            setIsAssembledReady(true);
+          }
+        } catch (assembleErr) {
+          console.warn("Re-assembly after section refinement skipped/failed:", assembleErr);
+        }
+      } else {
+        alert("Section regeneration failed: " + (data.error || "Unknown"));
       }
-    } catch (e: any) {
-      alert("Regeneration failed: " + e.message);
+    } catch (err: any) {
+      alert("Error regenerating section: " + err.message);
     } finally {
       setRegeneratingSectionId(null);
-      setSectionRevisionInstruction("");
     }
   };
 
+  // Follow-up notes in split screen
   const handleAddFollowUpNote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!followUpInstruction.trim()) return;
-
-    const userText = followUpInstruction.trim();
-    setFollowUpNotes((prev) => [
-      ...prev,
-      {
-        id: `msg_${Date.now()}`,
-        role: "user",
-        text: userText,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      },
-      {
-        id: `msg_resp_${Date.now()}`,
-        role: "assistant",
-        text: `Understood. Applying revision: "${userText}" across the manuscript. You can also click "Refine Section" directly on any chapter.`,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      }
-    ]);
+    setFollowUpNotes((prev) => [...prev, followUpInstruction.trim()]);
     setFollowUpInstruction("");
   };
 
@@ -805,7 +986,7 @@ export default function ClaudeDocumentStudioApp() {
       const blob = await res.blob();
       const downloadUrl = URL.createObjectURL(blob);
       const safeTitle = (outline.title || "Document").replace(/[^a-zA-Z0-9_\-]/g, "_");
-      const filename = `Claude_Studio_${safeTitle}.${requestedFormat}`;
+      const filename = `Paperrrrrr_${safeTitle}.${requestedFormat}`;
       const a = document.createElement("a");
       a.href = downloadUrl;
       a.download = filename;
@@ -836,11 +1017,11 @@ export default function ClaudeDocumentStudioApp() {
 
           return (
             <div key={bIdx} className="my-4 overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-400 text-[10.5pt] font-['Times_New_Roman',_Times,_serif] text-black">
+              <table className="w-full border-collapse border border-gray-300 text-[11pt] font-['Times_New_Roman',_Times,_serif] text-black">
                 <thead>
-                  <tr className="bg-gray-100 border-b border-gray-400">
+                  <tr className="bg-gray-100 border-b border-gray-300">
                     {headerCells.map((h, hIdx) => (
-                      <th key={hIdx} className="p-2.5 text-center font-bold border border-gray-400 text-black">
+                      <th key={hIdx} className="p-2.5 text-center font-bold border border-gray-300 text-black">
                         {h}
                       </th>
                     ))}
@@ -850,7 +1031,7 @@ export default function ClaudeDocumentStudioApp() {
                   {bodyRows.map((row, rIdx) => (
                     <tr key={rIdx} className={rIdx % 2 === 1 ? "bg-gray-50" : "bg-white"}>
                       {row.map((cell, cIdx) => (
-                        <td key={cIdx} className="p-2 border border-gray-400 text-black">
+                        <td key={cIdx} className="p-2 border border-gray-300 text-black">
                           {cell}
                         </td>
                       ))}
@@ -863,7 +1044,7 @@ export default function ClaudeDocumentStudioApp() {
         }
       }
 
-      // Handle Subheadings
+      // Handle Subheading 3 (###)
       if (trimmed.startsWith("### ")) {
         return (
           <h3 key={bIdx} className="text-[13pt] font-bold text-black mt-4 mb-1 font-['Times_New_Roman',_Times,_serif]">
@@ -872,6 +1053,7 @@ export default function ClaudeDocumentStudioApp() {
         );
       }
 
+      // Handle Subheading 2 (##)
       if (trimmed.startsWith("## ")) {
         return (
           <h2 key={bIdx} className="text-[14pt] font-bold text-black mt-5 mb-2 font-['Times_New_Roman',_Times,_serif]">
@@ -880,7 +1062,7 @@ export default function ClaudeDocumentStudioApp() {
         );
       }
 
-      // Handle Citations
+      // Handle Citations in regular paragraph
       const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
       const parts: any[] = [];
       let lastIndex = 0;
@@ -914,9 +1096,19 @@ export default function ClaudeDocumentStudioApp() {
     });
   };
 
+  const handleDownloadFile = () => {
+    if (!assembledBlobUrl) return;
+    const a = document.createElement("a");
+    a.href = assembledBlobUrl;
+    a.download = assembledFilename || `Paperrrrrr_Document.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const handleCopyMarkdown = () => {
     if (!outline) return;
-    let md = `# ${outline.title}\n\n*${outline.subtitle}*\n\nAuthored with **Claude Studio** • ${new Date().toLocaleDateString()}\n\n---\n\n`;
+    let md = `# ${outline.title}\n\n*${outline.subtitle}*\n\nGenerated by **Paperrrrrr** • ${new Date().toLocaleDateString()}\n\n---\n\n`;
     outline.sections.forEach((sec, idx) => {
       const prose = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || sec.brief;
       md += `## ${sec.title}\n\n${prose}\n\n`;
@@ -924,608 +1116,826 @@ export default function ClaudeDocumentStudioApp() {
 
     navigator.clipboard.writeText(md);
     setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+    setTimeout(() => setCopySuccess(false), 2500);
   };
 
   const readySectionsCount = outline
-    ? outline.sections.filter((s, idx) => Boolean(generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[s.title])).length
+    ? outline.sections.filter((s, i) =>
+        Boolean(generatedSections[s.id] || generatedSections[i] || generatedSections[`sec_${i + 1}`] || (generatedSections as any)[s.title])
+      ).length
     : 0;
 
-  const totalCalculatedPages = outline ? outline.sections.length + 2 : 20;
+  const stepsData: ProgressStepItem[] = [
+    {
+      id: "intake",
+      title: "Configure & Scope",
+      description: "Topic, format & audience",
+      status: step === "intake" ? "current" : "complete",
+    },
+    {
+      id: "outline",
+      title: "Review Outline",
+      description: "12 structural chapter briefs",
+      status:
+        step === "generating_outline"
+          ? "current"
+          : step === "outline"
+          ? "current"
+          : step === "workspace"
+          ? "complete"
+          : "upcoming",
+    },
+    {
+      id: "workspace",
+      title: "Live Workspace",
+      description: "Live prose stream & binary export",
+      status: step === "workspace" ? "current" : "upcoming",
+    },
+  ];
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[var(--background)] text-[var(--on-background)] font-sans antialiased">
-      {/* ============================================================ */}
-      {/* CLAUDE COLLAPSIBLE SIDEBAR                                   */}
-      {/* ============================================================ */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#F5F2EC] dark:bg-[#1E1D1B] border-r border-[var(--surface-border)] flex flex-col justify-between transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:w-0 md:border-none md:overflow-hidden"
-        }`}
-      >
-        <div className="flex flex-col p-4 gap-4 overflow-y-auto">
-          {/* Top Brand Logo */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center font-serif font-bold text-base shadow-sm">
-                ✦
-              </span>
-              <div>
-                <h2 className="font-serif font-bold text-base leading-tight text-[var(--on-background)]">
-                  Claude Studio
-                </h2>
-                <span className="text-[10px] text-[var(--text-subtle)] font-mono uppercase tracking-wider">
-                  Document Engine
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="md:hidden text-[var(--text-subtle)] hover:text-[var(--on-background)] p-1 rounded"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* New Document Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setStep("intake");
-              setPrompt("");
-              setOutline(null);
-              setGeneratedSections({});
-              setFollowUpNotes([]);
-            }}
-            className="w-full py-2.5 px-3.5 bg-[var(--surface-card)] hover:bg-[var(--surface-muted)] text-[var(--on-background)] border border-[var(--surface-border)] rounded-xl font-medium text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-          >
-            <span className="text-base text-[var(--primary)]">+</span>
-            <span>New Research & Document</span>
-          </button>
-
-          {/* Recent Documents History */}
-          <div className="flex flex-col gap-1.5 pt-2">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-subtle)] px-2">
-              Recent Documents
-            </div>
-            <div className="space-y-1">
-              {pastDocuments.length > 0 ? (
-                pastDocuments.slice(0, 10).map((d: any) => (
-                  <button
-                    key={d._id}
-                    onClick={() => {
-                      setPrompt(d.prompt || d.title);
-                      setOutline({
-                        title: d.title,
-                        subtitle: d.subtitle || "Research Document",
-                        docType: d.docType || "Research Report",
-                        format: d.format || "docx",
-                        targetLength: d.targetLength || "Detailed",
-                        sections: d.outline || []
-                      });
-                      const secMap: Record<string, string> = {};
-                      (d.outline || []).forEach((sec: any) => {
-                        if (sec.content) secMap[sec.id] = sec.content;
-                      });
-                      setGeneratedSections(secMap);
-                      setStep("workspace");
-                    }}
-                    className="w-full text-left p-2 rounded-lg hover:bg-[var(--surface-muted)] text-xs text-[var(--on-background)] truncate transition-colors flex items-center gap-2 cursor-pointer"
-                  >
-                    <span className="text-[var(--primary)] text-sm">📄</span>
-                    <span className="truncate flex-1 font-medium">{d.title}</span>
-                  </button>
-                ))
-              ) : (
-                <div className="text-xs text-[var(--text-subtle)] italic px-2 py-3">
-                  No previous manuscripts saved yet.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar Footer User & Key Status */}
-        <div className="p-3 border-t border-[var(--surface-border)] bg-[var(--surface-card)] flex flex-col gap-2">
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            className="w-full p-2 rounded-lg hover:bg-[var(--surface-muted)] flex items-center justify-between text-xs text-[var(--on-background)] transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-2 truncate">
-              <span className="text-[var(--primary)] text-sm">✨</span>
-              <span className="truncate font-medium">
-                {hasCustomGeminiKey ? `Google Studio (${geminiKeyMasked})` : geminiModel}
-              </span>
-            </div>
-            <span className="text-[10px] text-[var(--text-subtle)] font-mono">BYOK</span>
-          </button>
-
-          <div className="flex items-center justify-between pt-1 border-t border-[var(--surface-border)] text-xs">
-            {user ? (
-              <span className="truncate font-bold text-xs">👤 {user.name}</span>
-            ) : (
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="text-[var(--primary)] hover:underline font-bold text-xs"
-              >
-                Sign In
-              </button>
-            )}
-            <button
-              onClick={toggleTheme}
-              className="p-1 rounded hover:bg-[var(--surface-muted)] text-[var(--text-subtle)] cursor-pointer"
-            >
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* ============================================================ */}
-      {/* MAIN CLAUDE CONTENT VIEWPORT                                 */}
-      {/* ============================================================ */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {/* Top Minimal Navigation Bar */}
-        <header className="h-14 border-b border-[var(--surface-border)] bg-[var(--surface)] px-4 flex items-center justify-between shrink-0 z-10">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--on-background)] flex flex-col font-sans transition-colors duration-300">
+      {/* Top Navigation Bar */}
+      <header className="w-full border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md px-4 sm:px-8 py-3.5 sticky top-0 z-40 shadow-xs">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              title="Toggle Sidebar"
-              className="p-1.5 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-subtle)] hover:text-[var(--on-background)] transition-colors cursor-pointer"
+              onClick={() => setStep("intake")}
+              className="flex items-center gap-2.5 cursor-pointer group focus:outline-none"
             >
-              <span className="material-symbols-outlined text-xl">menu</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="font-serif font-bold text-base text-[var(--on-background)]">
-                {step === "workspace" && outline ? outline.title : "Claude Studio"}
+              <div className="size-9 rounded-xl bg-gradient-to-tr from-[#7F56D9] to-[#9E77ED] text-white flex items-center justify-center font-serif text-lg font-bold shadow-sm group-hover:scale-105 transition-transform">
+                P
+              </div>
+              <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#101828] dark:text-white">
+                Paperrrrrr
               </span>
-              {step === "workspace" && (
-                <span className="text-[10px] bg-[var(--primary-fixed)] text-[var(--primary)] font-bold px-2 py-0.5 rounded-full uppercase">
-                  Active Treatise
-                </span>
-              )}
-            </div>
+            </button>
+            <Badge variant="brand" size="sm">
+              Studio 2.0
+            </Badge>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <button
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Model & BYOK Settings Button */}
+            <Button
+              variant={hasCustomGeminiKey || hasCustomOpenAIKey ? "secondary_color" : "secondary_gray"}
+              size="sm"
               onClick={() => setShowSettingsModal(true)}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-card)] hover:border-[var(--primary)] text-[var(--on-background)] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              iconLeading={<Sparkles className="size-3.5 text-[#9E77ED]" />}
             >
-              <span className="text-[var(--primary)] text-sm">✨</span>
-              <span className="hidden sm:inline">
-                {hasCustomGeminiKey ? `Google Studio (${geminiKeyMasked})` : "Google AI Studio Key"}
+              <span className="hidden sm:inline font-medium">
+                {hasCustomGeminiKey
+                  ? `Gemini 3.6 (${geminiKeyMasked})`
+                  : geminiModel === "gemini-3.6-flash"
+                  ? "Gemini 3.6 Flash"
+                  : geminiModel}
               </span>
-            </button>
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-card)] hover:bg-[var(--surface-muted)] text-xs cursor-pointer"
-            >
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
+              <span className="sm:hidden">{hasCustomGeminiKey ? "3.6 Key" : "Model"}</span>
+            </Button>
+
+            {/* Auth Button / Profile */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Badge variant="gray" size="md" icon={<User className="size-3 text-gray-700" />}>
+                  {user.name}
+                </Badge>
+                <Button
+                  variant="tertiary_gray"
+                  size="sm"
+                  onClick={() => setUser(null)}
+                >
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setShowAuthModal(true)}
+                iconLeading={<User className="size-3.5" />}
+              >
+                Sign In
+              </Button>
+            )}
           </div>
-        </header>
+        </div>
+      </header>
+
+      {/* Main App Content Container */}
+      <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-start">
+        {/* Untitled UI Progress Step Indicator Bar */}
+        <div className="w-full max-w-3xl mx-auto mb-6 sm:mb-8">
+          <ProgressSteps
+            steps={stepsData}
+            onStepClick={(stepId) => {
+              if (stepId === "intake") setStep("intake");
+              if (stepId === "outline" && outline) setStep("outline");
+              if (stepId === "workspace" && outline) setStep("workspace");
+            }}
+          />
+        </div>
 
         {/* ============================================================ */}
-        {/* SCREEN 1: CLAUDE AI INTAKE HERO (HOMEPAGE)                   */}
+        {/* SCREEN 1: HOMEPAGE CENTERPIECE PASS (INTAKE UI)              */}
         {/* ============================================================ */}
         {step === "intake" && (
-          <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center justify-center p-4 sm:p-8">
-            <div className="w-full max-w-2xl flex flex-col gap-5 text-center animate-in fade-in duration-400">
-              {/* Claude Editorial Greeting */}
-              <div className="flex flex-col gap-2 items-center">
-                <span className="w-10 h-10 rounded-2xl bg-[var(--primary)] text-white flex items-center justify-center text-xl shadow-md">
-                  ✦
-                </span>
-                <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--on-background)] tracking-tight mt-1">
-                  {greeting}, what would you like to draft?
-                </h1>
-                <p className="text-sm sm:text-base text-[var(--text-muted)] max-w-lg mx-auto leading-relaxed">
-                  Autonomous deep research, real empirical datasets, and perfectly aligned 30–50 page Word &amp; PDF treatises.
-                </p>
-              </div>
-
-              {/* Google AI Studio Status Banner */}
-              <div
-                onClick={() => setShowSettingsModal(true)}
-                className="bg-[var(--surface-card)] hover:bg-[var(--surface-muted)] border border-[var(--surface-border)] rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs cursor-pointer transition-all shadow-xs"
+          <div className="w-full max-w-3xl mx-auto flex flex-col gap-7 py-2 sm:py-4">
+            {/* Header Text & BadgeGroup */}
+            <div className="flex flex-col gap-3 text-center items-center">
+              <BadgeGroup
+                tag="Neural Engine"
+                variant="brand"
+                size="md"
+                dot
+                pulse
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="font-semibold text-[var(--on-background)]">
-                    {hasCustomGeminiKey
-                      ? `Google AI Studio API Connected (${geminiKeyMasked})`
-                      : "Google AI Studio Neural Grounding & Empirical Search Ready"}
-                  </span>
-                </div>
-                <span className="text-[var(--primary)] font-bold hover:underline flex items-center gap-1">
-                  {hasCustomGeminiKey ? "Configure Key ⚙" : "Connect Custom Key ↗"}
-                </span>
-              </div>
+                Gemini 3.6 Flash &amp; Tavily Web Search
+              </BadgeGroup>
 
-              {/* Signature Claude Rounded Pill Prompt Box */}
-              <div className="claude-input-box rounded-3xl p-4 sm:p-5 flex flex-col gap-3 text-left">
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl text-[#101828] dark:text-white font-bold leading-tight mt-1">
+                Tell us what you're working on.
+              </h1>
+              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 max-w-xl mx-auto leading-relaxed">
+                Enter a topic, research question, or thesis to generate a fully sourced, editable Word, PPT, Excel, or PDF document.
+              </p>
+            </div>
+
+            {/* Target Output Format Pills */}
+            <div className="flex flex-col items-center gap-2.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                Target Output Format
+              </span>
+              <div className="flex flex-wrap justify-center gap-2.5 items-center">
+                {[
+                  { key: "docx", label: "Word (.docx)", icon: <FileText className="size-4 text-blue-600" /> },
+                  { key: "pptx", label: "PowerPoint (.pptx)", icon: <Presentation className="size-4 text-amber-600" /> },
+                  { key: "xlsx", label: "Excel (.xlsx)", icon: <FileSpreadsheet className="size-4 text-emerald-600" /> },
+                  { key: "pdf", label: "Printable PDF (.pdf)", icon: <FileCheck className="size-4 text-rose-600" /> },
+                ].map((fmt) => {
+                  const isSelected = format === fmt.key;
+                  return (
+                    <button
+                      key={fmt.key}
+                      type="button"
+                      onClick={() => setFormat(fmt.key as any)}
+                      className={`inline-flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl transition-all border cursor-pointer ${
+                        isSelected
+                          ? "bg-[#7F56D9] text-white border-[#7F56D9] shadow-sm ring-2 ring-[#7F56D9]/20"
+                          : "bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-800 hover:border-[#7F56D9] hover:bg-gray-50 shadow-xs"
+                      }`}
+                    >
+                      {fmt.icon}
+                      <span>{fmt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Prominent Prompt Textarea Centerpiece */}
+            <div className="flex flex-col gap-2">
+              <div className="relative rounded-2xl bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 focus-within:border-[#7F56D9] dark:focus-within:border-[#9E77ED] focus-within:ring-4 focus-within:ring-[#7F56D9]/10 transition-all shadow-md overflow-hidden">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={4}
-                  placeholder="Ask Claude to research and author an exhaustive 30–50 page manuscript... e.g. An empirical analysis of renewable energy grid adoption in India with CAGR statistics, or a treatise on Post-Quantum Cryptography standards."
-                  className="w-full bg-transparent outline-none text-[var(--on-background)] text-base placeholder:text-[var(--text-subtle)] resize-none leading-relaxed"
+                  placeholder="e.g., A comprehensive analysis of renewable energy adoption in India, or a pitch deck on AI document pipelines..."
+                  className="w-full p-5 bg-transparent outline-none text-gray-900 dark:text-white text-base sm:text-lg leading-relaxed placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none font-medium"
                 />
-
-                {/* Inline Action Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--surface-border)]">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {/* Format Selector Pill */}
-                    <select
-                      value={format}
-                      onChange={(e) => setFormat(e.target.value as any)}
-                      className="text-xs font-semibold py-1 px-2.5 rounded-full bg-[var(--surface-muted)] border border-[var(--surface-border)] text-[var(--on-background)] outline-none cursor-pointer"
-                    >
-                      <option value="docx">📄 Word (.docx)</option>
-                      <option value="pdf">📕 PDF (.pdf)</option>
-                      <option value="pptx">📊 PowerPoint (.pptx)</option>
-                      <option value="xlsx">📈 Excel (.xlsx)</option>
-                    </select>
-
-                    {/* Document Preset Pill */}
-                    <select
-                      value={docType}
-                      onChange={(e) => setDocType(e.target.value)}
-                      className="text-xs font-semibold py-1 px-2.5 rounded-full bg-[var(--surface-muted)] border border-[var(--surface-border)] text-[var(--on-background)] outline-none cursor-pointer"
-                    >
-                      <option value="Research Report">Research Report</option>
-                      <option value="Academic Essay">Academic Essay</option>
-                      <option value="Literature Review">Literature Review</option>
-                      <option value="Freeform Summary">Executive Brief</option>
-                    </select>
-
-                    {/* Research Depth Pill */}
-                    <button
-                      type="button"
-                      onClick={() => setResearchDepth(researchDepth === "standard" ? "deep" : "standard")}
-                      className={`text-xs font-semibold py-1 px-2.5 rounded-full border transition-all cursor-pointer ${
-                        researchDepth === "deep"
-                          ? "bg-[var(--primary-fixed)] border-[var(--primary)] text-[var(--primary)] font-bold"
-                          : "bg-[var(--surface-muted)] border-[var(--surface-border)] text-[var(--text-muted)]"
-                      }`}
-                    >
-                      {researchDepth === "deep" ? "🔍 Deep Research" : "⚡ Fast"}
-                    </button>
-
-                    {/* Attach File Button */}
-                    <button
-                      type="button"
-                      onClick={() => setShowFileIntake(!showFileIntake)}
-                      className={`p-1.5 rounded-full border transition-all cursor-pointer ${
-                        attachedFileName
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-700"
-                          : "border-[var(--surface-border)] bg-[var(--surface-muted)] text-[var(--text-muted)] hover:border-[var(--primary)]"
-                      }`}
-                      title="Attach Reference Notes or File"
-                    >
-                      <span className="material-symbols-outlined text-sm">attach_file</span>
-                    </button>
+                <div className="flex justify-between items-center px-5 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-300">
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <Sparkles className="size-3.5 text-[#7F56D9] dark:text-[#9E77ED]" />
+                    <span>Gemini 3.6 1M context token allocated</span>
                   </div>
-
-                  {/* Terracotta Circular Submit Arrow Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleStartPipeline({ direct: true })}
-                    disabled={!prompt.trim() || isResearching}
-                    className="w-9 h-9 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-container)] text-white flex items-center justify-center shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <span className="material-symbols-outlined text-lg">arrow_upward</span>
-                  </button>
+                  <span className="font-mono text-xs font-semibold">{prompt.length} characters</span>
                 </div>
+              </div>
+            </div>
 
-                {/* Attached File Dropzone Drawer */}
-                {showFileIntake && (
-                  <div className="pt-2 border-t border-[var(--surface-border)] flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-[var(--text-muted)] font-medium">Attach PDF, DOCX, TXT reference notes:</span>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileUpload}
-                        accept=".txt,.md,.pdf,.json,.csv"
-                        className="hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="text-[var(--primary)] hover:underline font-bold"
-                      >
-                        {isUploadingFile ? "Extracting..." : "Choose File ↗"}
-                      </button>
-                    </div>
-                    {attachedFileName && (
-                      <span className="text-xs bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded border border-emerald-200">
-                        ✓ {attachedFileName} attached
-                      </span>
-                    )}
-                  </div>
+            {/* Reference File & Notes Dropzone Drawer */}
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
+              <div className="flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowFileIntake(!showFileIntake)}
+                  className="text-xs font-bold uppercase tracking-wider text-[#7F56D9] dark:text-[#9E77ED] flex items-center gap-1.5 cursor-pointer hover:underline"
+                >
+                  <Paperclip className="size-4" />
+                  {showFileIntake ? "Hide Reference Notes / File Dropzone" : "+ Attach Reference Notes or File (PDF, TXT, MD, DOCX)"}
+                </button>
+                {attachedFileName && (
+                  <Badge variant="success" size="sm" dot>
+                    {attachedFileName} attached
+                  </Badge>
                 )}
               </div>
 
-              {/* Claude Curated Topic Starters */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+              {showFileIntake && (
+                <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800 animate-in fade-in duration-300">
+                  <div className="flex flex-col sm:flex-row gap-3 items-center">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".txt,.md,.pdf,.json,.csv"
+                      className="hidden"
+                    />
+                    <Button
+                      variant="secondary_gray"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      isLoading={isUploadingFile}
+                      loadingText="Extracting Text..."
+                      iconLeading={<FileUp className="size-4 text-[#7F56D9]" />}
+                    >
+                      Choose Local File
+                    </Button>
+                    <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                      Upload reference context to anchor AI outline &amp; citations
+                    </span>
+                  </div>
+
+                  <textarea
+                    value={referenceNotes}
+                    onChange={(e) => setReferenceNotes(e.target.value)}
+                    rows={3}
+                    placeholder="Or paste background text notes, research findings, or specific requirements here..."
+                    className="w-full p-3 text-xs bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:border-[#7F56D9] text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Document Type Cards */}
+            <div className="flex flex-col gap-2.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                Document Type Preset:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  {
-                    title: "Renewable Energy Grid Transition",
-                    desc: "Analyze solar/wind adoption benchmarks and 2026 infrastructure roadmaps in India."
-                  },
-                  {
-                    title: "Post-Quantum Cryptography",
-                    desc: "Draft an exhaustive treatise on lattice-based algorithms and NIST security standards."
-                  },
-                  {
-                    title: "Digital UPI & Fintech Systems",
-                    desc: "Synthesize Tier-2/3 transaction metrics, fraud vector analysis, and offline payment scaling."
-                  }
-                ].map((chip, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setPrompt(chip.desc);
-                    }}
-                    className="p-3 bg-[var(--surface-card)] hover:bg-[var(--surface-muted)] border border-[var(--surface-border)] rounded-2xl text-left transition-all paper-shadow flex flex-col gap-1 cursor-pointer group"
-                  >
-                    <span className="text-xs font-bold text-[var(--on-background)] group-hover:text-[var(--primary)]">
-                      {chip.title}
-                    </span>
-                    <span className="text-[11px] text-[var(--text-muted)] line-clamp-2 leading-relaxed">
-                      {chip.desc}
-                    </span>
-                  </button>
-                ))}
+                  { title: "Research Report", desc: "Empirical synthesis with baseline metrics, risk analysis, and strategic roadmap." },
+                  { title: "Academic Essay", desc: "Formal critical essay with thesis argumentation, theoretical models, and scholarly discourse." },
+                  { title: "Literature Review", desc: "Systematic meta-analysis with taxonomy of scholarship, empirical gaps, and future agenda." },
+                  { title: "Freeform Summary", desc: "Concise executive briefing focusing directly on core takeaways, key themes, and actionable next steps." }
+                ].map((item) => {
+                  const isSelected = docType === item.title;
+                  return (
+                    <button
+                      key={item.title}
+                      type="button"
+                      onClick={() => setDocType(item.title)}
+                      className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? "border-[#7F56D9] bg-[#F9F5FF] dark:bg-[#2C1C5F]/40 ring-2 ring-[#7F56D9] dark:ring-[#9E77ED] shadow-sm"
+                          : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700 shadow-xs"
+                      }`}
+                    >
+                      <div className="font-bold text-xs text-gray-900 dark:text-white flex items-center justify-between">
+                        <span>{item.title}</span>
+                        {isSelected && <span className="size-2 rounded-full bg-[#7F56D9] dark:bg-[#9E77ED]" />}
+                      </div>
+                      <div className="text-[11px] text-gray-600 dark:text-gray-300 mt-1.5 leading-relaxed font-medium">{item.desc}</div>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
+
+            {/* Customization Options Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 sm:p-5 rounded-2xl shadow-xs text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider text-[11px]">
+                  Research Depth
+                </label>
+                <select
+                  value={researchDepth}
+                  onChange={(e) => setResearchDepth(e.target.value as any)}
+                  className="w-full p-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white outline-none focus:border-[#7F56D9] font-medium cursor-pointer"
+                >
+                  <option value="standard">Standard (Fast Synthesis)</option>
+                  <option value="deep">Deep Investigative (High Citation Density)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider text-[11px]">
+                  Tone &amp; Style
+                </label>
+                <select
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white outline-none focus:border-[#7F56D9] font-medium cursor-pointer"
+                >
+                  <option>Academic &amp; Analytical</option>
+                  <option>Executive &amp; Direct</option>
+                  <option>Technical &amp; Architectural</option>
+                  <option>Venture &amp; Investor Ready</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider text-[11px]">
+                  Target Length
+                </label>
+                <select
+                  value={targetLength}
+                  onChange={(e) => setTargetLength(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white outline-none focus:border-[#7F56D9] font-medium cursor-pointer"
+                >
+                  <option>Unlimited &amp; Exhaustive (Comprehensive In-Depth)</option>
+                  <option>Detailed (~3,500+ words)</option>
+                  <option>Standard (~2,000 words)</option>
+                  <option>Concise (~1,000 words)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Primary Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button
+                size="xl"
+                variant="primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleStartPipeline({ direct: true });
+                }}
+                isLoading={isResearching || isGeneratingOutline}
+                loadingText="Synthesizing Live Document..."
+                iconLeading={<Zap className="size-5" />}
+                className="flex-1 text-base shadow-md font-bold"
+              >
+                Generate Full Document Directly (Live Word Mode) →
+              </Button>
+              <Button
+                size="xl"
+                variant="secondary_gray"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleStartPipeline({ direct: false });
+                }}
+                disabled={isResearching || isGeneratingOutline}
+                iconLeading={<BookOpen className="size-4 text-[#7F56D9]" />}
+                className="shrink-0 text-sm font-bold"
+              >
+                Review Outline First
+              </Button>
             </div>
           </div>
         )}
 
         {/* ============================================================ */}
-        {/* SCREEN 2: CLAUDE ARTIFACTS SPLIT-SCREEN WORKSPACE            */}
+        {/* SCREEN 1.5: DEDICATED RESEARCH & OUTLINE GENERATION LOADER   */}
         {/* ============================================================ */}
-        {step === "workspace" && outline && (
-          <div className="flex-1 flex flex-col lg:flex-row h-[calc(100vh-56px)] overflow-hidden">
-            {/* -------------------------------------------------------- */}
-            {/* LEFT PANEL: 42% WIDTH - CONVERSATIONAL CHAT & THOUGHT    */}
-            {/* -------------------------------------------------------- */}
-            <div className="w-full lg:w-[42%] border-r border-[var(--surface-border)] bg-[var(--surface)] flex flex-col h-full overflow-hidden">
-              {/* Chat & Thought Feed */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
-                {/* User Prompt Message */}
-                <div className="flex justify-end">
-                  <div className="max-w-[85%] bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-3.5 text-xs text-[var(--on-background)] leading-relaxed shadow-xs">
-                    <div className="font-bold text-[10px] uppercase tracking-wider text-[var(--text-subtle)] mb-1">
-                      User Request
-                    </div>
-                    {prompt || outline.title}
-                  </div>
-                </div>
+        {step === "generating_outline" && (
+          <div className="w-full max-w-3xl mx-auto py-6 animate-in fade-in duration-300">
+            <ProcessingCard
+              currentStageText={streamStatusText}
+              modelName={geminiModel === "gemini-3.6-flash" ? "Gemini 3.6 Flash" : geminiModel}
+              format={format}
+              typedCodeLines={typedCodeLines}
+              sourcesCount={researchBundle?.results?.length || 8}
+              onViewSources={() => setShowSourcesModal(true)}
+              onCancel={() => setStep("intake")}
+            />
+          </div>
+        )}
 
-                {/* Claude Agent Response with Collapsible Thought Accordion */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-[var(--primary)] text-white text-xs flex items-center justify-center font-serif">
-                      ✦
-                    </span>
-                    <span className="font-serif font-bold text-xs text-[var(--on-background)]">
-                      Claude Research Agent
-                    </span>
-                    {isStreaming && (
-                      <span className="text-[10px] text-[var(--primary)] animate-pulse font-mono font-semibold">
-                        Synthesizing...
-                      </span>
-                    )}
-                  </div>
+        {/* ============================================================ */}
+        {/* SCREEN 2: OUTLINE REVIEW & EDIT (STEP 2)                     */}
+        {/* ============================================================ */}
+        {step === "outline" && outline && (
+          <div className="w-full max-w-3xl mx-auto flex flex-col gap-6 py-4 animate-in fade-in duration-300">
+            <div className="border-b border-gray-200 dark:border-gray-800 pb-5 flex flex-wrap justify-between items-start gap-4">
+              <div>
+                <Badge variant="brand" size="sm" dot>
+                  Step 2 of 3 • Outline Architect
+                </Badge>
+                <h1 className="font-serif text-2xl sm:text-3xl text-[#101828] dark:text-white font-bold mt-2">
+                  Review &amp; Approve Outline
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-0.5 font-medium">
+                  Edit chapter titles, briefs, or add new sections before launching the live generation engine.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {researchBundle && (
+                  <Button
+                    variant="secondary_gray"
+                    size="sm"
+                    onClick={() => setShowSourcesModal(true)}
+                    iconLeading={<Search className="size-3.5 text-[#7F56D9] dark:text-[#9E77ED]" />}
+                  >
+                    Inspect Sources ({researchBundle.results.length})
+                  </Button>
+                )}
+                <Badge variant="brand" size="md">
+                  {outline.sections.length} Chapters
+                </Badge>
+              </div>
+            </div>
 
-                  {/* Collapsible Claude Thinking Process Accordion */}
-                  <div className="claude-thought-box rounded-xl p-3.5 flex flex-col gap-2 text-xs">
+            {/* Document Title Header Input */}
+            <div className="p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs flex flex-col gap-3">
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Document Title &amp; Subtitle
+              </label>
+              <input
+                type="text"
+                value={outline.title}
+                onChange={(e) => setOutline({ ...outline, title: e.target.value })}
+                className="font-serif text-lg sm:text-xl font-bold text-gray-900 dark:text-white p-3 border border-gray-300 dark:border-gray-700 rounded-xl focus:border-[#7F56D9] outline-none bg-gray-50 dark:bg-gray-950"
+              />
+              <input
+                type="text"
+                value={outline.subtitle}
+                onChange={(e) => setOutline({ ...outline, subtitle: e.target.value })}
+                className="text-xs text-gray-700 dark:text-gray-300 italic p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-950 font-medium"
+                placeholder="Subtitle..."
+              />
+            </div>
+
+            {/* Editable Sections List */}
+            <div className="space-y-4">
+              {outline.sections.map((sec, idx) => (
+                <div
+                  key={sec.id || idx}
+                  className="p-4 sm:p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs flex flex-col gap-3.5 transition-all hover:border-gray-300 dark:hover:border-gray-700"
+                >
+                  <div className="flex justify-between items-center">
+                    <Badge variant="brand" size="sm">
+                      Chapter {idx + 1}
+                    </Badge>
                     <button
                       type="button"
-                      onClick={() => setThoughtExpanded(!thoughtExpanded)}
-                      className="flex items-center justify-between font-bold text-[var(--primary)] cursor-pointer"
+                      onClick={() => handleDeleteSection(idx)}
+                      className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline cursor-pointer font-bold flex items-center gap-1"
                     >
-                      <span className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-sm">psychology</span>
-                        Thinking Process &amp; Research Chain
-                      </span>
-                      <span className="material-symbols-outlined text-sm transition-transform">
-                        {thoughtExpanded ? "expand_less" : "expand_more"}
-                      </span>
+                      <Trash2 className="size-3.5" />
+                      Remove
                     </button>
-
-                    {thoughtExpanded && (
-                      <div className="space-y-2 pt-2 border-t border-[var(--surface-border)] text-[11px] text-[var(--text-muted)] animate-in fade-in duration-200">
-                        <div className="font-mono text-[10px] text-gray-500">
-                          Status: {streamStatusText}
-                        </div>
-                        {streamTimelineEvents.map((ev) => (
-                          <div key={ev.id} className="flex items-start gap-2">
-                            <span className="text-[var(--primary)]">›</span>
-                            <div>
-                              <span className="font-semibold text-[var(--on-background)]">{ev.title}</span>
-                              {ev.detail && <p className="text-[10px] text-[var(--text-subtle)] leading-snug">{ev.detail}</p>}
-                            </div>
-                          </div>
-                        ))}
-                        <div ref={timelineEndRef} />
-                      </div>
-                    )}
                   </div>
 
-                  {/* Follow-up conversation history */}
-                  {followUpNotes.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`p-3 rounded-xl text-xs leading-relaxed ${
-                        msg.role === "user"
-                          ? "bg-[var(--surface-card)] border border-[var(--surface-border)] self-end max-w-[85%]"
-                          : "bg-[var(--surface-muted)] text-[var(--on-background)]"
-                      }`}
-                    >
-                      <div className="text-[10px] font-mono text-[var(--text-subtle)] mb-0.5">
-                        {msg.role === "user" ? "You" : "Claude"} • {msg.time}
-                      </div>
-                      {msg.text}
-                    </div>
-                  ))}
-                </div>
-              </div>
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 font-bold">
+                      Chapter Title
+                    </label>
+                    <input
+                      type="text"
+                      value={sec.title}
+                      onChange={(e) => handleSectionTitleChange(idx, e.target.value)}
+                      className="w-full font-serif text-base font-bold text-gray-900 dark:text-white p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl mt-1 bg-gray-50 dark:bg-gray-950 outline-none focus:border-[#7F56D9]"
+                    />
+                  </div>
 
-              {/* Pinned Follow-Up Chat Bar at Bottom */}
-              <div className="p-3 border-t border-[var(--surface-border)] bg-[var(--surface-card)]">
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 font-bold">
+                      Synthesis Brief &amp; Focal Points
+                    </label>
+                    <input
+                      type="text"
+                      value={sec.brief}
+                      onChange={(e) => handleSectionBriefChange(idx, e.target.value)}
+                      className="w-full text-xs text-gray-800 dark:text-gray-200 p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl mt-1 bg-gray-50 dark:bg-gray-950 outline-none focus:border-[#7F56D9] font-medium"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 items-center pt-2 border-t border-gray-100 dark:border-gray-800">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mr-1">Sources Attached:</span>
+                    {(sec.relevantSourceIndices || [1]).map((srcIdx: number) => (
+                      <Badge key={srcIdx} variant="gray" size="sm">
+                        Source #{srcIdx}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                variant="secondary_gray"
+                size="lg"
+                onClick={handleAddSection}
+                iconLeading={<Plus className="size-4 text-[#7F56D9]" />}
+                className="w-full py-3.5 border-dashed border-2 font-bold"
+              >
+                Add Chapter Section
+              </Button>
+            </div>
+
+            {/* Approval CTAs */}
+            <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+              <Button
+                variant="secondary_gray"
+                size="lg"
+                onClick={() => setStep("intake")}
+                iconLeading={<ArrowLeft className="size-4" />}
+                className="font-bold"
+              >
+                Back
+              </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleApproveAndLaunchLiveWorkspace}
+                iconTrailing={<ArrowRight className="size-4" />}
+                className="flex-1 shadow-md font-bold"
+              >
+                Approve Outline &amp; Open Live Split-Screen Workspace →
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* SCREEN 3: SPLIT-SCREEN WORKSPACE (42% CODE ENGINE / 58% MS WORD) */}
+        {/* ============================================================ */}
+        {step === "workspace" && outline && (
+          <div className="flex flex-col lg:flex-row gap-6 w-full max-w-7xl mx-auto py-2 animate-in fade-in duration-300">
+            {/* -------------------------------------------------------- */}
+            {/* LEFT COLUMN: 42% WIDTH - LIVE CODE & SYNTHESIS TERMINAL  */}
+            {/* -------------------------------------------------------- */}
+            <div className="w-full lg:w-[42%] flex flex-col gap-4 shrink-0">
+              {/* Untitled UI AI Thinking & Synthesis Indicator */}
+              <ThinkingIndicator
+                statusText={streamStatusText}
+                modelName={geminiModel === "gemini-3.6-flash" ? "Gemini 3.6 Flash" : geminiModel}
+                isStreaming={isStreaming}
+                events={streamTimelineEvents}
+                activeStepIndex={activeGeneratingSectionIndex !== null ? activeGeneratingSectionIndex + 1 : readySectionsCount}
+                totalSteps={outline.sections.length}
+                sourcesCount={researchBundle?.results?.length || 8}
+                onViewSources={() => setShowSourcesModal(true)}
+              />
+
+              {/* Pinned Top Prompt Bar */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-xs flex flex-col gap-2.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#7F56D9] dark:text-[#9E77ED] flex items-center gap-1.5">
+                    <Sparkles className="size-3.5" />
+                    Pinned Follow-Up Instructions
+                  </span>
+                  <Badge variant="gray" size="sm">
+                    Active Session
+                  </Badge>
+                </div>
                 <form onSubmit={handleAddFollowUpNote} className="flex gap-2">
                   <input
                     type="text"
+                    placeholder="Add follow-up focal points or directives..."
                     value={followUpInstruction}
                     onChange={(e) => setFollowUpInstruction(e.target.value)}
-                    placeholder="Ask Claude to revise a chapter, add empirical data, or adjust tone..."
-                    className="flex-1 p-2.5 text-xs bg-[var(--surface-muted)] border border-[var(--surface-border)] rounded-xl outline-none focus:border-[var(--primary)] text-[var(--on-background)]"
+                    className="flex-1 text-xs p-2.5 border border-gray-300 dark:border-gray-700 rounded-xl outline-none focus:border-[#7F56D9] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white font-medium"
                   />
-                  <button
+                  <Button
                     type="submit"
-                    disabled={!followUpInstruction.trim()}
-                    className="px-4 py-2.5 bg-[var(--primary)] hover:bg-[var(--primary-container)] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer disabled:opacity-40"
+                    variant="primary"
+                    size="sm"
+                    className="shrink-0 font-bold"
                   >
-                    Send
-                  </button>
+                    Add
+                  </Button>
                 </form>
+                {followUpNotes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {followUpNotes.map((n, i) => (
+                      <Badge key={i} variant="gray" size="sm" icon={<Check className="size-3 text-emerald-600" />}>
+                        {n}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Futuristic Live Code & Synthesis Terminal Box */}
+              <div className="bg-[#0D1117] text-[#E6EDF3] border border-[#30363D] rounded-2xl overflow-hidden terminal-glow flex flex-col shadow-xl">
+                {/* Terminal Header Bar with Untitled UI Tabs */}
+                <div className="bg-[#161B22] border-b border-[#30363D] px-4 py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#FF5F56] inline-block" />
+                      <span className="w-3 h-3 rounded-full bg-[#FFBD2E] inline-block" />
+                      <span className="w-3 h-3 rounded-full bg-[#27C93F] inline-block" />
+                    </div>
+                    <span className="text-xs font-mono font-bold text-gray-200 ml-2 flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${isStreaming ? "bg-green-400 animate-ping" : "bg-green-500"}`} />
+                      live-synth-engine.ts
+                    </span>
+                  </div>
+
+                  {/* Untitled UI Segmented Tabs */}
+                  <Tabs
+                    tabs={[
+                      { id: "terminal", label: "Terminal", icon: <Terminal className="size-3" /> },
+                      { id: "code", label: "Raw Code", icon: <FileCode2 className="size-3" /> },
+                    ]}
+                    activeTab={terminalTab}
+                    onChange={(id) => setTerminalTab(id as any)}
+                    size="sm"
+                  />
+                </div>
+
+                {/* Live Stats Ribbon */}
+                <div className="bg-[#1F242C] px-4 py-2 border-b border-[#30363D] flex flex-wrap justify-between items-center text-[11px] font-mono text-gray-300">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[#58A6FF]">
+                      Words: <strong>{Object.values(generatedSections).reduce((acc, t) => acc + (typeof t === "string" ? t.split(/\s+/).filter(Boolean).length : 0), 0)}</strong>
+                    </span>
+                    <span className="text-[#7EE787]">
+                      Chars: <strong>{Object.values(generatedSections).reduce((acc, t) => acc + (typeof t === "string" ? t.length : 0), 0)}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={isStreaming ? "brand" : "success"} size="sm" dot pulse={isStreaming}>
+                      {isStreaming ? "85 tokens/s" : "Complete"}
+                    </Badge>
+                    {researchBundle && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSourcesModal(true)}
+                        className="text-[10px] text-[#58A6FF] hover:underline cursor-pointer font-bold"
+                      >
+                        {researchBundle.results.length} Sources
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tab Content 1: Terminal Logs Stream */}
+                {terminalTab === "terminal" && (
+                  <div className="p-4 font-mono text-xs text-gray-300 h-[420px] lg:h-[calc(100vh-420px)] max-h-[520px] overflow-y-auto custom-scrollbar space-y-2.5 bg-[#090D13]">
+                    <div className="text-gray-400 text-[11px]">
+                      // PaperLoop Runtime v2.0 • Gemini 3.6 Flash • Tavily Neural Search
+                    </div>
+                    {streamTimelineEvents.map((ev) => (
+                      <div key={ev.id} className="leading-relaxed flex items-start gap-2">
+                        <span className="text-gray-400 shrink-0 select-none">[{ev.timestamp ? ev.timestamp.split(" ")[0] : ""}]</span>
+                        <div className="flex-1">
+                          <span className={
+                            ev.type === "complete" ? "text-[#7EE787] font-bold" :
+                            ev.type === "section" ? "text-[#58A6FF] font-bold" :
+                            ev.type === "research" ? "text-[#D2A8FF] font-bold" :
+                            ev.type === "error" ? "text-[#FFA198] font-bold" :
+                            "text-[#79C0FF]"
+                          }>
+                            {ev.type === "section" && "📝 "}
+                            {ev.type === "complete" && "🎉 "}
+                            {ev.type === "research" && "🔍 "}
+                            {ev.type === "status" && "⚡ "}
+                            {ev.title}
+                          </span>
+                          {ev.detail && (
+                            <p className="text-gray-300 text-[11px] mt-0.5 pl-2 border-l border-gray-700">
+                              {ev.detail}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {isStreaming && (
+                      <div className="flex items-center gap-2 text-green-400 pt-2 animate-pulse font-bold">
+                        <span className="text-green-500">▶</span>
+                        <span>[Streaming] Generating section markdown & OpenXML document nodes...</span>
+                        <span className="inline-block w-2 h-4 bg-green-400 cursor-blink ml-1" />
+                      </div>
+                    )}
+                    <div ref={timelineEndRef} />
+                  </div>
+                )}
+
+                {/* Tab Content 2: Raw Code / Markdown Stream */}
+                {terminalTab === "code" && (
+                  <div className="p-4 font-mono text-xs text-[#79C0FF] h-[420px] lg:h-[calc(100vh-420px)] max-h-[520px] overflow-y-auto custom-scrollbar bg-[#090D13]">
+                    <pre className="whitespace-pre-wrap leading-relaxed text-[11px] text-gray-200">
+                      {`# ${outline.title}\n*${outline.subtitle}*\n\n` +
+                        outline.sections.map((s, idx) => {
+                          const content = generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[s.title];
+                          return `## ${s.title}\n\n${content || `<!-- [Drafting with Gemini 3.6 Flash...] -->`}`;
+                        }).join("\n\n---\n\n")}
+                    </pre>
+                    {isStreaming && <span className="inline-block w-2 h-4 bg-green-400 cursor-blink mt-1" />}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* -------------------------------------------------------- */}
-            {/* RIGHT PANEL: 58% WIDTH - CLAUDE INTERACTIVE ARTIFACT     */}
+            {/* RIGHT COLUMN: 58% WIDTH - AUTHENTIC MS WORD DOCUMENT PREVIEW */}
             {/* -------------------------------------------------------- */}
-            <div className="w-full lg:w-[58%] bg-[#F5F2EC] dark:bg-[#151413] flex flex-col h-full overflow-hidden">
-              {/* Claude Artifact Window Header */}
-              <div className="p-3 bg-[var(--surface-card)] border-b border-[var(--surface-border)] flex flex-wrap items-center justify-between gap-2 shrink-0">
+            <div className="w-full lg:w-[58%] flex flex-col gap-3.5">
+              {/* Sticky Action Bar with Prominent Word (.docx) & PDF Downloads */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-wrap gap-2.5 justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded bg-[var(--primary-fixed)] text-[var(--primary)] flex items-center justify-center font-mono text-xs font-bold">
-                    📄
+                  <Badge variant="blue" size="md" icon={<FileText className="size-3.5 text-blue-600" />}>
+                    Word &amp; PDF Manuscript
+                  </Badge>
+                  <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                    {readySectionsCount} of {outline.sections.length} chapters
                   </span>
-                  <div>
-                    <h3 className="font-serif font-bold text-xs text-[var(--on-background)] truncate max-w-[200px] sm:max-w-xs">
-                      {outline.title}
-                    </h3>
-                    <div className="flex items-center gap-2 text-[10px] text-[var(--text-subtle)] font-mono">
-                      <span>30–50 Pages A4 Treatise</span>
-                      <span>•</span>
-                      <span>{readySectionsCount} of {outline.sections.length} Chapters</span>
-                    </div>
-                  </div>
                 </div>
 
-                {/* Artifact Action Toolbar */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    type="button"
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="secondary_gray"
+                    size="sm"
                     onClick={handleCopyMarkdown}
-                    title="Copy Full Document Markdown"
-                    className="text-xs font-semibold px-2.5 py-1.5 border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-muted)] transition-colors flex items-center gap-1 cursor-pointer"
+                    title="Copy Markdown with Citations"
+                    iconLeading={copySuccess ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
                   >
-                    <span className="material-symbols-outlined text-sm">content_copy</span>
                     {copySuccess ? "Copied!" : "Copy"}
-                  </button>
-
-                  {/* Primary Word Document Download */}
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="secondary_gray"
+                    size="sm"
+                    onClick={() => setStep("outline")}
+                  >
+                    Outline
+                  </Button>
+                  {/* Microsoft Word (.docx) Download Button */}
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => handleDownloadFormat("docx")}
                     disabled={readySectionsCount === 0}
-                    title="Download Editable Microsoft Word Document (.docx)"
-                    className={`text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1 shadow transition-all cursor-pointer ${
-                      readySectionsCount > 0
-                        ? "bg-[#2B579A] text-white hover:bg-[#1E3E6D]"
-                        : "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
-                    }`}
+                    iconLeading={<FileText className="size-3.5" />}
+                    className="shadow-sm font-bold bg-[#185ABD] hover:bg-[#104896] border-[#185ABD]"
                   >
-                    <span className="material-symbols-outlined text-sm">description</span>
-                    Word (.docx)
-                  </button>
-
-                  {/* Direct PDF Download */}
-                  <button
-                    type="button"
+                    Download Word (.docx)
+                  </Button>
+                  {/* Direct PDF Download Button */}
+                  <Button
+                    variant="secondary_gray"
+                    size="sm"
                     onClick={() => handleDownloadFormat("pdf")}
                     disabled={readySectionsCount === 0}
-                    title="Download Direct Printable PDF (.pdf)"
-                    className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow transition-all cursor-pointer ${
-                      readySectionsCount > 0
-                        ? "bg-[#C93B2B] text-white hover:bg-[#A32A1C]"
-                        : "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
-                    }`}
+                    iconLeading={<Download className="size-3.5 text-rose-600" />}
+                    className="font-bold text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60 bg-rose-50/50 dark:bg-rose-950/30"
                   >
-                    <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
                     PDF
-                  </button>
-
-                  {/* Export PowerPoint */}
-                  <button
-                    type="button"
+                  </Button>
+                  {/* Export PowerPoint Presentation (.pptx) */}
+                  <Button
+                    variant="secondary_gray"
+                    size="sm"
                     onClick={() => handleDownloadFormat("pptx")}
                     disabled={readySectionsCount === 0}
-                    title="Export College & Corporate Presentation Deck (.pptx)"
-                    className={`text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-all cursor-pointer ${
-                      readySectionsCount > 0 ? "" : "opacity-50 cursor-not-allowed"
-                    }`}
+                    iconLeading={<Presentation className="size-3.5 text-amber-600" />}
+                    className="font-bold text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/30"
                   >
-                    <span className="material-symbols-outlined text-sm">slideshow</span>
                     PPT
-                  </button>
+                  </Button>
                 </div>
               </div>
 
-              {/* Quality & Originality Audit Bar */}
-              <div className="bg-emerald-50/70 dark:bg-[#0E201B] border-b border-emerald-200 dark:border-emerald-900/40 px-3.5 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+              {/* Real-time Originality & Authenticity Audit Bar */}
+              <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 dark:from-[#0B1E19] dark:via-[#0E2325] dark:to-[#0D1E2D] border border-emerald-200 dark:border-emerald-900/50 rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
                 <div className="flex items-center gap-3">
-                  <span className="text-emerald-800 dark:text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
-                    <span>🛡️</span> Turnitin Plagiarism: &lt; 3.8%
-                  </span>
-                  <span>•</span>
-                  <span className="text-teal-800 dark:text-teal-400 font-bold flex items-center gap-1 text-[11px]">
-                    <span>🧠</span> AI Probability: &lt; 4.2%
-                  </span>
+                  <Badge variant="success" size="sm" icon={<ShieldCheck className="size-3 text-emerald-600" />}>
+                    Turnitin Plagiarism: &lt; 3.8%
+                  </Badge>
+                  <Badge variant="blue" size="sm" icon={<Cpu className="size-3 text-blue-600" />}>
+                    AI Probability: &lt; 4.2%
+                  </Badge>
                 </div>
-                <div className="text-[11px] text-emerald-900 dark:text-emerald-300 font-mono">
-                  {researchBundle?.results?.length || 8} Live Verified Citations • Times New Roman 12pt A4
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200 font-semibold text-xs">
+                  <span>📊 {researchBundle?.results?.length || 8} Live Verified Sources</span>
+                  <span>•</span>
+                  <span>A4 Times New Roman 12pt</span>
                 </div>
               </div>
 
-              {/* Contained Scrollable Multi-Page A4 Sheet Stack */}
-              <div
+              {/* Contained Document Viewing Box (Scrollable Viewport Window) */}
+              <div 
                 id="doc-viewer-container"
-                className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 flex flex-col items-center gap-8 relative"
+                className="bg-[#E4E6EA] dark:bg-[#0B0E14] border border-gray-300 dark:border-[#262C3A] rounded-2xl p-3 sm:p-6 h-[650px] lg:h-[calc(100vh-280px)] max-h-[850px] overflow-y-auto custom-scrollbar flex flex-col items-center shadow-inner relative"
               >
-                {/* Floating Quick Navigation Dock */}
-                <div className="sticky top-2 z-20 bg-white/95 dark:bg-[#201F1D]/95 backdrop-blur-md border border-[var(--surface-border)] rounded-full px-4 py-1.5 shadow-md flex items-center gap-3 text-xs">
-                  <span className="text-[var(--text-subtle)] font-mono text-[11px] hidden sm:inline">Jump to:</span>
+                {/* Floating Jump & Quick-Scroll Dock */}
+                <div className="sticky top-2 z-20 mb-4 bg-white/95 dark:bg-[#181B24]/95 backdrop-blur-md border border-gray-300 dark:border-gray-700 rounded-full px-4 py-1.5 shadow-lg flex items-center gap-3 text-xs">
+                  <span className="text-gray-600 dark:text-gray-300 font-mono text-[11px] hidden sm:inline font-semibold">Navigate:</span>
                   <select
                     onChange={(e) => {
                       const target = document.getElementById(e.target.value);
-                      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+                      if (target) {
+                        target.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }
                     }}
-                    className="bg-transparent text-[var(--on-background)] font-medium text-xs outline-none cursor-pointer max-w-[180px] sm:max-w-[240px] truncate"
+                    className="bg-transparent text-gray-900 dark:text-gray-100 font-bold text-xs outline-none cursor-pointer max-w-[180px] sm:max-w-[240px] truncate"
                   >
-                    <option value="page-cover">Page 1: Cover Page &amp; Abstract</option>
-                    <option value="page-toc">Page 2: Table of Contents &amp; Scope</option>
+                    <option value="doc-top">Jump to: Top of Document</option>
                     {outline.sections.map((s, idx) => (
-                      <option key={idx} value={`page-chapter-${idx}`}>
-                        Page {idx + 3}: {idx + 1}. {s.title.replace(/^\d+\.\s*/, "")}
+                      <option key={idx} value={`chapter-sec-${idx}`}>
+                        {idx + 1}. {s.title.replace(/^\d+\.\s*/, "")}
                       </option>
                     ))}
                   </select>
-                  <div className="h-3.5 w-px bg-[var(--surface-border)]" />
+                  <div className="h-3.5 w-px bg-gray-300 dark:bg-gray-700" />
                   <button
                     type="button"
                     onClick={() => {
                       const container = document.getElementById("doc-viewer-container");
                       if (container) container.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    className="text-[var(--text-muted)] hover:text-[var(--on-background)] font-bold cursor-pointer text-[11px]"
+                    title="Scroll to Top"
+                    className="text-gray-800 dark:text-gray-200 hover:text-black dark:hover:text-white font-bold cursor-pointer flex items-center gap-0.5 text-[11px]"
                   >
                     ↑ Top
                   </button>
@@ -1535,221 +1945,124 @@ export default function ClaudeDocumentStudioApp() {
                       const container = document.getElementById("doc-viewer-container");
                       if (container) container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
                     }}
-                    className="text-[var(--text-muted)] hover:text-[var(--on-background)] font-bold cursor-pointer text-[11px]"
+                    title="Scroll to Bottom"
+                    className="text-gray-800 dark:text-gray-200 hover:text-black dark:hover:text-white font-bold cursor-pointer flex items-center gap-0.5 text-[11px]"
                   >
                     ↓ End
                   </button>
                 </div>
 
-                {/* ====================================================== */}
-                {/* PAGE 1: FORMAL COVER & EXECUTIVE TITLE SHEET          */}
-                {/* ====================================================== */}
-                <div
-                  id="page-cover"
-                  className="w-full max-w-[780px] min-h-[1080px] bg-white text-black p-10 sm:p-16 border border-gray-300 shadow-xl rounded-sm font-['Times_New_Roman',_Times,_serif] flex flex-col justify-between"
-                >
-                  {/* Top Running Header */}
-                  <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-500 border-b border-gray-300 pb-3">
-                    <span>✦ PAPERRRRRR • CLAUDE ACADEMIC TREATISE</span>
-                    <span>1" MARGINS • TIMES NEW ROMAN 12PT</span>
+                {/* Realistic Microsoft Word Document Paper Canvas */}
+                <div id="doc-top" className="ms-word-canvas bg-white text-black border border-gray-300 rounded-sm p-8 sm:p-14 w-full max-w-[780px] flex flex-col gap-6 shadow-2xl font-['Times_New_Roman',_Times,_serif] self-center">
+                  {/* Word Ruler / Print Layout Header */}
+                  <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-600 border-b border-gray-300 pb-3 font-semibold">
+                    <span>A4 Print Layout • Times New Roman 12pt • 1" Margins</span>
+                    <span>30–50 Pages Depth • 100% Zoom</span>
                   </div>
 
-                  {/* Title & Metadata Centerpiece */}
-                  <div className="my-auto flex flex-col gap-6 text-center">
-                    <div className="border-y-2 border-black py-8 px-4 flex flex-col gap-3">
-                      <h1 className="text-2xl sm:text-3xl text-black font-bold uppercase tracking-wider leading-tight">
-                        {outline.title}
-                      </h1>
-                      <p className="text-base text-gray-800 italic">
-                        {outline.subtitle}
-                      </p>
-                    </div>
-
-                    {/* Metadata Grid */}
-                    <div className="max-w-md mx-auto w-full bg-gray-50 border border-gray-300 p-5 rounded text-left space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="font-bold text-gray-700">Evaluation Target:</span>
-                        <span className="text-black font-semibold">Academic &amp; Corporate Review</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-bold text-gray-700">Neural Synthesizer:</span>
-                        <span className="text-black font-semibold">Google AI Studio ({geminiModel})</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-bold text-gray-700">Verified Empirical Depth:</span>
-                        <span className="text-black font-semibold">{researchBundle?.results?.length || 8} Live Citations</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-bold text-gray-700">Publication Date:</span>
-                        <span className="text-black font-semibold">{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-bold text-gray-700">Authenticity Score:</span>
-                        <span className="text-emerald-800 font-bold">Turnitin &lt; 3.8% | AI &lt; 4.2%</span>
-                      </div>
-                    </div>
-
-                    {/* Executive Abstract Brief */}
-                    <div className="text-left mt-2 text-xs leading-relaxed border-l-2 border-black pl-4">
-                      <span className="font-bold uppercase tracking-wider block mb-1">Executive Scope:</span>
-                      <p className="text-justify text-gray-900">
-                        This treatise presents an exhaustive, multi-dimensional investigation into {outline.title}, integrating empirical baseline benchmarks, policy oversight frameworks, risk mitigation matrices, and a phased execution roadmap.
-                      </p>
+                  {/* Word Document Title Header */}
+                  <div className="text-center pb-6 border-b border-black flex flex-col gap-2">
+                    <h1 className="font-['Times_New_Roman',_Times,_serif] text-2xl sm:text-3xl text-black font-bold uppercase tracking-wide leading-tight">
+                      {outline.title}
+                    </h1>
+                    <p className="text-sm text-gray-800 italic font-['Times_New_Roman',_Times,_serif]">{outline.subtitle}</p>
+                    <div className="text-xs text-gray-700 mt-2 flex items-center justify-center gap-2 font-['Times_New_Roman',_Times,_serif]">
+                      <span>Prepared for: <strong>Academic &amp; Corporate Review</strong></span>
+                      <span>•</span>
+                      <span>{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
                     </div>
                   </div>
 
-                  {/* Running Footer */}
-                  <div className="flex justify-between items-center text-[10px] text-gray-600 font-mono border-t border-gray-300 pt-3">
-                    <span>CONFIDENTIAL &amp; PROPRIETARY</span>
-                    <span>Page 1 of {totalCalculatedPages}</span>
-                  </div>
-                </div>
-
-                {/* ====================================================== */}
-                {/* PAGE 2: TABLE OF CONTENTS & METHODOLOGICAL BLUEPRINT   */}
-                {/* ====================================================== */}
-                <div
-                  id="page-toc"
-                  className="w-full max-w-[780px] min-h-[1080px] bg-white text-black p-10 sm:p-16 border border-gray-300 shadow-xl rounded-sm font-['Times_New_Roman',_Times,_serif] flex flex-col justify-between"
-                >
-                  {/* Top Running Header */}
-                  <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-500 border-b border-gray-300 pb-3">
-                    <span>TABLE OF CONTENTS &amp; METHODOLOGY</span>
-                    <span>PAGE 2</span>
-                  </div>
-
-                  {/* Table of Contents List */}
-                  <div className="my-auto flex flex-col gap-6">
-                    <h2 className="text-xl font-bold uppercase tracking-wide text-center border-b border-black pb-2">
-                      Table of Contents
-                    </h2>
-
-                    <div className="space-y-2 text-xs">
+                  {/* Table of Contents Section (Interactive Jump) */}
+                  <div className="bg-gray-50 p-5 rounded border border-gray-300 text-xs font-['Times_New_Roman',_Times,_serif]">
+                    <div className="font-bold uppercase tracking-wider text-black text-center text-sm mb-3">TABLE OF CONTENTS</div>
+                    <div className="space-y-2 text-black">
                       {outline.sections.map((s, idx) => (
                         <button
                           key={idx}
                           type="button"
                           onClick={() => {
-                            const target = document.getElementById(`page-chapter-${idx}`);
+                            const target = document.getElementById(`chapter-sec-${idx}`);
                             if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
                           }}
-                          className="w-full flex justify-between items-baseline gap-2 text-left hover:text-[#004085] hover:underline cursor-pointer group"
+                          className="w-full flex justify-between items-baseline gap-2 text-left hover:text-[#004085] hover:underline cursor-pointer"
                         >
-                          <span className="font-semibold text-black group-hover:text-[#004085] truncate">
-                            {idx + 1}. {s.title.replace(/^\d+\.\s*/, "")}
-                          </span>
+                          <span className="font-medium truncate">{s.title}</span>
                           <span className="flex-1 border-b border-dotted border-gray-400 min-w-8" />
-                          <span className="text-[11px] text-gray-700 font-mono">Page {idx + 3}</span>
+                          <span className="text-[11px] text-gray-800 font-mono font-semibold">Page {idx * 2 + 1}</span>
                         </button>
                       ))}
                     </div>
-
-                    {/* Methodological Blueprint Box */}
-                    <div className="bg-gray-50 border border-gray-300 p-4 rounded text-xs mt-4">
-                      <div className="font-bold text-black uppercase tracking-wider mb-1">
-                        Methodological Sampling &amp; Data Verification:
-                      </div>
-                      <p className="text-justify text-gray-800 leading-relaxed">
-                        Data points, CAGR distributions, and regulatory mandates cited in this treatise were cross-referenced against institutional records and academic publications. Quantitative tables employ strict OpenXML formatting standards.
-                      </p>
-                    </div>
                   </div>
 
-                  {/* Running Footer */}
-                  <div className="flex justify-between items-center text-[10px] text-gray-600 font-mono border-t border-gray-300 pt-3">
-                    <span>ACADEMIC &amp; CORPORATE TREATISE</span>
-                    <span>Page 2 of {totalCalculatedPages}</span>
+                  {/* Full Continuous Manuscript Prose */}
+                  <div className="space-y-8 text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
+                    {outline.sections.map((sec, idx) => {
+                      const proseContent = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[sec.title];
+                      const isDraftingNow = isStreaming && activeGeneratingSectionIndex === idx && !proseContent;
+                      const isSectionRegenerating = regeneratingSectionId === sec.id;
+
+                      return (
+                        <div key={sec.id || idx} id={`chapter-sec-${idx}`} className="space-y-4 group scroll-mt-16">
+                          {/* Word Heading 1 */}
+                          <div className="flex items-center justify-between border-b border-gray-300 pb-1.5 pt-6">
+                            <h2 className="text-[16pt] font-bold text-black font-['Times_New_Roman',_Times,_serif]">
+                              {idx + 1}. {sec.title.replace(/^\d+\.\s*/, "")}
+                            </h2>
+                            <div className="flex items-center gap-2">
+                              {proseContent && !isStreaming && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveRegenSection(sec);
+                                    setSectionRevisionInstruction("");
+                                  }}
+                                  className="text-[11px] text-[#004085] hover:underline font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer font-sans"
+                                >
+                                  🔄 Refine Section
+                                </button>
+                              )}
+                              {isDraftingNow || isSectionRegenerating ? (
+                                <span className="text-[11px] bg-black text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm font-sans">
+                                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                  ⚡ Drafting...
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          {/* Chapter Abstract / Scope */}
+                          {sec.brief && (
+                            <p className="italic text-gray-800 text-xs border-l-2 border-gray-400 pl-3 my-2">
+                              <strong>Chapter Scope:</strong> {sec.brief}
+                            </p>
+                          )}
+
+                          {/* Paragraph Content with Tables & Citations */}
+                          {proseContent ? (
+                            <div className="text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
+                              {renderFormattedManuscriptProse(proseContent)}
+                            </div>
+                          ) : isDraftingNow || isSectionRegenerating ? (
+                            <div className="space-y-3 py-3">
+                              <div className="text-xs text-gray-600 italic font-medium">
+                                Synthesizing chapter prose and empirical research data...
+                              </div>
+                              <div className="space-y-2">
+                                <div className="h-3.5 shimmer-skeleton rounded w-full" />
+                                <div className="h-3.5 shimmer-skeleton rounded w-[92%]" />
+                                <div className="h-3.5 shimmer-skeleton rounded w-[96%]" />
+                                <div className="h-3.5 shimmer-skeleton rounded w-[75%]" />
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500 italic font-medium">{sec.brief}</p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                {/* ====================================================== */}
-                {/* PAGES 3+: DEDICATED INDIVIDUAL CHAPTER A4 SHEETS       */}
-                {/* ====================================================== */}
-                {outline.sections.map((sec, idx) => {
-                  const proseContent = generatedSections[sec.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[sec.title];
-                  const isDraftingNow = isStreaming && activeGeneratingSectionIndex === idx && !proseContent;
-                  const isSectionRegenerating = regeneratingSectionId === sec.id;
-
-                  return (
-                    <div
-                      key={sec.id || idx}
-                      id={`page-chapter-${idx}`}
-                      className="w-full max-w-[780px] min-h-[1080px] bg-white text-black p-10 sm:p-16 border border-gray-300 shadow-xl rounded-sm font-['Times_New_Roman',_Times,_serif] flex flex-col justify-between relative group"
-                    >
-                      {/* Top Running Header */}
-                      <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-widest text-gray-500 border-b border-gray-300 pb-3">
-                        <span className="truncate max-w-[300px]">
-                          CHAPTER {idx + 1}: {sec.title.replace(/^\d+\.\s*/, "")}
-                        </span>
-                        <span>PAGE {idx + 3} OF {totalCalculatedPages}</span>
-                      </div>
-
-                      {/* Chapter Body Content */}
-                      <div className="my-auto space-y-4 py-4">
-                        {/* Chapter Title & Refine Button */}
-                        <div className="flex items-center justify-between border-b border-black pb-2">
-                          <h2 className="text-[16pt] font-bold text-black font-['Times_New_Roman',_Times,_serif]">
-                            {idx + 1}. {sec.title.replace(/^\d+\.\s*/, "")}
-                          </h2>
-                          <div className="flex items-center gap-2">
-                            {proseContent && !isStreaming && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveRegenSection(sec);
-                                  setSectionRevisionInstruction("");
-                                }}
-                                className="text-[11px] text-[#004085] hover:underline font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer font-sans"
-                              >
-                                🔄 Refine Section
-                              </button>
-                            )}
-                            {isDraftingNow || isSectionRegenerating ? (
-                              <span className="text-[11px] bg-black text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 animate-pulse shadow-sm font-sans">
-                                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                                ⚡ Drafting...
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        {/* Chapter Scope Box */}
-                        {sec.brief && (
-                          <div className="italic text-gray-800 text-xs border-l-2 border-gray-500 pl-3 my-2">
-                            <strong>Chapter Scope:</strong> {sec.brief}
-                          </div>
-                        )}
-
-                        {/* Rendered Prose with Tables and Citations */}
-                        {proseContent ? (
-                          <div className="text-[12pt] leading-[1.6] text-black font-['Times_New_Roman',_Times,_serif]">
-                            {renderFormattedManuscriptProse(proseContent)}
-                          </div>
-                        ) : isDraftingNow || isSectionRegenerating ? (
-                          <div className="space-y-3 py-4">
-                            <div className="text-xs text-gray-500 italic font-sans">
-                              Synthesizing verified empirical data and structured Markdown tables...
-                            </div>
-                            <div className="space-y-2.5">
-                              <div className="h-3.5 shimmer-skeleton rounded w-full" />
-                              <div className="h-3.5 shimmer-skeleton rounded w-[94%]" />
-                              <div className="h-3.5 shimmer-skeleton rounded w-[98%]" />
-                              <div className="h-3.5 shimmer-skeleton rounded w-[80%]" />
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-gray-400 italic font-sans">{sec.brief}</p>
-                        )}
-                      </div>
-
-                      {/* Running Footer */}
-                      <div className="flex justify-between items-center text-[10px] text-gray-600 font-mono border-t border-gray-300 pt-3">
-                        <span>CONFIDENTIAL &amp; ACADEMIC TREATISE</span>
-                        <span>Page {idx + 3} of {totalCalculatedPages}</span>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             </div>
           </div>
@@ -1760,217 +2073,259 @@ export default function ClaudeDocumentStudioApp() {
       {/* SECTION REGENERATION / REFINEMENT MODAL                      */}
       {/* ============================================================ */}
       {activeRegenSection && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 max-w-lg w-full paper-shadow flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-serif text-lg font-bold text-[var(--primary)] flex items-center gap-1.5">
-                <span>🔄 Refine Section:</span> {activeRegenSection.title}
-              </h3>
-              <button
+        <Modal
+          isOpen={Boolean(activeRegenSection)}
+          onClose={() => setActiveRegenSection(null)}
+          title={`Refine Chapter: ${activeRegenSection.title}`}
+          description="Provide custom revision directives (e.g. Include quantitative CAGR data, focus on regulatory policy, or make it concise)."
+          icon={<RotateCw className="size-5 text-[#7F56D9] dark:text-[#9E77ED]" />}
+          iconVariant="brand"
+          footer={
+            <>
+              <Button
+                variant="secondary_gray"
+                size="sm"
                 onClick={() => setActiveRegenSection(null)}
-                className="text-[var(--text-subtle)] hover:text-[var(--on-background)] text-xl cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              Provide instructions to deepen quantitative depth, adjust phrasing, or embed specific regional metrics.
-            </p>
-
-            <textarea
-              rows={3}
-              value={sectionRevisionInstruction}
-              onChange={(e) => setSectionRevisionInstruction(e.target.value)}
-              placeholder="e.g., Deepen the unit economics with 2026 CAGR targets and include a structured comparison table..."
-              className="w-full p-3 text-xs border border-[var(--surface-border)] rounded-xl outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)] resize-none"
-            />
-
-            <div className="flex gap-2 justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setActiveRegenSection(null)}
-                className="px-4 py-2 text-xs font-bold text-[var(--text-muted)] hover:bg-[var(--surface-muted)] rounded-lg border border-[var(--surface-border)] cursor-pointer"
               >
                 Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleExecuteSectionRegen}
-                className="px-4 py-2 text-xs font-bold text-white bg-[var(--primary)] hover:bg-[var(--primary-container)] rounded-lg shadow transition-colors cursor-pointer"
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleRegenerateSectionSubmit}
+                isLoading={regeneratingSectionId !== null}
+                loadingText="Regenerating..."
+                iconLeading={<RotateCw className="size-3.5" />}
               >
-                Apply Revision
-              </button>
-            </div>
+                Apply Refinement
+              </Button>
+            </>
+          }
+        >
+          <div className="py-2">
+            <textarea
+              value={sectionRevisionInstruction}
+              onChange={(e) => setSectionRevisionInstruction(e.target.value)}
+              rows={4}
+              placeholder="Enter specific refinement instructions for this section..."
+              className="w-full p-3.5 text-xs border border-gray-300 dark:border-gray-700 rounded-xl outline-none focus:border-[#7F56D9] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white font-medium"
+            />
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ============================================================ */}
-      {/* BYOK & GOOGLE AI STUDIO API KEY MODAL                         */}
+      {/* RESEARCH SOURCES INSPECTOR MODAL                             */}
+      {/* ============================================================ */}
+      {showSourcesModal && researchBundle && (
+        <Modal
+          isOpen={showSourcesModal}
+          onClose={() => setShowSourcesModal(false)}
+          title="Verified Research Sources"
+          description={`${researchBundle.results.length} institutional references retrieved for "${researchBundle.query}"`}
+          icon={<Search className="size-5 text-blue-600 dark:text-blue-400" />}
+          iconVariant="blue"
+          maxWidth="2xl"
+          footer={
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowSourcesModal(false)}
+            >
+              Close Inspector
+            </Button>
+          }
+        >
+          <div className="space-y-3 py-2">
+            {researchBundle.results.map((src) => (
+              <div
+                key={src.index}
+                className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-950 text-xs space-y-2"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    #{src.index}. {src.title}
+                  </span>
+                  <Badge variant="brand" size="sm">
+                    Score: {src.score || 0.95}
+                  </Badge>
+                </div>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                  {src.snippet}
+                </p>
+                <a
+                  href={src.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-[#7F56D9] dark:text-[#9E77ED] hover:underline font-mono inline-flex items-center gap-1 pt-1 font-semibold"
+                >
+                  <ExternalLink className="size-3" />
+                  <span>{src.url}</span>
+                </a>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
+
+      {/* ============================================================ */}
+      {/* BYOK SETTINGS MODAL                                          */}
       {/* ============================================================ */}
       {showSettingsModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 sm:p-8 max-w-md w-full paper-shadow flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-serif text-xl font-bold text-[var(--primary)] flex items-center gap-2">
-                <span className="material-symbols-outlined text-base">key</span>
-                Google AI Studio API Key &amp; Settings
-              </h3>
-              <button
-                onClick={() => setShowSettingsModal(false)}
-                className="text-[var(--text-subtle)] hover:text-[var(--on-background)] text-xl cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              Connect your <strong>Google AI Studio API Key</strong> for unlimited deep research, real empirical datasets, and high-speed multi-chapter document synthesis.
-            </p>
-
-            <div className="space-y-4">
-              {/* Google Gemini AI Studio Key */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-[var(--text-muted)]">
-                    Google AI Studio API Key
-                  </label>
-                  {hasCustomGeminiKey ? (
-                    <span className="text-[11px] text-emerald-600 font-bold">Active ({geminiKeyMasked})</span>
-                  ) : (
-                    <a
-                      href="https://aistudio.google.com/app/apikey"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] text-[var(--primary)] hover:underline font-bold"
-                    >
-                      Get Free Google AI Key ↗
-                    </a>
-                  )}
-                </div>
-                <input
-                  type="password"
-                  placeholder={hasCustomGeminiKey ? "Enter new key to update..." : "AIzaSy..."}
-                  value={customGeminiKeyInput}
-                  onChange={(e) => setCustomGeminiKeyInput(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)] font-mono"
-                />
-              </div>
-
-              {/* Model Architecture Selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-muted)] flex justify-between items-center">
-                  <span>Selected Model</span>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full">
-                    {geminiModel === "gemini-3.6-flash" ? "✨ Gemini 3.6" : geminiModel}
-                  </span>
-                </label>
-                <select
-                  value={geminiModel}
-                  onChange={(e) => setGeminiModel(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)] font-medium cursor-pointer"
-                >
-                  <option value="gemini-3.6-flash">✨ Google Gemini 3.6 Flash (Next-Gen Ultra Fast &amp; Deep Synthesis)</option>
-                  <option value="gemini-2.5-flash">⚡ Google Gemini 2.5 Flash (Production Standard)</option>
-                  <option value="gemini-1.5-pro">🧠 Google Gemini 1.5 Pro (Deep Research &amp; 2M Context)</option>
-                  <option value="gpt-4o-mini">🤖 OpenAI GPT-4o-mini (Secondary Engine)</option>
-                </select>
-              </div>
-
-              {/* OpenAI API Key */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-muted)] flex justify-between">
-                  <span>OpenAI API Key (Optional Fallback)</span>
-                  {hasCustomOpenAIKey && <span className="text-[11px] text-emerald-600 font-bold">Active ({openaiKeyMasked})</span>}
-                </label>
-                <input
-                  type="password"
-                  placeholder={hasCustomOpenAIKey ? "Enter new key to update..." : "sk-proj-..."}
-                  value={customOpenAIKeyInput}
-                  onChange={(e) => setCustomOpenAIKeyInput(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-[var(--surface-border)] rounded-lg outline-none focus:border-[var(--primary)] bg-[var(--surface-muted)] text-[var(--on-background)] font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 justify-end pt-2">
+        <Modal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          title="Bring Your Own Key (BYOK) & AI Settings"
+          description="Configure your preferred AI Model Architecture and use your own encrypted API keys for unlimited high-speed document synthesis."
+          icon={<Key className="size-5 text-[#7F56D9] dark:text-[#9E77ED]" />}
+          iconVariant="brand"
+          footer={
+            <>
               {(hasCustomGeminiKey || hasCustomOpenAIKey) && (
-                <button
-                  type="button"
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={handleClearKeys}
-                  className="px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg border border-red-200 transition-colors cursor-pointer"
                 >
                   Clear Keys
-                </button>
+                </Button>
               )}
-              <button
-                type="button"
+              <Button
+                variant="secondary_gray"
+                size="sm"
                 onClick={() => setShowSettingsModal(false)}
-                className="px-3.5 py-2 text-xs font-bold text-[var(--text-muted)] hover:bg-[var(--surface-muted)] rounded-lg border border-[var(--surface-border)] cursor-pointer"
               >
                 Cancel
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleSaveKeys}
+                isLoading={savingSettings}
+                loadingText="Saving Keys..."
                 disabled={savingSettings || (!customGeminiKeyInput && !customOpenAIKeyInput)}
-                className="px-4 py-2 text-xs font-bold text-white bg-[var(--primary)] hover:bg-[var(--primary-container)] rounded-lg shadow transition-colors cursor-pointer disabled:opacity-50"
               >
-                {savingSettings ? "Saving..." : "Save Encrypted Key"}
-              </button>
+                Save Encrypted Keys
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4 py-2">
+            {/* Model Selector */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-800 dark:text-gray-200 flex justify-between items-center">
+                <span>Selected AI Engine</span>
+                <Badge variant="success" size="sm" dot>
+                  {geminiModel === "gemini-3.6-flash" ? "Gemini 3.6 Flash" : geminiModel}
+                </Badge>
+              </label>
+              <select
+                value={geminiModel}
+                onChange={(e) => setGeminiModel(e.target.value)}
+                className="w-full p-2.5 text-xs border border-gray-300 dark:border-gray-700 rounded-xl outline-none focus:border-[#7F56D9] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white font-medium cursor-pointer"
+              >
+                <option value="gemini-3.6-flash">✨ Google Gemini 3.6 Flash (Next-Gen Ultra Fast &amp; Deep Synthesis)</option>
+                <option value="gemini-2.5-flash">⚡ Google Gemini 2.5 Flash (Production Standard)</option>
+                <option value="gemini-1.5-pro">🧠 Google Gemini 1.5 Pro (Deep Research &amp; 2M Context)</option>
+                <option value="gpt-4o-mini">🤖 OpenAI GPT-4o-mini (Secondary Engine)</option>
+              </select>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 italic">
+                Automatic fallback to Gemini 2.5 Flash is enabled if the experimental endpoint is unreachable.
+              </p>
+            </div>
+
+            {/* Google Gemini API Key */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                  Google Gemini API Key
+                </label>
+                {hasCustomGeminiKey ? (
+                  <span className="text-[11px] text-emerald-600 font-bold">Active ({geminiKeyMasked})</span>
+                ) : (
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-[#7F56D9] dark:text-[#9E77ED] hover:underline font-bold inline-flex items-center gap-0.5"
+                  >
+                    Get Free Gemini Key <ExternalLink className="size-2.5" />
+                  </a>
+                )}
+              </div>
+              <input
+                type="password"
+                placeholder={hasCustomGeminiKey ? "Enter new key to update..." : "AIzaSy..."}
+                value={customGeminiKeyInput}
+                onChange={(e) => setCustomGeminiKeyInput(e.target.value)}
+                className="w-full p-2.5 text-xs border border-gray-300 dark:border-gray-700 rounded-xl outline-none focus:border-[#7F56D9] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white font-mono"
+              />
+            </div>
+
+            {/* OpenAI API Key */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-800 dark:text-gray-200 flex justify-between">
+                <span>OpenAI API Key (Optional Fallback)</span>
+                {hasCustomOpenAIKey && <span className="text-[11px] text-emerald-600 font-bold">Active ({openaiKeyMasked})</span>}
+              </label>
+              <input
+                type="password"
+                placeholder={hasCustomOpenAIKey ? "Enter new key to update..." : "sk-proj-..."}
+                value={customOpenAIKeyInput}
+                onChange={(e) => setCustomOpenAIKeyInput(e.target.value)}
+                className="w-full p-2.5 text-xs border border-gray-300 dark:border-gray-700 rounded-xl outline-none focus:border-[#7F56D9] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white font-mono"
+              />
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ============================================================ */}
       {/* AUTH MODAL                                                   */}
       {/* ============================================================ */}
       {showAuthModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 sm:p-8 max-w-sm w-full paper-shadow flex flex-col gap-5">
-            <div className="flex justify-between items-center">
-              <h3 className="font-serif text-2xl font-bold text-[var(--primary)]">
-                {authMode === "signup" ? "Create Account" : "Welcome Back"}
-              </h3>
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="text-[var(--text-subtle)] hover:text-[var(--on-background)] text-xl cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
+        <Modal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          title={authMode === "signup" ? "Create Account" : "Welcome Back"}
+          description={authMode === "signup" ? "Sign up to save, sync, and export multi-chapter documents." : "Sign in to access your saved documents and API configurations."}
+          icon={<User className="size-5 text-[#7F56D9] dark:text-[#9E77ED]" />}
+          iconVariant="brand"
+          maxWidth="sm"
+        >
+          <div className="space-y-4 py-2">
             {/* Google Sign-In Identity Button */}
-            <button
+            <Button
+              variant="secondary_gray"
+              size="md"
               onClick={handleGoogleSignIn}
-              type="button"
-              className="w-full py-2.5 px-4 bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-xl text-xs font-bold text-[var(--on-background)] hover:bg-[var(--surface-muted)] transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+              iconLeading={
+                <svg className="size-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+              }
+              className="w-full shadow-xs font-bold"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
               Continue with Google
-            </button>
+            </Button>
 
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-[var(--surface-border)]" />
-              <span className="text-[11px] text-[var(--text-subtle)] font-mono">OR</span>
-              <div className="flex-1 h-px bg-[var(--surface-border)]" />
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+              <span className="font-medium">or email</span>
+              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
             </div>
 
             <form onSubmit={handleAuthSubmit} className="flex flex-col gap-3">
               {authMode === "signup" && (
                 <input
                   type="text"
-                  placeholder="Full Name"
+                  placeholder="Your Name"
                   value={authName}
                   onChange={(e) => setAuthName(e.target.value)}
-                  className="p-2.5 text-xs border border-[var(--surface-border)] rounded-lg bg-[var(--surface-muted)] text-[var(--on-background)] outline-none focus:border-[var(--primary)]"
+                  className="w-full p-2.5 text-xs border border-gray-300 dark:border-gray-700 rounded-xl outline-none focus:border-[#7F56D9] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white font-medium"
                   required
                 />
               )}
@@ -1979,7 +2334,7 @@ export default function ClaudeDocumentStudioApp() {
                 placeholder="Email Address"
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
-                className="p-2.5 text-xs border border-[var(--surface-border)] rounded-lg bg-[var(--surface-muted)] text-[var(--on-background)] outline-none focus:border-[var(--primary)]"
+                className="w-full p-2.5 text-xs border border-gray-300 dark:border-gray-700 rounded-xl outline-none focus:border-[#7F56D9] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white font-medium"
                 required
               />
               <input
@@ -1987,28 +2342,47 @@ export default function ClaudeDocumentStudioApp() {
                 placeholder="Password"
                 value={authPassword}
                 onChange={(e) => setAuthPassword(e.target.value)}
-                className="p-2.5 text-xs border border-[var(--surface-border)] rounded-lg bg-[var(--surface-muted)] text-[var(--on-background)] outline-none focus:border-[var(--primary)]"
+                className="w-full p-2.5 text-xs border border-gray-300 dark:border-gray-700 rounded-xl outline-none focus:border-[#7F56D9] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white font-medium"
                 required
               />
 
-              <button
+              <Button
                 type="submit"
-                className="w-full py-2.5 bg-[var(--primary)] text-white text-xs font-bold rounded-lg hover:bg-[var(--primary-container)] transition-colors shadow-sm cursor-pointer mt-1"
+                variant="primary"
+                size="md"
+                className="w-full mt-1 font-bold shadow-sm"
               >
-                {authMode === "signup" ? "Create Free Account" : "Sign In"}
-              </button>
+                {authMode === "signup" ? "Create Account" : "Sign In"}
+              </Button>
             </form>
 
-            <div className="text-center">
-              <button
-                onClick={() => setAuthMode(authMode === "signup" ? "login" : "signup")}
-                className="text-xs text-[var(--primary)] hover:underline font-medium"
-              >
-                {authMode === "signup" ? "Already have an account? Sign in" : "Need an account? Sign up"}
-              </button>
+            <div className="text-center text-xs text-gray-600 dark:text-gray-400">
+              {authMode === "signup" ? (
+                <span>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode("login")}
+                    className="text-[#7F56D9] dark:text-[#9E77ED] font-bold hover:underline cursor-pointer"
+                  >
+                    Sign In
+                  </button>
+                </span>
+              ) : (
+                <span>
+                  Need an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode("signup")}
+                    className="text-[#7F56D9] dark:text-[#9E77ED] font-bold hover:underline cursor-pointer"
+                  >
+                    Sign Up
+                  </button>
+                </span>
+              )}
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

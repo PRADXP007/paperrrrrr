@@ -1,119 +1,76 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: #FAF8F5;
-    --on-background: #1F1E1D;
-    --primary: #C35E3E;
-    --primary-container: #A94A2D;
-    --primary-fixed: #F7EDE8;
-    --on-primary: #FFFFFF;
-    --secondary: #6B665F;
-    --surface: #FAF8F5;
-    --surface-card: #FFFFFF;
-    --surface-border: #E8E4DC;
-    --surface-muted: #F2EFE9;
-    --text-muted: #6B665F;
-    --text-subtle: #969188;
-  }
+@theme {
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Untitled UI Signature Vibrant Violet / Indigo Palette */
+  --color-brand-25: #fcfaff;
+  --color-brand-50: #f9f5ff;
+  --color-brand-100: #f4ebff;
+  --color-brand-200: #e9d7fe;
+  --color-brand-300: #d6bbfb;
+  --color-brand-400: #b692f6;
+  --color-brand-500: #9e77ed;
+  --color-brand-600: #7f56d9;
+  --color-brand-700: #6941c6;
+  --color-brand-800: #53389e;
+  --color-brand-900: #42307d;
+  --color-brand-950: #2c1c5f;
+}
 
-  .dark {
-    --background: #181816;
-    --on-background: #F3F1ED;
-    --primary: #E07A5F;
-    --primary-container: #C35E3E;
-    --primary-fixed: #3A261F;
-    --on-primary: #FFFFFF;
-    --secondary: #A8A49C;
-    --surface: #181816;
-    --surface-card: #22211F;
-    --surface-border: #363430;
-    --surface-muted: #2A2825;
-    --text-muted: #A8A49C;
-    --text-subtle: #7A766F;
+@layer base {
+  :root, .dark {
+    --background: #0c111d;
+    --on-background: #f8fafc;
+    --primary: #9e77ed;
+    --primary-container: #7f56d9;
+    --primary-fixed: #2c1c5f;
+    --on-primary: #ffffff;
+    --secondary: #94a3b8;
+    --surface: #0c111d;
+    --surface-card: #161b26;
+    --surface-border: #222938;
+    --surface-muted: #1d2939;
+    --text-muted: #94a3b8;
+    --text-subtle: #64748b;
   }
 
   body {
     background-color: var(--background);
     color: var(--on-background);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
 
-  h1, h2, h3, .font-serif, .font-serif-title {
-    font-family: 'Newsreader', 'Playfair Display', Georgia, serif;
+  h1, h2, h3, .font-serif-title {
+    font-family: 'Playfair Display', Georgia, serif;
   }
-
-  code, pre, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
-  }
-}
-
-.claude-card {
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
-}
-
-.claude-input-box {
-  background: var(--surface-card);
-  border: 1.5px solid var(--surface-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.03);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.claude-input-box:focus-within {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(195, 94, 62, 0.12), 0 12px 36px rgba(0, 0, 0, 0.06);
-}
-
-.claude-thought-box {
-  background: rgba(195, 94, 62, 0.04);
-  border-left: 3px solid var(--primary);
-}
-
-.dark .claude-thought-box {
-  background: rgba(224, 122, 95, 0.08);
-  border-left: 3px solid var(--primary);
 }
 
 .paper-shadow {
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04), 0px 8px 24px rgba(0, 0, 0, 0.04);
-}
-
-.dark .paper-shadow {
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3), 0px 10px 30px rgba(0, 0, 0, 0.45);
+  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.4);
 }
 
 .ms-word-canvas {
-  background-color: #FFFFFF !important;
+  background-color: #ffffff !important;
   color: #000000 !important;
   font-family: 'Times New Roman', Times, 'Nimbus Roman No9 L', serif !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-  border: 1px solid #E2DDD5 !important;
-  transition: all 0.25s ease;
-}
-
-.dark .ms-word-canvas {
-  background-color: #FFFFFF !important;
-  color: #000000 !important;
-  font-family: 'Times New Roman', Times, 'Nimbus Roman No9 L', serif !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  border: 1px solid #4A4640 !important;
+  box-shadow: 0 16px 52px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  border: 1px solid #4b5563 !important;
 }
 
 .terminal-glow {
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.6), 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.glass-panel {
+  background: rgba(22, 27, 38, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .shimmer-skeleton {
-  background: linear-gradient(90deg, rgba(232, 228, 220, 0.4) 0%, rgba(195, 94, 62, 0.15) 50%, rgba(232, 228, 220, 0.4) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
-}
-
-.dark .shimmer-skeleton {
-  background: linear-gradient(90deg, rgba(54, 52, 48, 0.5) 0%, rgba(224, 122, 95, 0.2) 50%, rgba(54, 52, 48, 0.5) 100%);
+  background: linear-gradient(90deg, rgba(34, 41, 56, 0.6) 0%, rgba(127, 86, 217, 0.25) 50%, rgba(34, 41, 56, 0.6) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.8s infinite;
 }
@@ -131,34 +88,60 @@
   50% { opacity: 0; }
 }
 
-/* Custom Scrollbar */
+.pulse-text {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+@keyframes pulse-soft {
+  0%, 100% { color: var(--primary); }
+  50% { color: var(--primary-container); }
+}
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes move-bg {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 1rem 0;
+  }
+}
+
+/* Custom Scrollbar for contained document viewing box */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 9px;
+  height: 9px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.45);
 }
