@@ -35,20 +35,61 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "google") {
-      const gEmail = email || "researcher.scholar@gmail.com";
-      const gName = name || "Institutional Researcher";
+      const gEmail = (email || "researcher.scholar@gmail.com").toLowerCase().trim();
+      const gName = name || (gEmail.includes("@") ? gEmail.split("@")[0].replace(/\./g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) : "Institutional Researcher");
+      const avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${gEmail}`;
+
+      try {
+        const conn = await connectToDatabase();
+        if (conn) {
+          let user = await (User as any).findOne({ email: gEmail });
+          if (!user) {
+            user = await (User as any).create({
+              name: gName,
+              email: gEmail,
+              avatar,
+              authProvider: "google"
+            });
+          }
+
+          const authUser = {
+            id: user._id.toString(),
+            name: user.name || gName,
+            email: user.email,
+            avatar: user.avatar || avatar
+          };
+
+          saveLocalUser({ _id: authUser.id, name: authUser.name, email: authUser.email });
+          const token = await createSessionToken(authUser);
+
+          const res = NextResponse.json({ success: true, user: authUser, token });
+          res.cookies.set("auth_token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 30 * 24 * 60 * 60,
+            path: "/"
+          });
+          return res;
+        }
+      } catch (dbErr) {
+        console.warn("MongoDB Google Auth fallback:", dbErr);
+      }
+
+      // Fallback local auth
       const googleUser = {
         _id: `g_user_${Date.now()}`,
         name: gName,
-        email: gEmail.toLowerCase(),
+        email: gEmail,
+        avatar,
         provider: "google"
       };
 
       const saved = saveLocalUser(googleUser);
-      const authUser = { id: saved._id, name: saved.name, email: saved.email };
+      const authUser = { id: saved._id, name: saved.name, email: saved.email, avatar };
       const token = await createSessionToken(authUser);
 
-      const res = NextResponse.json({ user: authUser, token });
+      const res = NextResponse.json({ success: true, user: authUser, token });
       res.cookies.set("auth_token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",

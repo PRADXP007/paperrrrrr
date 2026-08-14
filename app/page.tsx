@@ -254,7 +254,7 @@ export default function PaperLoopApp() {
     document.documentElement.classList.add("dark");
 
     try {
-      const savedUserStr = localStorage.getItem("paperrrrrr_user");
+      const savedUserStr = localStorage.getItem("paperloop_user") || localStorage.getItem("paperrrrrr_user");
       if (savedUserStr) {
         setUser(JSON.parse(savedUserStr));
       }
@@ -268,7 +268,7 @@ export default function PaperLoopApp() {
         if (data.user) {
           setUser(data.user);
           try {
-            localStorage.setItem("paperrrrrr_user", JSON.stringify(data.user));
+            localStorage.setItem("paperloop_user", JSON.stringify(data.user));
           } catch (e) {}
         }
       })
@@ -306,24 +306,37 @@ export default function PaperLoopApp() {
   }, [screen]);
 
   const fetchPastDocuments = async () => {
+    let localDocs: any[] = [];
+    try {
+      const savedHistory = localStorage.getItem("paperloop_history") || localStorage.getItem("paperrrrrr_history");
+      if (savedHistory) localDocs = JSON.parse(savedHistory);
+    } catch (e) {}
+
     try {
       const res = await fetch("/api/documents");
       if (res.ok) {
         const data = await res.json();
-        if (data.documents) {
-          setPastDocuments(data.documents);
+        if (data.documents && Array.isArray(data.documents)) {
+          const seen = new Set<string>();
+          const merged = [...data.documents, ...localDocs].filter((d) => {
+            const key = d._id || d.id || `${d.title}_${d.format}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setPastDocuments(merged);
           try {
-            localStorage.setItem("paperrrrrr_history", JSON.stringify(data.documents));
+            localStorage.setItem("paperloop_history", JSON.stringify(merged));
           } catch (e) {}
+          return;
         }
-      } else {
-        // LocalStorage fallback
-        const savedHistory = localStorage.getItem("paperrrrrr_history");
-        if (savedHistory) setPastDocuments(JSON.parse(savedHistory));
       }
     } catch (e) {
-      const savedHistory = localStorage.getItem("paperrrrrr_history");
-      if (savedHistory) setPastDocuments(JSON.parse(savedHistory));
+      console.warn("Document history fetch error:", e);
+    }
+
+    if (localDocs.length > 0) {
+      setPastDocuments(localDocs);
     }
   };
 
@@ -432,7 +445,7 @@ export default function PaperLoopApp() {
       if (data.user) {
         setUser(data.user);
         try {
-          localStorage.setItem("paperrrrrr_user", JSON.stringify(data.user));
+          localStorage.setItem("paperloop_user", JSON.stringify(data.user));
         } catch (e) {}
         setShowAuthModal(false);
         setAuthEmail("");
@@ -457,6 +470,7 @@ export default function PaperLoopApp() {
     } catch (e) {}
     setUser(null);
     try {
+      localStorage.removeItem("paperloop_user");
       localStorage.removeItem("paperrrrrr_user");
     } catch (e) {}
   };
@@ -1051,26 +1065,35 @@ export default function PaperLoopApp() {
                       subsections: s.subsections,
                     }));
 
-                // Save to local and server document history
-                try {
-                  await fetch("/api/documents", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      title: projectTitleOverride || targetOutline.title,
-                      subtitle: targetOutline.subtitle,
-                      prompt: targetOutline.title,
-                      format: targetOutline.format || format,
-                      docType,
-                      tone,
-                      sections: compiledSections,
-                      outline: targetOutline.sections,
-                      status: "completed"
-                    }),
-                  });
-                } catch (saveErr) {
-                  console.warn("Document history auto-save:", saveErr);
-                }
+                const docRecord = {
+                  _id: targetDocId || docId || `doc_${Date.now()}`,
+                  title: projectTitleOverride || targetOutline.title,
+                  subtitle: targetOutline.subtitle,
+                  prompt: targetOutline.title,
+                  format: targetOutline.format || format,
+                  docType,
+                  tone,
+                  sections: compiledSections,
+                  outline: targetOutline.sections,
+                  status: "completed",
+                  updatedAt: new Date().toISOString()
+                };
+
+                // Add to pastDocuments state and local storage immediately
+                setPastDocuments((prev) => {
+                  const updated = [docRecord, ...prev.filter(d => (d._id !== docRecord._id && d.title !== docRecord.title))];
+                  try {
+                    localStorage.setItem("paperloop_history", JSON.stringify(updated));
+                  } catch (e) {}
+                  return updated;
+                });
+
+                // Save to server document history in background
+                fetch("/api/documents", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(docRecord),
+                }).catch((saveErr) => console.warn("Document history auto-save:", saveErr));
 
                 const resAssemble = await fetch("/api/assemble", {
                   method: "POST",
@@ -1416,28 +1439,27 @@ export default function PaperLoopApp() {
                       </div>
                     </div>
 
-                    {/* 5 Core Settings Fields Grid */}
+                    {/* Core Settings Fields Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 font-sans">
-                      {/* Field 1: Font */}
+                      {/* Field: Font */}
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">1. Typography Font</label>
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Typography Font</label>
                         <select
                           value={selectedFont}
                           onChange={(e) => setSelectedFont(e.target.value)}
                           className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
                         >
-                          <option value="Times New Roman">Times New Roman (Academic)</option>
-                          <option value="Arial">Arial (Modern Clean)</option>
-                          <option value="Calibri">Calibri (Corporate Formal)</option>
-                          <option value="Cambria">Cambria (Refined Serif)</option>
-                          <option value="Georgia">Georgia (Editorial Serif)</option>
+                          <option value="Times New Roman">Times New Roman</option>
+                          <option value="Arial">Arial</option>
+                          <option value="Calibri">Calibri</option>
+                          <option value="Cambria">Cambria</option>
+                          <option value="Georgia">Georgia</option>
                         </select>
-                        <span className="text-[11px] text-[#73726F] block">Applies throughout headings &amp; body.</span>
                       </div>
 
-                      {/* Field 2: Page Count */}
+                      {/* Field: Page Count */}
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">2. Page Count Target</label>
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Page Target</label>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
@@ -1448,29 +1470,27 @@ export default function PaperLoopApp() {
                           />
                           <span className="text-[#A38B86] text-xs shrink-0 font-medium">Pages</span>
                         </div>
-                        <span className="text-[11px] text-[#73726F] block">No upper limit (e.g. 40, 100, 200+).</span>
                       </div>
 
-                      {/* Field 3: Heading Accent Color */}
+                      {/* Field: Heading Accent Color */}
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">3. Heading Color</label>
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Heading Color</label>
                         <select
                           value={accentColor}
                           onChange={(e) => setAccentColor(e.target.value)}
                           className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
                         >
-                          <option value="000000">Black Text Only (#000000 Default)</option>
+                          <option value="000000">Black Only (Classic)</option>
                           <option value="1B365D">Navy Blue (#1B365D)</option>
-                          <option value="800020">Deep Burgundy (#800020)</option>
+                          <option value="800020">Burgundy (#800020)</option>
                           <option value="1E4620">Forest Emerald (#1E4620)</option>
                           <option value="2C3539">Slate Charcoal (#2C3539)</option>
                         </select>
-                        <span className="text-[11px] text-[#73726F] block">Headings &amp; accents only. Body stays black.</span>
                       </div>
 
-                      {/* Field 4: Chapter Count */}
+                      {/* Field: Chapter Count */}
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">4. Chapter Count</label>
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Chapter Count</label>
                         <input
                           type="number"
                           min={2}
@@ -1479,18 +1499,17 @@ export default function PaperLoopApp() {
                           onChange={(e) => setCustomChapterCount(e.target.value)}
                           className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none placeholder-[#73726F] focus:border-[#C3644B] font-sans"
                         />
-                        <span className="text-[11px] text-[#73726F] block">Leave blank for auto-derived chapters.</span>
                       </div>
                     </div>
 
-                    {/* Field 5: Additional Requirements & Instructions */}
+                    {/* Field: Additional Requirements & Instructions */}
                     <div className="space-y-1.5 pt-2 border-t border-white/10 font-sans">
-                      <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">5. Additional Requirements &amp; Instructions</label>
+                      <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Additional Instructions</label>
                       <textarea
                         rows={2}
                         value={additionalRequirements}
                         onChange={(e) => setAdditionalRequirements(e.target.value)}
-                        placeholder="Specific tone preferences, empirical benchmarks to emphasize, case studies, or institutional guidelines..."
+                        placeholder="Specific tone preferences, focus areas, case studies, or institutional requirements..."
                         className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none placeholder-[#73726F] focus:border-[#C3644B] resize-none font-sans"
                       />
                     </div>
@@ -2267,31 +2286,35 @@ export default function PaperLoopApp() {
           onClose={() => setShowAuthModal(false)}
           title={authMode === "signup" ? "Create PaperLoop Account" : "Sign In to Studio"}
         >
-          <div className="space-y-4">
+          <div className="space-y-4 font-sans text-xs">
             {/* One-Click Google Authentication */}
             <button
               type="button"
               onClick={async () => {
                 try {
+                  const googleEmail = authEmail.trim() || undefined;
+                  const googleName = authName.trim() || undefined;
                   const res = await fetch("/api/auth", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "google" }),
+                    body: JSON.stringify({ action: "google", email: googleEmail, name: googleName }),
                   });
                   const data = await res.json();
                   if (data.user) {
                     setUser(data.user);
                     try {
-                      localStorage.setItem("paperrrrrr_user", JSON.stringify(data.user));
+                      localStorage.setItem("paperloop_user", JSON.stringify(data.user));
                     } catch (e) {}
                     setShowAuthModal(false);
                     fetchPastDocuments();
+                  } else {
+                    alert(data.error || "Google Sign-In failed");
                   }
                 } catch (e: any) {
                   alert("Google Sign-In Error: " + e.message);
                 }
               }}
-              className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-[#FAF9F5] transition-all cursor-pointer shadow-sm hover:border-white/20"
+              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-sans text-[#FAF9F5] transition-all cursor-pointer shadow-sm hover:border-[#C3644B]/40 font-medium"
             >
               <svg className="size-4" viewBox="0 0 24 24">
                 <path
@@ -2316,43 +2339,43 @@ export default function PaperLoopApp() {
 
             <div className="flex items-center gap-3 my-2">
               <div className="flex-1 h-px bg-white/10" />
-              <span className="text-[10px] font-mono uppercase text-[#73726F]">or with email</span>
+              <span className="text-[11px] uppercase tracking-wider text-[#73726F] font-semibold">or with email</span>
               <div className="flex-1 h-px bg-white/10" />
             </div>
 
-            <form onSubmit={handleAuthSubmit} className="space-y-3.5">
+            <form onSubmit={handleAuthSubmit} className="space-y-3.5 font-sans">
               {authMode === "signup" && (
                 <div>
-                  <label className="text-xs font-mono text-[#A38B86]">Full Name</label>
+                  <label className="text-xs text-[#A38B86] font-medium">Full Name</label>
                   <input
                     type="text"
                     required
                     value={authName}
                     onChange={(e) => setAuthName(e.target.value)}
-                    className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1"
+                    className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1 focus:border-[#C3644B]"
                     placeholder="e.g. Dr. Jane Vance"
                   />
                 </div>
               )}
               <div>
-                <label className="text-xs font-mono text-[#A38B86]">Email Address</label>
+                <label className="text-xs text-[#A38B86] font-medium">Email Address</label>
                 <input
                   type="email"
                   required
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
-                  className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1"
-                  placeholder="vance@university.edu"
+                  className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1 focus:border-[#C3644B]"
+                  placeholder="name@university.edu"
                 />
               </div>
               <div>
-                <label className="text-xs font-mono text-[#A38B86]">Password</label>
+                <label className="text-xs text-[#A38B86] font-medium">Password</label>
                 <input
                   type="password"
                   required
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1"
+                  className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1 focus:border-[#C3644B]"
                   placeholder="••••••••"
                 />
               </div>
@@ -2360,7 +2383,7 @@ export default function PaperLoopApp() {
                 <button
                   type="button"
                   onClick={() => setAuthMode(authMode === "signup" ? "login" : "signup")}
-                  className="text-xs font-mono text-[#C3644B] hover:underline cursor-pointer"
+                  className="text-xs text-[#C3644B] hover:underline cursor-pointer font-medium"
                 >
                   {authMode === "signup" ? "Already have an account? Sign in" : "Need an account? Sign up"}
                 </button>
