@@ -3,43 +3,46 @@
 @theme {
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  
-  /* Untitled UI Signature Vibrant Violet / Indigo Palette */
-  --color-brand-25: #fcfaff;
-  --color-brand-50: #f9f5ff;
-  --color-brand-100: #f4ebff;
-  --color-brand-200: #e9d7fe;
-  --color-brand-300: #d6bbfb;
-  --color-brand-400: #b692f6;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* PaperLoop Terracotta / Copper Palette */
+  --color-terracotta-50: #fff5f2;
+  --color-terracotta-100: #ffe8e2;
+  --color-terracotta-200: #ffd4c9;
+  --color-terracotta-300: #ffb4a2;
+  --color-terracotta-400: #f88467;
+  --color-terracotta-500: #c3644b;
+  --color-terracotta-600: #97422c;
+  --color-terracotta-700: #7b2e19;
+  --color-terracotta-800: #5d1806;
+  --color-terracotta-900: #3c0800;
+
+  /* Untitled UI Vibrant Brand Accent */
   --color-brand-500: #9e77ed;
   --color-brand-600: #7f56d9;
-  --color-brand-700: #6941c6;
-  --color-brand-800: #53389e;
-  --color-brand-900: #42307d;
-  --color-brand-950: #2c1c5f;
 }
 
 @layer base {
   :root, .dark {
-    --background: #0c111d;
-    --on-background: #f8fafc;
-    --primary: #9e77ed;
-    --primary-container: #7f56d9;
-    --primary-fixed: #2c1c5f;
-    --on-primary: #ffffff;
-    --secondary: #94a3b8;
-    --surface: #0c111d;
-    --surface-card: #161b26;
-    --surface-border: #222938;
-    --surface-muted: #1d2939;
-    --text-muted: #94a3b8;
-    --text-subtle: #64748b;
+    --background: #0a0a0a;
+    --surface: #121316;
+    --surface-card: #18191e;
+    --surface-border: rgba(255, 255, 255, 0.1);
+    --surface-muted: #20222a;
+    --on-background: #f1f0ee;
+    --text-primary: #f1f0ee;
+    --text-secondary: #a3a29e;
+    --text-muted: #73726f;
+    --primary: #c3644b;
+    --primary-container: #97422c;
+    --primary-light: #ffb4a2;
   }
 
   body {
     background-color: var(--background);
     color: var(--on-background);
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, .font-serif-title {
@@ -47,101 +50,88 @@
   }
 }
 
+/* Glassmorphic utilities */
+.glass-panel {
+  background: rgba(24, 25, 30, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input-wrapper {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-input-wrapper:focus-within {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(195, 100, 75, 0.7);
+  box-shadow: 0 0 0 3px rgba(195, 100, 75, 0.2), 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
 .paper-shadow {
-  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0px 12px 36px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .ms-word-canvas {
   background-color: #ffffff !important;
-  color: #000000 !important;
+  color: #111827 !important;
   font-family: 'Times New Roman', Times, 'Nimbus Roman No9 L', serif !important;
-  box-shadow: 0 16px 52px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 52px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1);
   border: 1px solid #4b5563 !important;
 }
 
 .terminal-glow {
-  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.6), 0 8px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.6), 0 8px 30px rgba(0, 0, 0, 0.3);
 }
 
-.glass-panel {
-  background: rgba(22, 27, 38, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+.pulse-indicator {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.shimmer-skeleton {
-  background: linear-gradient(90deg, rgba(34, 41, 56, 0.6) 0%, rgba(127, 86, 217, 0.25) 50%, rgba(34, 41, 56, 0.6) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.source-appear {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: fadeUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .cursor-blink {
   animation: blink 1s step-end infinite;
 }
+
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
 
-.pulse-text {
-  animation: pulse-soft 2s ease-in-out infinite;
-}
-@keyframes pulse-soft {
-  0%, 100% { color: var(--primary); }
-  50% { color: var(--primary-container); }
-}
-
-@keyframes indeterminate {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(200%);
-  }
-}
-
-@keyframes move-bg {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 1rem 0;
-  }
-}
-
-/* Custom Scrollbar for contained document viewing box */
+/* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: 7px;
+  height: 7px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.06);
-  border-radius: 6px;
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.45);
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.35);
 }
