@@ -2,7 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Paperrrrrr — Autonomous Research & Document Studio",
+  title: "PaperLoop — Autonomous Research & Document Studio",
   description: "Research, write, and assemble real editable Word docs, PowerPoint presentations, Excel spreadsheets, and PDFs with Gemini 2.5 Flash.",
 };
 

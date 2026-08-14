@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const filename = `Paperrrrrr_${safeTitle}.${fileExtension}`;
+    const filename = `PaperLoop_${safeTitle}.${fileExtension}`;
 
     return new Response(new Uint8Array(fileBuffer), {
       status: 200,

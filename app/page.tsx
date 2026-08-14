@@ -1102,7 +1102,7 @@ export default function PaperLoopApp() {
                 if (resAssemble.ok) {
                   const blob = await resAssemble.blob();
                   const downloadUrl = URL.createObjectURL(blob);
-                  const filename = `Paperrrrrr_${(projectTitleOverride || targetOutline.title).replace(/[^a-zA-Z0-9_\-]/g, "_")}.${targetOutline.format || format}`;
+                  const filename = `PaperLoop_${(projectTitleOverride || targetOutline.title).replace(/[^a-zA-Z0-9_\-]/g, "_")}.${targetOutline.format || format}`;
 
                   setAssembledBlobUrl(downloadUrl);
                   setAssembledFilename(filename);
