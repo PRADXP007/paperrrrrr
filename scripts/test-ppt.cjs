@@ -1,7 +1,7 @@
 const path = require("path");
 const pptxgen = require("pptxgenjs");
 
-async function buildPowerPoint(outputFilename = "PaperLoop_Generated_Presentation.pptx") {
+async function buildPowerPoint(outputFilename = "Paperrrrrr_Generated_Presentation.pptx") {
   console.log(`\n==================================================`);
   console.log(`📊 GENERATING EDITABLE POWERPOINT PRESENTATION (.pptx)`);
   console.log(`==================================================\n`);

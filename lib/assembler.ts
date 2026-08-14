@@ -347,7 +347,9 @@ export async function assembleWordDocument(input: AssembleDocumentInput): Promis
   // TOC Entries: CHAPTERS (Roman Numerals I through N)
   sections.forEach((sec, idx) => {
     const romanNumeral = toRomanNumeral(idx + 1);
-    const cleanTitle = sec.title.replace(/^\d+\.\s*/, "");
+    const cleanTitle = sec.title
+      .replace(/^(chapter\s*[ivxlcdm\d]+[\s:\-.]*|\d+[\s:\-.]*)/i, "")
+      .trim();
     frontMatterChildren.push(
       new Paragraph({
         tabStops: tocTabStops,
@@ -432,7 +434,9 @@ export async function assembleWordDocument(input: AssembleDocumentInput): Promis
   // 5. CHAPTERS (CHAPTER I through CHAPTER N)
   sections.forEach((sec, idx) => {
     const romanNumeral = toRomanNumeral(idx + 1);
-    const cleanTitle = sec.title.replace(/^\d+\.\s*/, "");
+    const cleanTitle = sec.title
+      .replace(/^(chapter\s*[ivxlcdm\d]+[\s:\-.]*|\d+[\s:\-.]*)/i, "")
+      .trim();
 
     // Page Break before every chapter
     bodyChildren.push(

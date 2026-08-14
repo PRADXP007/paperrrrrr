@@ -185,132 +185,48 @@ export function buildDynamicOutline(
       }
     ];
   } else if (isExhaustive) {
-    subtitle = `An Exhaustive Multi-Chapter Strategic, Empirical & Methodological Treatise (${options.tone || "Academic & Analytical"})`;
+    subtitle = `A Comprehensive Multi-Chapter Strategic & Empirical Treatise (${options.tone || "Academic & Analytical"})`;
     sections = [
       {
         id: "sec_1",
-        title: "1. Executive Abstract, Empirical Baseline & Foundational Scope",
+        title: "Executive Abstract, Empirical Baseline & Foundational Scope",
         brief: `Comprehensive executive overview of baseline metrics, scope, and foundational significance for ${cleanTitle}.`,
         keyPoints: [`Core adoption and volume metrics for ${cleanTitle}`, "High-level institutional indicators", "Scope and methodology framework"],
         relevantSourceIndices: [1]
       },
       {
         id: "sec_2",
-        title: "2. Historical Genesis, Inflection Points & Evolutionary Chronology",
+        title: "Historical Genesis, Inflection Points & Evolutionary Chronology",
         brief: `Chronological analysis of the origin, historical inflection points, and structural maturation of ${cleanTitle}.`,
         keyPoints: ["Early developmental phases and policy catalysts", "Key structural pivots over the past decade", "Evolution of market and user adoption curves"],
         relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1]
       },
       {
         id: "sec_3",
-        title: "3. Theoretical Frameworks, Scholarly Taxonomy & Conceptual Models",
+        title: "Theoretical Frameworks, Scholarly Taxonomy & Conceptual Models",
         brief: `Theoretical models, scholarly taxonomy, and conceptual lenses governing ${cleanTitle}.`,
         keyPoints: ["Academic paradigms and economic models", "Thematic categorization of ecosystem dynamics", "Taxonomy of primary and secondary variables"],
         relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1]
       },
       {
         id: "sec_4",
-        title: "4. Methodological Design, Empirical Scope & Sampling Protocols",
-        brief: `Systematic selection criteria, measurement protocols, and quantitative evaluation indices for ${cleanTitle}.`,
-        keyPoints: ["Sampling protocols and dataset verification", "Key quantitative indicators and CAGR tracking", "Empirical boundary conditions and error tolerances"],
-        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1]
-      },
-      {
-        id: "sec_5",
-        title: "5. Operational Architecture & Technical Infrastructure",
+        title: "Operational Architecture & Technical Infrastructure",
         brief: `Technical infrastructure, systems integration, and operational workflows supporting ${cleanTitle}.`,
         keyPoints: ["System architecture and protocol design", "Infrastructure scalability and uptime resilience", "Data pipelines and latency optimization"],
         relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1]
       },
       {
-        id: "sec_6",
-        title: "6. Granular Empirical Findings & Quantitative Indicators",
+        id: "sec_5",
+        title: "Granular Empirical Findings & Comparative Benchmarks",
         brief: `Deep data synthesis of verified figures, institutional benchmarks, and performance metrics for ${cleanTitle}.`,
         keyPoints: ["Granular statistical distributions and benchmarks", "Demographic and regional performance variations", "Comparative unit economics and growth velocity"],
         relevantSourceIndices: srcCount >= 4 ? [3, 4] : [srcCount]
       },
       {
-        id: "sec_7",
-        title: "7. Comparative Global Benchmarks & International Case Studies",
-        brief: `Cross-regional case evaluations, international parallels, and operational case studies on ${cleanTitle}.`,
-        keyPoints: ["Cross-border comparative analysis", "Institutional implementation case studies", "Lessons learned and transferable operational models"],
-        relevantSourceIndices: srcCount >= 4 ? [3, 4] : [srcCount]
-      },
-      {
-        id: "sec_8",
-        title: "8. Institutional Policy, Governance & Regulatory Compliance Mandates",
-        brief: `Legal oversight, statutory compliance, institutional governance, and policy dynamics impacting ${cleanTitle}.`,
-        keyPoints: ["Government policies, mandates, and statutory standards", "Regulatory compliance and consumer protections", "Cross-jurisdictional harmonization priorities"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 2, 4] : [1]
-      },
-      {
-        id: "sec_9",
-        title: "9. Advanced Economic Modeling, Unit Economics & Cost-Benefit Ratios",
-        brief: `Financial viability, cost-benefit modeling, capital allocation, and commercial incentives for ${cleanTitle}.`,
-        keyPoints: ["Cost structures, capital intensity, and ROI models", "Direct vs indirect economic dividends", "Monetization and pricing sustainability"],
-        relevantSourceIndices: srcCount >= 4 ? [2, 3, 4] : [1, 2]
-      },
-      {
-        id: "sec_10",
-        title: "10. Operational Vulnerabilities, Friction Points & Systemic Failure Modes",
-        brief: `Critical assessment of operational vulnerabilities, friction points, security threats, and failure modes in ${cleanTitle}.`,
-        keyPoints: ["Hardware, network, and supply chain friction", "Security vulnerabilities and compliance risks", "Comprehensive mitigation and disaster recovery protocols"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 3, 4] : [1, 2]
-      },
-      {
-        id: "sec_11",
-        title: "11. Enterprise Security, Threat Modeling & Data Protection Vectors",
-        brief: `Cybersecurity protocols, data sovereignty, encryption standards, and threat modeling for ${cleanTitle}.`,
-        keyPoints: ["Threat surface minimization and vulnerability scoring", "Encryption, identity management, and access controls", "Data privacy compliance and audit readiness"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 2, 4] : [1]
-      },
-      {
-        id: "sec_12",
-        title: "12. Sociotechnical Dynamics, Workforce Evolution & Institutional Adoption",
-        brief: `Human capital, workforce adaptation, cultural implications, and institutional adoption vectors for ${cleanTitle}.`,
-        keyPoints: ["Workforce skilling and operational change management", "Consumer psychology and behavioral adoption patterns", "Institutional transformation milestones"],
-        relevantSourceIndices: srcCount >= 4 ? [2, 3, 4] : [1]
-      },
-      {
-        id: "sec_13",
-        title: "13. Environmental, Social & Governance (ESG) Life-Cycle Assessments",
-        brief: `Sustainability footprints, carbon accounting, social equity dividends, and governance transparency in ${cleanTitle}.`,
-        keyPoints: ["Life-cycle carbon and environmental metrics", "Social equity and inclusion benchmarks", "Corporate governance and reporting standards"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 3, 4] : [1]
-      },
-      {
-        id: "sec_14",
-        title: "14. Cross-Industry Interoperability Standards & Protocol Harmonization",
-        brief: `API standardization, cross-platform protocols, and ecosystem interoperability frameworks for ${cleanTitle}.`,
-        keyPoints: ["Standardization protocols and open architecture", "Cross-system API integration benchmarks", "Friction reduction across legacy infrastructure"],
-        relevantSourceIndices: srcCount >= 4 ? [2, 4] : [1]
-      },
-      {
-        id: "sec_15",
-        title: "15. Frontier Technological Innovations & Emerging Horizons (2026–2035)",
-        brief: `Predictive modeling, artificial intelligence integration, and forward-looking technological horizon for ${cleanTitle}.`,
-        keyPoints: ["Next-generation technological breakthroughs", "Anticipated market transformations over the next decade", "Pivotal inflection triggers to monitor"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
-      },
-      {
-        id: "sec_16",
-        title: "16. Strategic Execution Roadmap, Phased Timelines & Milestone Matrix",
-        brief: `Actionable phased implementation timeline, capital deployment sequencing, and governance checkpoints for ${cleanTitle}.`,
-        keyPoints: ["Near-term tactical rollout (Months 1–12)", "Medium-term scaling & optimization (Years 2–3)", "Long-term institutional governance and global leadership"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
-      },
-      {
-        id: "sec_17",
-        title: "17. Risk Governance Matrix & Contingency Protocol Framework",
-        brief: `Systematic risk mitigation matrix, regulatory defense strategies, and business continuity frameworks for ${cleanTitle}.`,
-        keyPoints: ["High-impact low-probability scenario modeling", "Operational redundancy and fault tolerance", "Continuous compliance monitoring protocols"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 3, 4] : [1, 2]
-      },
-      {
-        id: "sec_18",
-        title: "18. Scholarly Synthesis, Open Research Inquiries & Final Conclusion",
-        brief: `Synthesized resolution of core findings, academic contributions, and prospective research agenda on ${cleanTitle}.`,
-        keyPoints: ["Integrated theoretical and empirical summary", "Key open academic questions for prospective investigators", "Final strategic verdict and policy recommendations"],
+        id: "sec_6",
+        title: "Strategic Execution Roadmap, Risk Governance & Final Verdict",
+        brief: `Actionable phased implementation timeline, risk governance framework, and concluding verdict on ${cleanTitle}.`,
+        keyPoints: ["Near-term tactical rollout (Months 1–12)", "Medium-term scaling & optimization (Years 2–3)", "Comprehensive risk governance and policy recommendations"],
         relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
       }
     ];
@@ -319,7 +235,7 @@ export function buildDynamicOutline(
     sections = [
       {
         id: "sec_1",
-        title: "1. Introduction & Thesis Argumentation",
+        title: "Introduction & Thesis Argumentation",
         brief: `Foundational context, scholarly problem definition, and core thesis formulation regarding ${cleanTitle}.`,
         keyPoints: [
           `Historical and contextual backdrop of ${cleanTitle}`,
@@ -330,7 +246,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_2",
-        title: "2. Theoretical Foundations & Counter-Perspectives",
+        title: "Theoretical Foundations & Counter-Perspectives",
         brief: `Analysis of prevailing academic paradigms, foundational literature, and critical counter-arguments surrounding ${cleanTitle}.`,
         keyPoints: [
           "Major conceptual frameworks and theoretical models",
@@ -341,7 +257,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_3",
-        title: "3. Critical Synthesis & Textual Evidence",
+        title: "Critical Synthesis & Textual Evidence",
         brief: `In-depth evidentiary evaluation, qualitative/quantitative metrics, and case-study analysis for ${cleanTitle}.`,
         keyPoints: [
           "Primary empirical findings and data corroboration",
@@ -352,7 +268,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_4",
-        title: "4. Scholarly Conclusion & Future Discourse",
+        title: "Scholarly Conclusion & Future Discourse",
         brief: `Re-articulation of core findings, scholarly contributions, and implications for upcoming academic research on ${cleanTitle}.`,
         keyPoints: [
           "Synthesized resolution of the central thesis",
@@ -367,7 +283,7 @@ export function buildDynamicOutline(
     sections = [
       {
         id: "sec_1",
-        title: "1. Methodological Scope & Thematic Taxonomy",
+        title: "Methodological Scope & Thematic Taxonomy",
         brief: `Systematic selection criteria, conceptual boundaries, and taxonomy of surveyed literature concerning ${cleanTitle}.`,
         keyPoints: [
           `Inclusion criteria and publication timeframe for ${cleanTitle}`,
@@ -378,7 +294,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_2",
-        title: "2. Synthesized State of Contemporary Scholarship",
+        title: "Synthesized State of Contemporary Scholarship",
         brief: `Thematic synthesis of dominant research themes, empirical agreements, and core institutional findings on ${cleanTitle}.`,
         keyPoints: [
           "Consensus findings across market and academic studies",
@@ -389,7 +305,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_3",
-        title: "3. Methodological Divergences & Empirical Gaps",
+        title: "Methodological Divergences & Empirical Gaps",
         brief: `Critical examination of conflicting evidence, sampling discrepancies, and unaddressed questions in the literature on ${cleanTitle}.`,
         keyPoints: [
           "Contradictory findings across regional and qualitative datasets",
@@ -400,7 +316,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_4",
-        title: "4. Theoretical Synthesis & Future Research Agenda",
+        title: "Theoretical Synthesis & Future Research Agenda",
         brief: `Unified framework reconciling existing findings and proposing concrete priorities for future academic inquiry on ${cleanTitle}.`,
         keyPoints: [
           "Integrated conceptual model bridging observed gaps",
@@ -415,7 +331,7 @@ export function buildDynamicOutline(
     sections = [
       {
         id: "sec_1",
-        title: "1. Core Executive Takeaways & Baseline Findings",
+        title: "Core Executive Takeaways & Baseline Findings",
         brief: `Concise briefing of the most critical high-level takeaways, metrics, and primary context regarding ${cleanTitle}.`,
         keyPoints: [
           `Essential summary statement on the state of ${cleanTitle}`,
@@ -426,7 +342,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_2",
-        title: "2. Structural Analysis of Central Themes",
+        title: "Structural Analysis of Central Themes",
         brief: `Direct breakdown of the core operational themes, driving forces, and key variables governing ${cleanTitle}.`,
         keyPoints: [
           "Primary adoption drivers and functional infrastructure",
@@ -437,7 +353,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_3",
-        title: "3. Actionable Insights & Strategic Implications",
+        title: "Actionable Insights & Strategic Implications",
         brief: `Pragmatic recommendations, strategic implications, and next steps for ${cleanTitle}.`,
         keyPoints: [
           "Immediate tactical priorities and resource allocation",
@@ -452,7 +368,7 @@ export function buildDynamicOutline(
     sections = [
       {
         id: "sec_1",
-        title: "1. Executive Summary & Baseline Landscape",
+        title: "Executive Summary & Baseline Landscape",
         brief: `Overview of current baseline metrics, verified benchmark indicators, and foundational scope for ${cleanTitle}.`,
         keyPoints: [
           `Core adoption and growth metrics for ${cleanTitle}`,
@@ -463,7 +379,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_2",
-        title: "2. Operational Infrastructure & Ecosystem Dynamics",
+        title: "Operational Infrastructure & Ecosystem Dynamics",
         brief: `Detailed analysis of deployment infrastructure, merchant/user engagement, and operational frameworks for ${cleanTitle}.`,
         keyPoints: [
           "Infrastructure scaling and distribution architecture",
@@ -474,7 +390,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_3",
-        title: "3. Structural Challenges & Risk Analysis",
+        title: "Structural Challenges & Risk Analysis",
         brief: `Critical assessment of operational bottlenecks, latency/downtime risks, and security considerations in ${cleanTitle}.`,
         keyPoints: [
           "Network latency, hardware reliability, and connectivity friction",
@@ -485,7 +401,7 @@ export function buildDynamicOutline(
       },
       {
         id: "sec_4",
-        title: "4. Strategic Roadmap & Implementation Framework",
+        title: "Strategic Roadmap & Implementation Framework",
         brief: `Actionable recommendations, regulatory harmonization, and long-term expansion roadmap for ${cleanTitle}.`,
         keyPoints: [
           "Infrastructure resilience and offline transaction protocols",
@@ -497,13 +413,19 @@ export function buildDynamicOutline(
     ];
   }
 
+  // Ensure all section titles are sanitized from any numeric prefixes
+  const sanitizedSections = sections.map((sec) => ({
+    ...sec,
+    title: sec.title.replace(/^(chapter\s*[ivxlcdm\d]+[\s:\-.]*|\d+[\s:\-.]*)/i, "").trim()
+  }));
+
   return {
     title: capitalizedTitle,
     subtitle,
     docType,
     format: (options.format as any) || "docx",
-    targetLength: options.targetLength || "Unlimited & Exhaustive (Comprehensive In-Depth)",
-    sections
+    targetLength: options.targetLength || "Detailed (~2,000 words)",
+    sections: sanitizedSections
   };
 }
 
@@ -532,7 +454,7 @@ export async function generateStructuredOutline(
   "sections": [
     {
       "id": "sec_1",
-      "title": "Section Title",
+      "title": "Section Title Without Number Prefix",
       "brief": "One sentence summary of this section's focus",
       "keyPoints": ["Point 1", "Point 2", "Point 3"],
       "relevantSourceIndices": [1, 2]
@@ -540,7 +462,8 @@ export async function generateStructuredOutline(
   ]
 }`;
 
-  const isExhaustive = (options.targetLength || "").toLowerCase().includes("unlimited") || (options.targetLength || "").toLowerCase().includes("detailed") || options.format === "docx" || options.format === "pdf";
+  const isExhaustive = (options.targetLength || "").toLowerCase().includes("unlimited") || (options.targetLength || "").toLowerCase().includes("exhaustive");
+  const maxChapters = isExhaustive ? 7 : 5;
 
   const userMessage = `Create a structured document outline for the following prompt:
 "${prompt}"
@@ -549,20 +472,16 @@ Document Type: ${docType} (${docTypePromptInstructions[docType] || docTypePrompt
 Target Format: ${options.format || "docx"}
 Target Tone: ${options.tone || "Academic & Analytical"}
 Target Audience: ${options.audience || "Researchers & Practitioners"}
-Target Length: ${options.targetLength || "Unlimited & Exhaustive (Comprehensive In-Depth, 30–50 Pages)"}
+Target Length: ${options.targetLength || "Standard Report (4–6 Chapters)"}
 
 ${options.referenceNotes ? `User Provided Background / Reference Notes:\n${options.referenceNotes}\n` : ""}
 
 Live Research Sources Available:
 ${JSON.stringify(researchBundle?.results || [], null, 2)}
 
-Ensure:
-1. Genuinely reflect the requested Document Type (${docType}) in section titles, briefs, and analytical structure.
-${
-  isExhaustive
-    ? `2. CHAPTER COUNT: For Word (.docx) and PDF (.pdf) publication treatises (target 30 to 50 pages volume), generate 16 to 22 comprehensive, discrete chapters/modules (e.g. Chapter 1 through Chapter 18+) covering every facet: Executive Abstract, Historical Genesis, Theoretical Models, Methodological Metrics, Technical Architecture, Quantitative Empirical Data, Case Studies & Global Benchmarks, Regulatory & Policy Frameworks, Economic Feasibility & Unit Economics, Risk Vectors & Bottlenecks, Enterprise Security, Sociotechnical Impacts, ESG Lifecycle, Cross-Industry Interoperability, Emerging Horizons (2026-2035), Strategic Execution Roadmap, Risk Governance Matrix, and Concluding Scholarly Synthesis.`
-    : `2. Generate 4 to 6 focused, high-impact sections.`
-}
+STRICT RULES:
+1. CHAPTER COUNT: Generate between 4 and ${maxChapters} comprehensive, discrete chapters (maximum ${isExhaustive ? 8 : 6} chapters). NEVER exceed 8 chapters under any circumstances.
+2. CRITICAL SECTION TITLE FORMAT: Section titles MUST be pure descriptive titles ONLY (e.g. "Executive Abstract and Empirical Baseline", "Historical Genesis and Theoretical Foundations"). NEVER prefix section titles with "Chapter 1:", "Chapter I:", "1. ", "Section 1:", or any numbers. The document renderer dynamically formats Roman numeral chapter headings at render time.
 3. Link each section to relevant research source indices.
 4. Every section has 3-4 specific key points directly addressing the prompt and reference notes.`;
 
@@ -594,7 +513,17 @@ ${
       if (response && response.text) {
         const parsed = JSON.parse(response.text);
         if (parsed.sections && Array.isArray(parsed.sections)) {
-          return parsed as GeneratedOutline;
+          const cleanSections = parsed.sections.slice(0, 8).map((sec: any, idx: number) => ({
+            ...sec,
+            id: sec.id || `sec_${idx + 1}`,
+            title: (sec.title || `Section ${idx + 1}`)
+              .replace(/^(chapter\s*[ivxlcdm\d]+[\s:\-.]*|\d+[\s:\-.]*)/i, "")
+              .trim()
+          }));
+          return {
+            ...parsed,
+            sections: cleanSections
+          } as GeneratedOutline;
         }
       }
     } catch (e) {
@@ -618,7 +547,17 @@ ${
 
       const parsed = JSON.parse(completion.choices[0].message.content || "{}");
       if (parsed.sections && Array.isArray(parsed.sections)) {
-        return parsed as GeneratedOutline;
+        const cleanSections = parsed.sections.slice(0, 8).map((sec: any, idx: number) => ({
+          ...sec,
+          id: sec.id || `sec_${idx + 1}`,
+          title: (sec.title || `Section ${idx + 1}`)
+            .replace(/^(chapter\s*[ivxlcdm\d]+[\s:\-.]*|\d+[\s:\-.]*)/i, "")
+            .trim()
+        }));
+        return {
+          ...parsed,
+          sections: cleanSections
+        } as GeneratedOutline;
       }
     } catch (e) {
       console.warn("OpenAI API call failed for outline, using dynamic generator:", e);

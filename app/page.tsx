@@ -357,93 +357,51 @@ export default function PaperLoopApp() {
     const capitalizedTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
     return {
       title: capitalizedTitle,
-      subtitle: `An Exhaustive Multi-Chapter Strategic & Empirical Treatise (${tone})`,
+      subtitle: `A Comprehensive Multi-Chapter Strategic & Empirical Treatise (${tone})`,
       docType: dType,
       format: (fmt as any) || "docx",
-      targetLength: tLen || "Comprehensive In-Depth",
+      targetLength: tLen || "Standard Report (4–6 Chapters)",
       sections: [
         {
           id: "sec_1",
-          title: "1. Executive Abstract, Empirical Baseline & Foundational Scope",
+          title: "Executive Abstract, Empirical Baseline & Foundational Scope",
           brief: `Comprehensive executive overview of baseline metrics, scope, and foundational significance for ${cleanTitle}.`,
           keyPoints: [`Core adoption and volume metrics for ${cleanTitle}`, "High-level institutional indicators", "Scope and methodology framework"],
           relevantSourceIndices: [1],
         },
         {
           id: "sec_2",
-          title: "2. Historical Genesis, Inflection Points & Evolutionary Chronology",
+          title: "Historical Genesis, Inflection Points & Evolutionary Chronology",
           brief: `Chronological analysis of the origin, historical inflection points, and structural maturation of ${cleanTitle}.`,
           keyPoints: ["Early developmental phases and policy catalysts", "Key structural pivots over the past decade", "Evolution of market and user adoption curves"],
           relevantSourceIndices: [1, 2],
         },
         {
           id: "sec_3",
-          title: "3. Theoretical Frameworks, Scholarly Taxonomy & Conceptual Models",
+          title: "Theoretical Frameworks, Scholarly Taxonomy & Conceptual Models",
           brief: `Theoretical models, scholarly taxonomy, and conceptual lenses governing ${cleanTitle}.`,
           keyPoints: ["Academic paradigms and economic models", "Thematic categorization of ecosystem dynamics", "Taxonomy of primary and secondary variables"],
           relevantSourceIndices: [1, 2],
         },
         {
           id: "sec_4",
-          title: "4. Methodological Design, Empirical Scope & Sampling Protocols",
-          brief: `Systematic selection criteria, measurement protocols, and quantitative evaluation indices for ${cleanTitle}.`,
-          keyPoints: ["Sampling protocols and dataset verification", "Key quantitative indicators and CAGR tracking", "Empirical boundary conditions and error tolerances"],
-          relevantSourceIndices: [2, 3],
-        },
-        {
-          id: "sec_5",
-          title: "5. Operational Architecture & Technical Infrastructure",
+          title: "Operational Architecture & Technical Infrastructure",
           brief: `Technical infrastructure, systems integration, and operational workflows supporting ${cleanTitle}.`,
           keyPoints: ["System architecture and protocol design", "Infrastructure scalability and uptime resilience", "Data pipelines and latency optimization"],
           relevantSourceIndices: [2, 3],
         },
         {
-          id: "sec_6",
-          title: "6. Granular Empirical Findings & Quantitative Indicators",
+          id: "sec_5",
+          title: "Granular Empirical Findings & Comparative Benchmarks",
           brief: `Deep data synthesis of verified figures, institutional benchmarks, and performance metrics for ${cleanTitle}.`,
           keyPoints: ["Verified historical performance metrics", "Comparative benchmark tables across sectors", "Statistical dispersion and anomaly detection"],
           relevantSourceIndices: [1, 3],
         },
         {
-          id: "sec_7",
-          title: "7. Comparative Institutional Case Studies & Field Implementations",
-          brief: `Exhaustive real-world case evaluations demonstrating concrete implementations and institutional outcomes.`,
-          keyPoints: ["High-impact enterprise case study", "Public sector/academic deployment analysis", "Failures, post-mortems, and key lessons"],
-          relevantSourceIndices: [2, 4],
-        },
-        {
-          id: "sec_8",
-          title: "8. Global Regulatory Frameworks, Compliance & Policy Landscape",
-          brief: `Jurisdictional compliance requirements, global policy treaties, and statutory mandates.`,
-          keyPoints: ["Global statutory landscape (US, EU, APAC)", "Compliance requirements and liability protocols", "Anticipated regulatory reforms (2026–2030)"],
-          relevantSourceIndices: [1, 4],
-        },
-        {
-          id: "sec_9",
-          title: "9. Economic Unit Modeling, Cost-Benefit & Valuation Analysis",
-          brief: `Granular financial modeling, capital allocation efficiency, ROI, and total cost of ownership.`,
-          keyPoints: ["Unit economics and cost driver breakdown", "Capital expenditure vs. operational yield", "Long-term Net Present Value (NPV) modeling"],
-          relevantSourceIndices: [2, 3],
-        },
-        {
-          id: "sec_10",
-          title: "10. Strategic Execution Roadmap, Phased Timelines & Milestones",
-          brief: `Actionable phased implementation timeline, capital deployment sequencing, and governance checkpoints.`,
-          keyPoints: ["Near-term tactical rollout (Months 1–12)", "Medium-term scaling & optimization (Years 2–3)", "Long-term institutional governance"],
-          relevantSourceIndices: [1, 2, 3],
-        },
-        {
-          id: "sec_11",
-          title: "11. Risk Governance Matrix & Contingency Protocol Framework",
-          brief: `Systematic risk mitigation matrix, regulatory defense strategies, and business continuity frameworks.`,
-          keyPoints: ["High-impact low-probability scenario modeling", "Operational redundancy and fault tolerance", "Continuous compliance monitoring protocols"],
-          relevantSourceIndices: [1, 3, 4],
-        },
-        {
-          id: "sec_12",
-          title: "12. Scholarly Synthesis, Open Inquiries & Strategic Verdict",
-          brief: `Synthesized resolution of core findings, academic contributions, and prospective research agenda.`,
-          keyPoints: ["Integrated theoretical and empirical summary", "Key open questions for prospective investigators", "Final strategic verdict and recommendations"],
+          id: "sec_6",
+          title: "Strategic Execution Roadmap, Risk Governance & Final Verdict",
+          brief: `Actionable phased implementation timeline, risk governance framework, and concluding verdict on ${cleanTitle}.`,
+          keyPoints: ["Near-term tactical rollout (Months 1–12)", "Medium-term scaling & optimization (Years 2–3)", "Comprehensive risk governance and policy recommendations"],
           relevantSourceIndices: [1, 2, 3, 4],
         },
       ],
@@ -737,7 +695,7 @@ export default function PaperLoopApp() {
                 if (resAssemble.ok) {
                   const blob = await resAssemble.blob();
                   const downloadUrl = URL.createObjectURL(blob);
-                  const filename = `PaperLoop_${targetOutline.title.replace(/[^a-zA-Z0-9_\-]/g, "_")}.${targetOutline.format || format}`;
+                  const filename = `Paperrrrrr_${targetOutline.title.replace(/[^a-zA-Z0-9_\-]/g, "_")}.${targetOutline.format || format}`;
 
                   setAssembledBlobUrl(downloadUrl);
                   setAssembledFilename(filename);
@@ -1340,7 +1298,7 @@ export default function PaperLoopApp() {
               {assembledBlobUrl ? (
                 <a
                   href={assembledBlobUrl}
-                  download={assembledFilename || `PaperLoop_${outline.title}.${format}`}
+                  download={assembledFilename || `Paperrrrrr_${outline.title}.${format}`}
                   className="inline-flex items-center gap-2 bg-[#C3644B] hover:bg-[#97422C] text-white px-4 py-1.5 rounded-lg text-xs font-mono font-bold transition-all shadow-md"
                 >
                   <Download className="size-3.5" />
@@ -1628,7 +1586,7 @@ export default function PaperLoopApp() {
                           if (assembledBlobUrl) {
                             const link = document.createElement("a");
                             link.href = assembledBlobUrl;
-                            link.download = assembledFilename || `PaperLoop_${outline.title}.pptx`;
+                            link.download = assembledFilename || `Paperrrrrr_${outline.title}.pptx`;
                             link.click();
                           }
                         }}
@@ -1649,7 +1607,7 @@ export default function PaperLoopApp() {
                           if (assembledBlobUrl) {
                             const link = document.createElement("a");
                             link.href = assembledBlobUrl;
-                            link.download = assembledFilename || `PaperLoop_${outline.title}.xlsx`;
+                            link.download = assembledFilename || `Paperrrrrr_${outline.title}.xlsx`;
                             link.click();
                           }
                         }}
