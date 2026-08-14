@@ -2284,7 +2284,7 @@ export default function PaperLoopApp() {
         <Modal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          title={authMode === "signup" ? "Create PaperLoop Account" : "Sign In to Studio"}
+          title={authMode === "signup" ? "Create Paperrrrrr Account" : "Sign In to Paperrrrrr Studio"}
         >
           <div className="space-y-4 font-sans text-xs">
             {/* One-Click Google Authentication */}
@@ -2303,6 +2303,7 @@ export default function PaperLoopApp() {
                   if (data.user) {
                     setUser(data.user);
                     try {
+                      localStorage.setItem("paperrrrrr_user", JSON.stringify(data.user));
                       localStorage.setItem("paperloop_user", JSON.stringify(data.user));
                     } catch (e) {}
                     setShowAuthModal(false);
@@ -2314,7 +2315,7 @@ export default function PaperLoopApp() {
                   alert("Google Sign-In Error: " + e.message);
                 }
               }}
-              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-sans text-[#FAF9F5] transition-all cursor-pointer shadow-sm hover:border-[#C3644B]/40 font-medium"
+              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-sans text-[#FAF9F5] transition-all cursor-pointer shadow-sm hover:border-[#C3644B]/40 font-semibold"
             >
               <svg className="size-4" viewBox="0 0 24 24">
                 <path
