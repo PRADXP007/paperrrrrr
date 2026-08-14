@@ -36,3 +36,7 @@ next-env.d.ts
 *.pem
 Thumbs.db
 .vercel
+.data/
+*.docx
+*.pptx
+*.xlsx

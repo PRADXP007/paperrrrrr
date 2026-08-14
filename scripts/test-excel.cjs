@@ -1,7 +1,7 @@
 const path = require("path");
 const ExcelJS = require("exceljs");
 
-async function buildExcelSheet(outputFilename = "Paperrrrrr_Generated_Spreadsheet.xlsx") {
+async function buildExcelSheet(outputFilename = "PaperLoop_Generated_Spreadsheet.xlsx") {
   console.log(`\n==================================================`);
   console.log(`📈 GENERATING EDITABLE EXCEL SPREADSHEET (.xlsx)`);
   console.log(`==================================================\n`);

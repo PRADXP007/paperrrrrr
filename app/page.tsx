@@ -41,6 +41,7 @@ import {
   FileCheck,
   SlidersHorizontal,
   ChevronRight,
+  ChevronDown,
   Maximize2,
   ZoomIn,
   ZoomOut,
@@ -57,12 +58,21 @@ interface ResearchSource {
   sourceDomain?: string;
 }
 
+interface OutlineSubsection {
+  id: string;
+  title: string;
+  brief: string;
+  keyPoints?: string[];
+  content?: string;
+}
+
 interface OutlineSection {
   id: string;
   title: string;
   brief: string;
   keyPoints: string[];
   relevantSourceIndices: number[];
+  subsections?: OutlineSubsection[];
   content?: string;
   status?: "pending" | "generating" | "completed";
 }
@@ -73,6 +83,7 @@ interface GeneratedOutline {
   docType: string;
   format: "docx" | "pptx" | "xlsx" | "pdf";
   targetLength: string;
+  chapters?: OutlineSection[];
   sections: OutlineSection[];
 }
 
@@ -85,10 +96,11 @@ export default function PaperLoopApp() {
   // User state & persistence
   const [user, setUser] = useState<{ id?: string; name?: string; email?: string; avatar?: string } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authName, setAuthName] = useState("");
-  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [pastDocuments, setPastDocuments] = useState<any[]>([]);
 
   // BYOK Settings State
@@ -106,11 +118,57 @@ export default function PaperLoopApp() {
   const [prompt, setPrompt] = useState("");
   const [showParameters, setShowParameters] = useState(false);
   const [format, setFormat] = useState<"docx" | "pptx" | "xlsx" | "pdf">("docx");
-  const [docType, setDocType] = useState("Research Treatise");
+  const [docType, setDocType] = useState("Research Report");
   const [tone, setTone] = useState("Academic & Analytical");
   const [audience, setAudience] = useState("Scholars & Decision Makers");
-  const [targetLength, setTargetLength] = useState("Comprehensive In-Depth (12–16 Chapters)");
+  const [targetLength, setTargetLength] = useState("Comprehensive In-Depth (6–8 Chapters)");
   const [researchDepth, setResearchDepth] = useState<"standard" | "deep">("standard");
+
+  // Document Settings Panel (Font, Page Count, Accent Color, Chapters, Additional Requirements)
+  const [selectedFont, setSelectedFont] = useState<string>("Times New Roman");
+  const [pageCount, setPageCount] = useState<number>(15);
+  const [accentColor, setAccentColor] = useState<string>("000000");
+  const [customChapterCount, setCustomChapterCount] = useState<string>("");
+  const [additionalRequirements, setAdditionalRequirements] = useState<string>("");
+  const [showDocSettingsPanel, setShowDocSettingsPanel] = useState<boolean>(false);
+
+  // Live Budget Metric Derivation
+  const calculatedBudget = useMemo(() => {
+    const f = selectedFont.toLowerCase();
+    const wordsPerPage = f.includes("arial") || f.includes("georgia") ? 255 : f.includes("calibri") || f.includes("cambria") ? 265 : 275;
+    const totalWords = Math.round(pageCount * wordsPerPage);
+    const parsedCustom = customChapterCount ? parseInt(customChapterCount, 10) : 0;
+    let chapters = parsedCustom > 0
+      ? parsedCustom
+      : pageCount >= 150 ? 28
+      : pageCount >= 80 ? 20
+      : pageCount >= 50 ? 16
+      : pageCount >= 30 ? 14
+      : pageCount >= 20 ? 10
+      : pageCount >= 12 ? 8
+      : pageCount >= 6 ? 6
+      : pageCount >= 3 ? 4
+      : 3;
+    chapters = Math.max(2, chapters);
+    const wordsPerChapter = Math.round(totalWords / chapters);
+    return {
+      wordsPerPage,
+      totalWords,
+      chapters,
+      wordsPerChapter
+    };
+  }, [selectedFont, pageCount, customChapterCount]);
+
+  // Formal Academic Report (College / Thesis Front Matter)
+  const [isFormalAcademicReport, setIsFormalAcademicReport] = useState(false);
+  const [institutionName, setInstitutionName] = useState("");
+  const [department, setDepartment] = useState("");
+  const [degree, setDegree] = useState("");
+  const [submittedBy, setSubmittedBy] = useState("");
+  const [guideName, setGuideName] = useState("");
+  const [academicYear, setAcademicYear] = useState("");
+  const [projectTitleOverride, setProjectTitleOverride] = useState("");
+  const [expandedChapterIds, setExpandedChapterIds] = useState<Record<string, boolean>>({});
 
   // File / Notes Intake
   const [referenceNotes, setReferenceNotes] = useState("");
@@ -191,15 +249,38 @@ export default function PaperLoopApp() {
     }
   }, [detectedFormat]);
 
-  // Enforce dark mode permanently
+  // Enforce dark mode permanently and restore user session
   useEffect(() => {
     document.documentElement.classList.add("dark");
+
+    try {
+      const savedUserStr = localStorage.getItem("paperrrrrr_user");
+      if (savedUserStr) {
+        setUser(JSON.parse(savedUserStr));
+      }
+    } catch (e) {
+      console.warn("User restore:", e);
+    }
+
+    fetch("/api/auth")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.user) {
+          setUser(data.user);
+          try {
+            localStorage.setItem("paperrrrrr_user", JSON.stringify(data.user));
+          } catch (e) {}
+        }
+      })
+      .catch(() => {});
+
+    fetchPastDocuments();
   }, []);
 
   // Fetch document history & user key settings when user changes
   useEffect(() => {
+    fetchPastDocuments();
     if (user) {
-      fetchPastDocuments();
       fetchUserKeySettings();
     }
   }, [user]);
@@ -229,10 +310,20 @@ export default function PaperLoopApp() {
       const res = await fetch("/api/documents");
       if (res.ok) {
         const data = await res.json();
-        if (data.documents) setPastDocuments(data.documents);
+        if (data.documents) {
+          setPastDocuments(data.documents);
+          try {
+            localStorage.setItem("paperrrrrr_history", JSON.stringify(data.documents));
+          } catch (e) {}
+        }
+      } else {
+        // LocalStorage fallback
+        const savedHistory = localStorage.getItem("paperrrrrr_history");
+        if (savedHistory) setPastDocuments(JSON.parse(savedHistory));
       }
     } catch (e) {
-      console.warn("Failed to fetch history:", e);
+      const savedHistory = localStorage.getItem("paperrrrrr_history");
+      if (savedHistory) setPastDocuments(JSON.parse(savedHistory));
     }
   };
 
@@ -340,10 +431,14 @@ export default function PaperLoopApp() {
       const data = await res.json();
       if (data.user) {
         setUser(data.user);
+        try {
+          localStorage.setItem("paperrrrrr_user", JSON.stringify(data.user));
+        } catch (e) {}
         setShowAuthModal(false);
         setAuthEmail("");
         setAuthPassword("");
         setAuthName("");
+        fetchPastDocuments();
       } else {
         alert(data.error || "Authentication failed");
       }
@@ -352,59 +447,322 @@ export default function PaperLoopApp() {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "logout" }),
+      });
+    } catch (e) {}
+    setUser(null);
+    try {
+      localStorage.removeItem("paperrrrrr_user");
+    } catch (e) {}
+  };
+
+  const loadHistoryDocument = (doc: any) => {
+    const rawSections = doc.sections || doc.outline || [];
+    const restoredOutline: GeneratedOutline = {
+      title: doc.title,
+      subtitle: doc.subtitle || "Synthesized Research Document",
+      docType: doc.docType || "Research Report",
+      format: doc.format || "docx",
+      targetLength: "Detailed",
+      chapters: rawSections,
+      sections: rawSections
+    };
+
+    const sectionMap: Record<string, string> = {};
+    rawSections.forEach((s: any, idx: number) => {
+      const id = s.id || `sec_${idx + 1}`;
+      sectionMap[id] = s.content || s.brief || "";
+      sectionMap[idx] = s.content || s.brief || "";
+      if (s.title) sectionMap[s.title] = s.content || s.brief || "";
+    });
+
+    setOutline(restoredOutline);
+    setFormat(doc.format || "docx");
+    setGeneratedSections(sectionMap);
+    setScreen("workspace");
+    setIsStreaming(false);
+    setIsAssembledReady(true);
+    setShowHistoryModal(false);
+  };
+
   const createClientFallbackOutline = (p: string, fmt: string, tLen: string, dType: string): GeneratedOutline => {
     const cleanTitle = p.replace(/\.$/, "").trim();
     const capitalizedTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
+
+    const isExhaustiveLength = p.toLowerCase().includes("40") || p.toLowerCase().includes("50") || p.toLowerCase().includes("30") || tLen.toLowerCase().includes("exhaustive");
+
+    const chapters: OutlineSection[] = isExhaustiveLength
+      ? [
+          {
+            id: "sec_1",
+            title: "1. Introduction & Foundational Scope",
+            brief: `Comprehensive introduction to baseline metrics, institutional significance, and scope of inquiry for ${cleanTitle}.`,
+            keyPoints: [`Contextual background and domain importance`, "Core problem definition and inefficiencies", "Scope boundaries and project objectives"],
+            relevantSourceIndices: [1],
+            subsections: [
+              { id: "sec_1_1", title: "1.1 Background and Domain Urgency", brief: `Historical and contemporary context motivating research in ${cleanTitle}.` },
+              { id: "sec_1_2", title: "1.2 Formal Problem Statement", brief: `Detailed breakdown of structural inefficiencies and technical bottlenecks.` },
+              { id: "sec_1_3", title: "1.3 Research Aims and Inquiries", brief: `Specific analytical questions, hypotheses, and scope boundaries.` },
+              { id: "sec_1_4", title: "1.4 Methodological Contributions", brief: `Expected empirical deliverables and scholarly taxonomy contributions.` }
+            ]
+          },
+          {
+            id: "sec_2",
+            title: "2. Historical Genesis & Evolutionary Inflection Points",
+            brief: `Chronological maturation, early developmental milestones, and structural inflection points of ${cleanTitle}.`,
+            keyPoints: ["Early developmental phases", "Major historical inflection points", "Structural evolution of the ecosystem"],
+            relevantSourceIndices: [1, 2],
+            subsections: [
+              { id: "sec_2_1", title: "2.1 Early Developmental Phases", brief: `Pioneering initiatives, early prototypes, and initial standardizations.` },
+              { id: "sec_2_2", title: "2.2 Decade-Long Inflection Points", brief: `Critical technological pivots, catalysts, and paradigm transitions.` },
+              { id: "sec_2_3", title: "2.3 Contemporary Ecosystem Maturation", brief: `Current state of global adoption and operational scaling.` }
+            ]
+          },
+          {
+            id: "sec_3",
+            title: "3. Literature Survey & Theoretical Frameworks",
+            brief: `Exhaustive analysis of seminal scholarship, prevailing conceptual models, and academic debates.`,
+            keyPoints: ["Seminal theoretical models", "Taxonomy of existing research streams", "Critical counter-perspectives"],
+            relevantSourceIndices: [1, 2],
+            subsections: [
+              { id: "sec_3_1", title: "3.1 Theoretical Taxonomy & Conceptual Models", brief: `Classification of prevailing mathematical and operational frameworks.` },
+              { id: "sec_3_2", title: "3.2 Comparative Analysis of Prior Literature", brief: `Critical synthesis of empirical findings across leading studies.` },
+              { id: "sec_3_3", title: "3.3 Unresolved Theoretical Blind Spots", brief: `Systematic evaluation of research gaps and unanswered inquiries.` }
+            ]
+          },
+          {
+            id: "sec_4",
+            title: "4. Methodological Design & Empirical Framework",
+            brief: `Systematic selection criteria, measurement protocols, and quantitative evaluation indices for ${cleanTitle}.`,
+            keyPoints: ["Sampling protocols and dataset verification", "Mathematical metric formulations", "Validity and reproducibility controls"],
+            relevantSourceIndices: [2, 3],
+            subsections: [
+              { id: "sec_4_1", title: "4.1 Dataset Selection & Sampling Parameters", brief: `Inclusion criteria, verification protocols, and corpus integrity.` },
+              { id: "sec_4_2", title: "4.2 Quantitative Metrics & Mathematical Formulations", brief: `Formulas for yield tracking, latency, error bounds, and CAGR.` },
+              { id: "sec_4_3", title: "4.3 Internal & External Validity Safeguards", brief: `Controls for systematic bias, noise isolation, and reproducibility.` }
+            ]
+          },
+          {
+            id: "sec_5",
+            title: "5. High-Level Architectural Topology",
+            brief: `Core system topology, component modularity, and operational workflow design.`,
+            keyPoints: ["Modular component hierarchy", "Communication bus and data interchange", "High-throughput operational topology"],
+            relevantSourceIndices: [2, 3],
+            subsections: [
+              { id: "sec_5_1", title: "5.1 Structural Component Hierarchy", brief: `Decomposition of functional sub-modules and core engine components.` },
+              { id: "sec_5_2", title: "5.2 Inter-Module Protocols & Synchronization", brief: `Message bus, event dispatching, and state synchronization.` },
+              { id: "sec_5_3", title: "5.3 Pipeline Latency & Throughput Guarantees", brief: `Optimization techniques for high-concurrency throughput.` }
+            ]
+          },
+          {
+            id: "sec_6",
+            title: "6. Data Pipelines & Protocol Standardization",
+            brief: `Data ingestion, processing pipeline, and protocol harmonization standards.`,
+            keyPoints: ["Data transformation pipelines", "Standardization and schema validation", "Auditability and provenance tracking"],
+            relevantSourceIndices: [1, 3],
+            subsections: [
+              { id: "sec_6_1", title: "6.1 Ingestion Protocols & Parsing Pipelines", brief: `Streaming ingestion mechanisms and schema validation rules.` },
+              { id: "sec_6_2", title: "6.2 Data Integrity & Provenance Tracking", brief: `Cryptographic hashes, audit trails, and immutable logs.` },
+              { id: "sec_6_3", title: "6.3 Cross-Platform Protocol Interoperability", brief: `Harmonization across heterogeneous third-party interfaces.` }
+            ]
+          },
+          {
+            id: "sec_7",
+            title: "7. Security Architecture & Fault-Tolerance Mechanisms",
+            brief: `Redundancy safeguards, cryptographic integrity, and disaster recovery.`,
+            keyPoints: ["Zero-trust protocols", "High-availability failover mechanisms", "Threat modeling and intrusion defense"],
+            relevantSourceIndices: [2, 4],
+            subsections: [
+              { id: "sec_7_1", title: "7.1 Threat Vector Modeling & Surface Analysis", brief: `Comprehensive taxonomy of adversarial vulnerabilities and defense strategies.` },
+              { id: "sec_7_2", title: "7.2 Distributed Redundancy & Failover Protocols", brief: `Automatic failover, partition tolerance, and self-healing state engines.` },
+              { id: "sec_7_3", title: "7.3 Cryptographic Integrity & Access Governance", brief: `Role-based access control, cryptographic verification, and secret management.` }
+            ]
+          },
+          {
+            id: "sec_8",
+            title: "8. Quantitative Empirical Findings & Benchmark Synthesis",
+            brief: `Deep data synthesis with structured comparison tables, verified institutional statistics, and performance distributions.`,
+            keyPoints: ["Granular statistical distributions", "Comparative benchmark tables", "Multi-variable statistical significance tests"],
+            relevantSourceIndices: [1, 2],
+            subsections: [
+              { id: "sec_8_1", title: "8.1 Baseline vs Achieved Metric Distributions", brief: `Empirical performance distributions across representative testbeds.` },
+              { id: "sec_8_2", title: "8.2 Multi-Variable Benchmark Data Tables", brief: `Structured Markdown comparison tables assessing throughput, cost, and yield.` },
+              { id: "sec_8_3", title: "8.3 Statistical Significance & Dispersion Analysis", brief: `Hypothesis validation, p-value calculations, and sensitivity matrices.` }
+            ]
+          },
+          {
+            id: "sec_9",
+            title: "9. Comparative Institutional Case Studies",
+            brief: `Exhaustive real-world case evaluations demonstrating concrete implementations and institutional outcomes.`,
+            keyPoints: ["Enterprise-scale case evaluation", "Public sector/academic deployment review", "Failure post-mortems and key lessons"],
+            relevantSourceIndices: [2, 3],
+            subsections: [
+              { id: "sec_9_1", title: "9.1 Enterprise Tier Implementation Review", brief: `Large-scale deployment outcomes, timeline analysis, and measured ROI.` },
+              { id: "sec_9_2", title: "9.2 Public Sector & Institutional Deployments", brief: `Academic and regulatory consortium deployments and compliance.` },
+              { id: "sec_9_3", title: "9.3 Post-Mortem Analysis of Observed Failures", brief: `Analysis of implementation friction, failed assumptions, and remedies.` }
+            ]
+          },
+          {
+            id: "sec_10",
+            title: "10. Economic Feasibility, Unit Economics & TCO Modeling",
+            brief: `Granular financial modeling, capital allocation efficiency, ROI, and total cost of ownership.`,
+            keyPoints: ["Unit economics breakdown", "CAPEX vs OPEX projections", "Long-term Net Present Value (NPV) modeling"],
+            relevantSourceIndices: [1, 3],
+            subsections: [
+              { id: "sec_10_1", title: "10.1 Unit Cost Drivers & Marginal Economics", brief: `Granular cost breakdown per transaction/compute unit.` },
+              { id: "sec_10_2", title: "10.2 Total Cost of Ownership (5-Year Model)", brief: `CAPEX requirements, operational staffing, and infrastructure overhead.` },
+              { id: "sec_10_3", title: "10.3 Net Present Value & Payback Horizon", brief: `Discounted cash flow projections and capital break-even calculations.` }
+            ]
+          },
+          {
+            id: "sec_11",
+            title: "11. Global Regulatory Frameworks & Compliance Policies",
+            brief: `Jurisdictional compliance requirements, global policy treaties, and statutory mandates.`,
+            keyPoints: ["Cross-border statutory compliance", "Liability protocols and audit mandates", "2026-2030 regulatory trajectory"],
+            relevantSourceIndices: [1, 4],
+            subsections: [
+              { id: "sec_11_1", title: "11.1 Cross-Jurisdictional Statutory Landscape", brief: `Regulatory analysis across US, EU, and APAC administrative bodies.` },
+              { id: "sec_11_2", title: "11.2 Compliance Checkpoints & Audit Mandates", brief: `Continuous audit protocols and institutional liability management.` },
+              { id: "sec_11_3", title: "11.3 Emerging Policy Directives (2026–2030)", brief: `Anticipated legislative shifts and prospective regulatory safeguards.` }
+            ]
+          },
+          {
+            id: "sec_12",
+            title: "12. Phased Strategic Execution Roadmap",
+            brief: `Actionable phased implementation timeline, capital deployment sequencing, and governance checkpoints.`,
+            keyPoints: ["Near-term tactical rollout (Months 1–12)", "Medium-term scaling (Years 2–3)", "Long-term institutional governance (Years 4–5)"],
+            relevantSourceIndices: [2, 3],
+            subsections: [
+              { id: "sec_12_1", title: "12.1 Phase I: Foundation & Validation (Months 1–12)", brief: `Immediate technical priorities, pilot validation, and initial deployment.` },
+              { id: "sec_12_2", title: "12.2 Phase II: Optimization & Scale (Years 2–3)", brief: `Full-scale system scaling, feature maturity, and ecosystem growth.` },
+              { id: "sec_12_3", title: "12.3 Phase III: Long-Term Maturation (Years 4–5)", brief: `Sustained institutional leadership, governance standardization, and audit.` }
+            ]
+          },
+          {
+            id: "sec_13",
+            title: "13. Risk Governance & Contingency Protocol Matrix",
+            brief: `Systematic risk mitigation matrix, regulatory defense strategies, and business continuity frameworks.`,
+            keyPoints: ["Probability-impact scoring matrix", "Disaster recovery and fault-tolerance", "Continuous compliance monitoring"],
+            relevantSourceIndices: [1, 4],
+            subsections: [
+              { id: "sec_13_1", title: "13.1 Comprehensive Risk Scoring Matrix", brief: `Quantitative probability and impact evaluation across all risk vectors.` },
+              { id: "sec_13_2", title: "13.2 Operational Contingency Playbooks", brief: `Immediate incident response playbooks for system outages and breaches.` },
+              { id: "sec_13_3", title: "13.3 Continuous Governance & Audit Monitoring", brief: `Automated compliance monitoring and real-time governance metrics.` }
+            ]
+          },
+          {
+            id: "sec_14",
+            title: "14. Scholarly Synthesis & Prospective Research Agenda",
+            brief: `Synthesized resolution of core findings, academic contributions, and prospective research agenda.`,
+            keyPoints: ["Integrated theoretical and empirical summary", "Core scholarly contributions", "Prospective research avenues for future investigators"],
+            relevantSourceIndices: [1, 2, 3, 4],
+            subsections: [
+              { id: "sec_14_1", title: "14.1 Integrated Resolution of Findings", brief: `Synthesized summary of theoretical and empirical discoveries.` },
+              { id: "sec_14_2", title: "14.2 Methodological & Practical Contributions", brief: `Key academic contributions and industry implications.` },
+              { id: "sec_14_3", title: "14.3 Future Research Trajectory & Open Questions", brief: `High-priority research questions for upcoming investigators.` }
+            ]
+          }
+        ]
+      : [
+          {
+            id: "sec_1",
+            title: "1. Introduction & Foundational Scope",
+            brief: `Comprehensive introduction to baseline metrics, institutional significance, and scope of inquiry for ${cleanTitle}.`,
+            keyPoints: [`Contextual background and domain importance`, "Core problem definition and inefficiencies", "Scope boundaries and project objectives"],
+            relevantSourceIndices: [1],
+            subsections: [
+              { id: "sec_1_1", title: "1.1 Background and Motivation", brief: `Historical and contemporary context motivating research in ${cleanTitle}.` },
+              { id: "sec_1_2", title: "1.2 Problem Statement", brief: `Formal definition of core structural inefficiencies and challenges in ${cleanTitle}.` },
+              { id: "sec_1_3", title: "1.3 Research Objectives & Project Scope", brief: `Specific analytical aims, inquiry boundaries, and targeted deliverables.` }
+            ]
+          },
+          {
+            id: "sec_2",
+            title: "2. Literature Survey & Theoretical Frameworks",
+            brief: `Chronological maturation, seminal scholarship, and theoretical paradigms governing ${cleanTitle}.`,
+            keyPoints: ["Evolutionary inflection points over the past decade", "Seminal theoretical models and scholarly taxonomy", "Contemporary academic consensus and divergences"],
+            relevantSourceIndices: [1, 2],
+            subsections: [
+              { id: "sec_2_1", title: "2.1 Historical Genesis & Inflection Points", brief: `Evolutionary milestones and early developmental phases of ${cleanTitle}.` },
+              { id: "sec_2_2", title: "2.2 Theoretical Taxonomy & Conceptual Models", brief: `Taxonomy of prevailing academic models and frameworks.` },
+              { id: "sec_2_3", title: "2.3 Gaps in Contemporary Literature", brief: `Unresolved empirical questions and theoretical blind spots.` }
+            ]
+          },
+          {
+            id: "sec_3",
+            title: "3. Methodological Design & Empirical Framework",
+            brief: `Systematic selection criteria, measurement protocols, and quantitative evaluation indices for ${cleanTitle}.`,
+            keyPoints: ["Sampling protocols and dataset verification", "Key performance metrics and quantitative tracking formulas", "Boundary conditions and error tolerances"],
+            relevantSourceIndices: [2, 3],
+            subsections: [
+              { id: "sec_3_1", title: "3.1 Sampling Protocols & Data Selection", brief: `Inclusion criteria, dataset curation, and verification protocols.` },
+              { id: "sec_3_2", title: "3.2 Quantitative Metrics & Performance Indicators", brief: `Mathematical formulation of core tracking metrics and KPIs.` },
+              { id: "sec_3_3", title: "3.3 Verification Safeguards & Validity Constraints", brief: `Controls for internal and external validity.` }
+            ]
+          },
+          {
+            id: "sec_4",
+            title: "4. System Architecture & Technical Infrastructure",
+            brief: `Technical infrastructure, systems integration, protocol standards, and data pipelines supporting ${cleanTitle}.`,
+            keyPoints: ["System architecture and protocol design", "Infrastructure scalability, resilience, and uptime parameters", "Data pipelines and latency optimization"],
+            relevantSourceIndices: [2, 3],
+            subsections: [
+              { id: "sec_4_1", title: "4.1 High-Level Architectural Topology", brief: `System topology, component modularity, and operational workflow design.` },
+              { id: "sec_4_2", title: "4.2 Data Pipelines & Protocol Standards", brief: `Data ingestion, processing pipeline, and protocol harmonization.` },
+              { id: "sec_4_3", title: "4.3 Security & Fault-Tolerance Mechanisms", brief: `Redundancy safeguards, cryptographic integrity, and disaster recovery.` }
+            ]
+          },
+          {
+            id: "sec_5",
+            title: "5. Empirical Findings & Granular Benchmark Synthesis",
+            brief: `Deep data synthesis with structured comparison tables, verified institutional statistics, and performance distributions for ${cleanTitle}.`,
+            keyPoints: ["Granular statistical distributions and verified data tables", "Demographic and sector performance benchmarks", "Comparative unit economics and operational metrics"],
+            relevantSourceIndices: [1, 3],
+            subsections: [
+              { id: "sec_5_1", title: "5.1 Quantitative Performance Distributions", brief: `Empirical distributions and performance benchmark metrics across testbeds.` },
+              { id: "sec_5_2", title: "5.2 Comparative Benchmark Tables", brief: `Granular comparison tables evaluating multi-variable yield against existing standards.` },
+              { id: "sec_5_3", title: "5.3 Statistical Significance & Sensitivity Analysis", brief: `Hypothesis validation, p-values, and parameter sensitivity testing.` }
+            ]
+          },
+          {
+            id: "sec_6",
+            title: "6. Institutional Case Studies & Field Implementations",
+            brief: `Exhaustive real-world case evaluations demonstrating concrete implementations and institutional outcomes.`,
+            keyPoints: ["High-impact enterprise case study", "Public sector/academic deployment analysis", "Failures, post-mortems, and key lessons"],
+            relevantSourceIndices: [2, 4],
+            subsections: [
+              { id: "sec_6_1", title: "6.1 Enterprise-Scale Implementation Case", brief: `In-depth case review of commercial enterprise deployment and ROI metrics.` },
+              { id: "sec_6_2", title: "6.2 Public Sector & Academic Deployment Analysis", brief: `Institutional case review of governance and open ecosystem deployment.` },
+              { id: "sec_6_3", title: "6.3 Implementation Pitfalls & Post-Mortem Lessons", brief: `Analysis of observed implementation bottlenecks and key corrective measures.` }
+            ]
+          },
+          {
+            id: "sec_7",
+            title: "7. Strategic Roadmap, Risk Governance & Economic Feasibility",
+            brief: `Actionable phased implementation timeline, capital deployment sequencing, risk mitigation matrix, and governance checkpoints for ${cleanTitle}.`,
+            keyPoints: ["Phased rollout milestones (Phase I, II, III)", "Comprehensive risk governance matrix", "Cost structures, unit economics, and return on investment"],
+            relevantSourceIndices: [1, 2, 3, 4],
+            subsections: [
+              { id: "sec_7_1", title: "7.1 Phased Execution Timeline & Milestones", brief: `Sequential implementation phases across near-term, mid-term, and long-term horizons.` },
+              { id: "sec_7_2", title: "7.2 Comprehensive Risk Governance Matrix", brief: `Systematic risk scoring, mitigation protocols, and compliance checkpoints.` },
+              { id: "sec_7_3", title: "7.3 Economic Feasibility & Capital Allocation Modeling", brief: `Unit economics, operational expenditure, and long-term commercial sustainability.` }
+            ]
+          }
+        ];
+
     return {
       title: capitalizedTitle,
-      subtitle: `A Comprehensive Multi-Chapter Strategic & Empirical Treatise (${tone})`,
+      subtitle: `An Exhaustive Multi-Chapter Strategic & Empirical Treatise (${tone})`,
       docType: dType,
       format: (fmt as any) || "docx",
-      targetLength: tLen || "Standard Report (4–6 Chapters)",
-      sections: [
-        {
-          id: "sec_1",
-          title: "Executive Abstract, Empirical Baseline & Foundational Scope",
-          brief: `Comprehensive executive overview of baseline metrics, scope, and foundational significance for ${cleanTitle}.`,
-          keyPoints: [`Core adoption and volume metrics for ${cleanTitle}`, "High-level institutional indicators", "Scope and methodology framework"],
-          relevantSourceIndices: [1],
-        },
-        {
-          id: "sec_2",
-          title: "Historical Genesis, Inflection Points & Evolutionary Chronology",
-          brief: `Chronological analysis of the origin, historical inflection points, and structural maturation of ${cleanTitle}.`,
-          keyPoints: ["Early developmental phases and policy catalysts", "Key structural pivots over the past decade", "Evolution of market and user adoption curves"],
-          relevantSourceIndices: [1, 2],
-        },
-        {
-          id: "sec_3",
-          title: "Theoretical Frameworks, Scholarly Taxonomy & Conceptual Models",
-          brief: `Theoretical models, scholarly taxonomy, and conceptual lenses governing ${cleanTitle}.`,
-          keyPoints: ["Academic paradigms and economic models", "Thematic categorization of ecosystem dynamics", "Taxonomy of primary and secondary variables"],
-          relevantSourceIndices: [1, 2],
-        },
-        {
-          id: "sec_4",
-          title: "Operational Architecture & Technical Infrastructure",
-          brief: `Technical infrastructure, systems integration, and operational workflows supporting ${cleanTitle}.`,
-          keyPoints: ["System architecture and protocol design", "Infrastructure scalability and uptime resilience", "Data pipelines and latency optimization"],
-          relevantSourceIndices: [2, 3],
-        },
-        {
-          id: "sec_5",
-          title: "Granular Empirical Findings & Comparative Benchmarks",
-          brief: `Deep data synthesis of verified figures, institutional benchmarks, and performance metrics for ${cleanTitle}.`,
-          keyPoints: ["Verified historical performance metrics", "Comparative benchmark tables across sectors", "Statistical dispersion and anomaly detection"],
-          relevantSourceIndices: [1, 3],
-        },
-        {
-          id: "sec_6",
-          title: "Strategic Execution Roadmap, Risk Governance & Final Verdict",
-          brief: `Actionable phased implementation timeline, risk governance framework, and concluding verdict on ${cleanTitle}.`,
-          keyPoints: ["Near-term tactical rollout (Months 1–12)", "Medium-term scaling & optimization (Years 2–3)", "Comprehensive risk governance and policy recommendations"],
-          relevantSourceIndices: [1, 2, 3, 4],
-        },
-      ],
+      targetLength: tLen || "Comprehensive In-Depth (6–8 Chapters)",
+      chapters,
+      sections: chapters
     };
   };
 
@@ -514,6 +872,11 @@ export default function PaperLoopApp() {
             targetLength,
             docType,
             referenceNotes: referenceNotes || undefined,
+            pageCount,
+            customChapterCount: customChapterCount ? parseInt(customChapterCount, 10) : undefined,
+            font: selectedFont,
+            accentColor,
+            additionalRequirements: additionalRequirements || undefined,
             customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined,
             geminiModel,
           },
@@ -580,6 +943,8 @@ export default function PaperLoopApp() {
     setGeneratedSections({});
     setStreamStatusText("Streaming live structured document with Gemini 3.6 Flash...");
 
+    const accumulatedSections: Record<string, string> = {};
+
     setStreamTimelineEvents((prev) => [
       ...prev,
       {
@@ -606,6 +971,11 @@ export default function PaperLoopApp() {
           approvedOutline: targetOutline,
           researchBundle: targetBundle || researchBundle,
           referenceNotes: referenceNotes || undefined,
+          pageCount,
+          customChapterCount: customChapterCount ? parseInt(customChapterCount, 10) : undefined,
+          font: selectedFont,
+          accentColor,
+          additionalRequirements: additionalRequirements || undefined,
           customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined,
           geminiModel,
         }),
@@ -636,37 +1006,28 @@ export default function PaperLoopApp() {
               const event = JSON.parse(jsonStr);
 
               if (event.type === "status") {
-                setStreamStatusText(event.message || "Generating...");
-                if (event.step === "section_start") {
+                setStreamStatusText(event.message || "Processing...");
+                if (event.step === "section_start" && typeof event.index === "number") {
                   setActiveGeneratingSectionIndex(event.index);
-                  setStreamTimelineEvents((prev) => [
-                    ...prev,
-                    {
-                      id: `ev_${Date.now()}_${event.index}`,
-                      timestamp: new Date().toLocaleTimeString(),
-                      type: "status",
-                      title: `Drafting Section ${event.index + 1} of ${event.total}`,
-                      detail: event.title,
-                    },
-                  ]);
                 }
               } else if (event.type === "section_done") {
-                const normId = event.id || `sec_${event.index + 1}`;
+                const secId = event.id || `sec_${event.index + 1}`;
+                accumulatedSections[secId] = event.content;
+                accumulatedSections[event.index] = event.content;
                 setGeneratedSections((prev) => ({
                   ...prev,
-                  [normId]: event.content,
+                  [secId]: event.content,
                   [event.index]: event.content,
-                  [`sec_${event.index + 1}`]: event.content,
-                  [event.title]: event.content,
                 }));
+
                 setStreamTimelineEvents((prev) => [
                   ...prev,
                   {
-                    id: `ev_done_${event.id || event.index}_${Date.now()}`,
+                    id: `ev_${Date.now()}_${event.index}`,
                     timestamp: new Date().toLocaleTimeString(),
                     type: "section",
-                    title: `Section ${event.index + 1} Completed`,
-                    detail: `"${event.title}" (${event.content.length} chars)`,
+                    title: `Drafted: ${event.title}`,
+                    detail: `${event.wordCount ? `${event.wordCount} words` : `${(event.content || "").length} characters`}`,
                   },
                 ]);
               } else if (event.type === "complete") {
@@ -674,33 +1035,79 @@ export default function PaperLoopApp() {
                 setActiveGeneratingSectionIndex(null);
                 setStreamStatusText("All chapters drafted. Building binary download package...");
 
-                const compiledSections = event.sections || targetOutline.sections.map((s, idx) => ({
-                  title: s.title,
-                  brief: s.brief,
-                  content: generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || s.brief,
-                }));
+                const compiledSections = (event.sections && event.sections.length > 0)
+                  ? event.sections.map((s: any, idx: number) => ({
+                      id: s.id || `sec_${idx + 1}`,
+                      title: s.title,
+                      brief: s.brief,
+                      content: s.content || accumulatedSections[s.id] || accumulatedSections[idx] || s.brief,
+                      subsections: targetOutline.sections[idx]?.subsections || s.subsections,
+                    }))
+                  : targetOutline.sections.map((s, idx) => ({
+                      id: s.id,
+                      title: s.title,
+                      brief: s.brief,
+                      content: accumulatedSections[s.id] || accumulatedSections[idx] || accumulatedSections[`sec_${idx + 1}`] || s.brief,
+                      subsections: s.subsections,
+                    }));
+
+                // Save to local and server document history
+                try {
+                  await fetch("/api/documents", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      title: projectTitleOverride || targetOutline.title,
+                      subtitle: targetOutline.subtitle,
+                      prompt: targetOutline.title,
+                      format: targetOutline.format || format,
+                      docType,
+                      tone,
+                      sections: compiledSections,
+                      outline: targetOutline.sections,
+                      status: "completed"
+                    }),
+                  });
+                } catch (saveErr) {
+                  console.warn("Document history auto-save:", saveErr);
+                }
 
                 const resAssemble = await fetch("/api/assemble", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     docId: targetDocId || docId,
-                    title: targetOutline.title,
+                    title: projectTitleOverride || targetOutline.title,
                     subtitle: targetOutline.subtitle,
                     format: targetOutline.format || format,
                     sections: compiledSections,
+                    chapters: compiledSections,
+                    selectedFont,
+                    accentColor,
+                    academicMeta: {
+                      isFormalAcademicReport,
+                      institutionName,
+                      department,
+                      degree,
+                      submittedBy,
+                      guideName,
+                      academicYear,
+                      projectTitleOverride: projectTitleOverride || targetOutline.title,
+                      selectedFont,
+                      accentColor,
+                    },
                   }),
                 });
 
                 if (resAssemble.ok) {
                   const blob = await resAssemble.blob();
                   const downloadUrl = URL.createObjectURL(blob);
-                  const filename = `Paperrrrrr_${targetOutline.title.replace(/[^a-zA-Z0-9_\-]/g, "_")}.${targetOutline.format || format}`;
+                  const filename = `Paperrrrrr_${(projectTitleOverride || targetOutline.title).replace(/[^a-zA-Z0-9_\-]/g, "_")}.${targetOutline.format || format}`;
 
                   setAssembledBlobUrl(downloadUrl);
                   setAssembledFilename(filename);
                   setIsAssembledReady(true);
-                  setStreamStatusText("Ready for download");
+                  setStreamStatusText("Complete manuscript ready for download.");
 
                   setStreamTimelineEvents((prev) => [
                     ...prev,
@@ -816,6 +1223,23 @@ export default function PaperLoopApp() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
+                onClick={() => {
+                  fetchPastDocuments();
+                  setShowHistoryModal(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer"
+              >
+                <Clock className="size-3.5 text-[#C3644B]" />
+                <span>History</span>
+                {pastDocuments.length > 0 && (
+                  <span className="bg-[#C3644B]/20 text-[#FAF9F5] text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                    {pastDocuments.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setShowSettingsModal(true)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer"
               >
@@ -830,19 +1254,26 @@ export default function PaperLoopApp() {
               </button>
 
               {user ? (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-[#A38B86] font-mono">{user.name}</span>
+                <div className="flex items-center gap-2 text-xs font-mono bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                  <div className="size-5 rounded-full bg-[#C3644B] text-white flex items-center justify-center font-bold text-[10px]">
+                    {(user.name || user.email || "U")[0].toUpperCase()}
+                  </div>
+                  <span className="text-[#FAF9F5] max-w-[100px] truncate">{user.name || user.email}</span>
                   <button
-                    onClick={() => setUser(null)}
-                    className="text-[#88726D] hover:text-white transition-colors cursor-pointer"
+                    onClick={handleSignOut}
+                    className="text-[#88726D] hover:text-[#FAF9F5] ml-1 transition-colors cursor-pointer"
+                    title="Sign Out"
                   >
                     Sign Out
                   </button>
                 </div>
               ) : (
                 <button
-                  onClick={() => setShowAuthModal(true)}
-                  className="text-xs font-mono text-[#A38B86] hover:text-[#E5E2E1] px-3 py-1.5 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setAuthMode("login");
+                    setShowAuthModal(true);
+                  }}
+                  className="text-xs font-mono text-[#FAF9F5] bg-white/5 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
                 >
                   Sign In
                 </button>
@@ -891,14 +1322,14 @@ export default function PaperLoopApp() {
                       <Paperclip className="size-4" />
                     </button>
 
-                    {/* Expandable Parameters Drawer Toggle */}
+                    {/* Settings Panel Accordion Toggle Button in Prompt Bar */}
                     <button
                       type="button"
-                      onClick={() => setShowParameters(!showParameters)}
+                      onClick={() => setShowDocSettingsPanel(!showDocSettingsPanel)}
                       className={`p-2 rounded-full transition-colors cursor-pointer shrink-0 ${
-                        showParameters ? "text-[#C3644B] bg-[#C3644B]/15" : "text-[#88726D] hover:text-[#FAF9F5] hover:bg-white/5"
+                        showDocSettingsPanel ? "text-[#C3644B] bg-[#C3644B]/15" : "text-[#88726D] hover:text-[#FAF9F5] hover:bg-white/5"
                       }`}
-                      title="Parameters & Options"
+                      title="Toggle Document Settings Panel"
                     >
                       <SlidersHorizontal className="size-4" />
                     </button>
@@ -953,90 +1384,229 @@ export default function PaperLoopApp() {
                   </div>
                 )}
 
-                {/* Expandable Parameters Drawer (Tucked cleanly behind tune button) */}
-                {showParameters && (
-                  <div className="absolute top-full right-0 mt-3 p-5 glass-panel rounded-2xl w-full sm:w-96 z-30 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                      <span className="text-xs font-mono uppercase tracking-wider text-[#C3644B] font-bold">
-                        Document Parameters
-                      </span>
-                      <button
-                        onClick={() => setShowParameters(false)}
-                        className="text-[#88726D] hover:text-white cursor-pointer"
-                      >
-                        <X className="size-4" />
-                      </button>
-                    </div>
+                {/* Collapsible Document Settings Toggle Pill */}
+                <div className="w-full mt-3 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowDocSettingsPanel(!showDocSettingsPanel)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-sans text-[#A38B86] hover:text-[#FAF9F5] transition-all cursor-pointer shadow-sm hover:border-white/20"
+                  >
+                    <SlidersHorizontal className="size-3.5 text-[#C3644B]" />
+                    <span className="font-medium">Document Settings:</span>
+                    <span className="text-xs text-[#C3644B] font-semibold">
+                      {selectedFont} • {pageCount} Pages (~{calculatedBudget.totalWords.toLocaleString()} w) • {accentColor === "000000" ? "Black" : `#${accentColor}`}
+                    </span>
+                    <ChevronDown className={`size-3.5 transition-transform duration-200 ${showDocSettingsPanel ? "rotate-180 text-[#C3644B]" : ""}`} />
+                  </button>
+                </div>
 
-                    {/* Format Selector Pills */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-mono text-[#A38B86]">Format</label>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {[
-                          { key: "docx", label: "Word (.docx)", icon: <FileText className="size-3.5 text-blue-400" /> },
-                          { key: "pptx", label: "PowerPoint (.pptx)", icon: <Presentation className="size-3.5 text-amber-400" /> },
-                          { key: "xlsx", label: "Excel (.xlsx)", icon: <FileSpreadsheet className="size-3.5 text-emerald-400" /> },
-                          { key: "pdf", label: "Printable PDF (.pdf)", icon: <FileCheck className="size-3.5 text-rose-400" /> },
-                        ].map((fmtOption) => (
-                          <button
-                            key={fmtOption.key}
-                            type="button"
-                            onClick={() => setFormat(fmtOption.key as any)}
-                            className={`flex items-center gap-2 p-2 rounded-xl text-xs font-mono transition-all cursor-pointer border ${
-                              format === fmtOption.key
-                                ? "bg-[#97422C]/30 border-[#C3644B] text-[#FAF9F5]"
-                                : "bg-white/5 border-transparent text-[#A38B86] hover:bg-white/10"
-                            }`}
-                          >
-                            {fmtOption.icon}
-                            <span>{fmtOption.label}</span>
-                          </button>
-                        ))}
+                {/* Document Settings Panel (Collapsed by Default, Expandable) */}
+                {showDocSettingsPanel && (
+                  <div className="w-full mt-3 p-5 glass-panel rounded-2xl border border-white/10 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-xs font-sans">
+                    {/* Live Word Budget Metric Banner */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-white/5 rounded-xl border border-white/10 text-xs font-sans">
+                      <div className="flex items-center gap-2 text-[#FAF9F5]">
+                        <span className="size-2 rounded-full bg-[#C3644B] animate-pulse" />
+                        <span className="font-semibold">Calculated Target:</span>
+                        <span className="text-[#C3644B] font-bold">~{calculatedBudget.totalWords.toLocaleString()} Words</span>
+                      </div>
+                      <div className="text-[#A38B86] text-xs flex items-center gap-3">
+                        <span>• {pageCount} Pages (~{calculatedBudget.wordsPerPage} w/pg)</span>
+                        <span>• {calculatedBudget.chapters} Chapters (~{calculatedBudget.wordsPerChapter} w/ch)</span>
                       </div>
                     </div>
 
-                    {/* Tone Selection */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-mono text-[#A38B86]">Tone &amp; Style</label>
-                      <select
-                        value={tone}
-                        onChange={(e) => setTone(e.target.value)}
-                        className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2 text-xs text-[#FAF9F5] outline-none"
-                      >
-                        <option value="Academic & Analytical">Academic &amp; Analytical</option>
-                        <option value="Executive & Strategic">Executive &amp; Strategic</option>
-                        <option value="Technical & Granular">Technical &amp; Granular</option>
-                        <option value="Authoritative & Published">Authoritative &amp; Published</option>
-                      </select>
+                    {/* 5 Core Settings Fields Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 font-sans">
+                      {/* Field 1: Font */}
+                      <div className="space-y-1.5">
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">1. Typography Font</label>
+                        <select
+                          value={selectedFont}
+                          onChange={(e) => setSelectedFont(e.target.value)}
+                          className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
+                        >
+                          <option value="Times New Roman">Times New Roman (Academic)</option>
+                          <option value="Arial">Arial (Modern Clean)</option>
+                          <option value="Calibri">Calibri (Corporate Formal)</option>
+                          <option value="Cambria">Cambria (Refined Serif)</option>
+                          <option value="Georgia">Georgia (Editorial Serif)</option>
+                        </select>
+                        <span className="text-[11px] text-[#73726F] block">Applies throughout headings &amp; body.</span>
+                      </div>
+
+                      {/* Field 2: Page Count */}
+                      <div className="space-y-1.5">
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">2. Page Count Target</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min={1}
+                            value={pageCount}
+                            onChange={(e) => setPageCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                            className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none focus:border-[#C3644B] font-sans"
+                          />
+                          <span className="text-[#A38B86] text-xs shrink-0 font-medium">Pages</span>
+                        </div>
+                        <span className="text-[11px] text-[#73726F] block">No upper limit (e.g. 40, 100, 200+).</span>
+                      </div>
+
+                      {/* Field 3: Heading Accent Color */}
+                      <div className="space-y-1.5">
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">3. Heading Color</label>
+                        <select
+                          value={accentColor}
+                          onChange={(e) => setAccentColor(e.target.value)}
+                          className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
+                        >
+                          <option value="000000">Black Text Only (#000000 Default)</option>
+                          <option value="1B365D">Navy Blue (#1B365D)</option>
+                          <option value="800020">Deep Burgundy (#800020)</option>
+                          <option value="1E4620">Forest Emerald (#1E4620)</option>
+                          <option value="2C3539">Slate Charcoal (#2C3539)</option>
+                        </select>
+                        <span className="text-[11px] text-[#73726F] block">Headings &amp; accents only. Body stays black.</span>
+                      </div>
+
+                      {/* Field 4: Chapter Count */}
+                      <div className="space-y-1.5">
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">4. Chapter Count</label>
+                        <input
+                          type="number"
+                          min={2}
+                          placeholder={`Auto (${calculatedBudget.chapters} chapters)`}
+                          value={customChapterCount}
+                          onChange={(e) => setCustomChapterCount(e.target.value)}
+                          className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none placeholder-[#73726F] focus:border-[#C3644B] font-sans"
+                        />
+                        <span className="text-[11px] text-[#73726F] block">Leave blank for auto-derived chapters.</span>
+                      </div>
                     </div>
 
-                    {/* Research Depth */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-mono text-[#A38B86]">Tavily Web Research Depth</label>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setResearchDepth("standard")}
-                          className={`p-2 rounded-xl text-xs font-mono border transition-all cursor-pointer ${
-                            researchDepth === "standard"
-                              ? "bg-[#97422C]/30 border-[#C3644B] text-[#FAF9F5]"
-                              : "bg-white/5 border-transparent text-[#A38B86]"
-                          }`}
-                        >
-                          Standard (5 Sources)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setResearchDepth("deep")}
-                          className={`p-2 rounded-xl text-xs font-mono border transition-all cursor-pointer ${
-                            researchDepth === "deep"
-                              ? "bg-[#97422C]/30 border-[#C3644B] text-[#FAF9F5]"
-                              : "bg-white/5 border-transparent text-[#A38B86]"
-                          }`}
-                        >
-                          Deep (10+ Sources)
-                        </button>
+                    {/* Field 5: Additional Requirements & Instructions */}
+                    <div className="space-y-1.5 pt-2 border-t border-white/10 font-sans">
+                      <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">5. Additional Requirements &amp; Instructions</label>
+                      <textarea
+                        rows={2}
+                        value={additionalRequirements}
+                        onChange={(e) => setAdditionalRequirements(e.target.value)}
+                        placeholder="Specific tone preferences, empirical benchmarks to emphasize, case studies, or institutional guidelines..."
+                        className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none placeholder-[#73726F] focus:border-[#C3644B] resize-none font-sans"
+                      />
+                    </div>
+
+                    {/* Format Selector Pills & Tone */}
+                    <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-sans">
+                      <div className="space-y-1.5">
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Target Format</label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {[
+                            { key: "docx", label: "Word (.docx)", icon: <FileText className="size-3.5 text-blue-400" /> },
+                            { key: "pptx", label: "PowerPoint (.pptx)", icon: <Presentation className="size-3.5 text-amber-400" /> },
+                            { key: "xlsx", label: "Excel (.xlsx)", icon: <FileSpreadsheet className="size-3.5 text-emerald-400" /> },
+                            { key: "pdf", label: "Printable PDF", icon: <FileCheck className="size-3.5 text-rose-400" /> },
+                          ].map((fmtOption) => (
+                            <button
+                              key={fmtOption.key}
+                              type="button"
+                              onClick={() => setFormat(fmtOption.key as any)}
+                              className={`flex items-center gap-1.5 p-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer border ${
+                                format === fmtOption.key
+                                  ? "bg-[#97422C]/30 border-[#C3644B] text-[#FAF9F5]"
+                                  : "bg-white/5 border-transparent text-[#A38B86] hover:bg-white/10"
+                              }`}
+                            >
+                              {fmtOption.icon}
+                              <span>{fmtOption.label}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Tone &amp; Style</label>
+                        <select
+                          value={tone}
+                          onChange={(e) => setTone(e.target.value)}
+                          className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none font-sans"
+                        >
+                          <option value="Academic & Analytical">Academic &amp; Analytical</option>
+                          <option value="Executive & Strategic">Executive &amp; Strategic</option>
+                          <option value="Technical & Granular">Technical &amp; Granular</option>
+                          <option value="Authoritative & Published">Authoritative &amp; Published</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Formal Academic Report Toggle & Fields */}
+                    <div className="pt-2 border-t border-white/10 space-y-2.5 font-sans">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-[#FAF9F5] font-semibold flex items-center gap-1.5">
+                          <span>Formal Academic Front Matter</span>
+                          <span className="text-[10px] text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded-full font-medium">College Certificate, Declaration &amp; TOC</span>
+                        </label>
+                        <input
+                          type="checkbox"
+                          checked={isFormalAcademicReport}
+                          onChange={(e) => setIsFormalAcademicReport(e.target.checked)}
+                          className="size-4 accent-[#C3644B] cursor-pointer"
+                        />
+                      </div>
+
+                      {isFormalAcademicReport && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-white/5 rounded-xl border border-white/5 text-xs font-sans animate-in fade-in duration-200">
+                          <div>
+                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Institution / University</label>
+                            <input
+                              type="text"
+                              value={institutionName}
+                              onChange={(e) => setInstitutionName(e.target.value)}
+                              placeholder="e.g. Stanford University"
+                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Department</label>
+                            <input
+                              type="text"
+                              value={department}
+                              onChange={(e) => setDepartment(e.target.value)}
+                              placeholder="e.g. Dept. of Computer Science"
+                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Degree Program</label>
+                            <input
+                              type="text"
+                              value={degree}
+                              onChange={(e) => setDegree(e.target.value)}
+                              placeholder="e.g. Bachelor of Technology"
+                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Submitted By (Names &amp; IDs)</label>
+                            <input
+                              type="text"
+                              value={submittedBy}
+                              onChange={(e) => setSubmittedBy(e.target.value)}
+                              placeholder="e.g. Alex Chen (2021104012)"
+                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Faculty Supervisor / Guide</label>
+                            <input
+                              type="text"
+                              value={guideName}
+                              onChange={(e) => setGuideName(e.target.value)}
+                              placeholder="e.g. Dr. Robert Smith, Professor"
+                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1159,30 +1729,78 @@ export default function PaperLoopApp() {
                 </div>
               </div>
 
-              {/* Dynamic Outline Framing Preview */}
+              {/* Dynamic Outline Framing Preview with Expandable Chapters & Subsections */}
               {outline && (
-                <div className="space-y-2 pt-2 border-t border-white/10">
+                <div className="space-y-3 pt-3 border-t border-white/10">
                   <div className="flex justify-between items-center text-xs font-mono text-[#A38B86]">
-                    <span>Outline Framing</span>
-                    <span className="text-[#C3644B]">{outline.sections.length} Chapters structured</span>
+                    <span className="font-bold text-[#FAF9F5]">Outline Architecture</span>
+                    <span className="text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded">
+                      {outline.sections.length} Chapters Structured
+                    </span>
                   </div>
-                  <div className="text-xs text-[#FAF9F5] font-serif font-bold">
-                    {outline.title}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {outline.sections.slice(0, 4).map((sec, i) => (
-                      <span
-                        key={i}
-                        className="text-[11px] font-mono bg-white/5 border border-white/5 px-2.5 py-1 rounded-lg text-[#A38B86]"
-                      >
-                        {sec.title.split(".")[0] || `Ch ${i + 1}`}
-                      </span>
-                    ))}
-                    {outline.sections.length > 4 && (
-                      <span className="text-[11px] font-mono bg-white/5 px-2 py-1 rounded-lg text-[#73726F]">
-                        +{outline.sections.length - 4} more
-                      </span>
-                    )}
+
+                  <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1">
+                    {outline.sections.map((sec, i) => {
+                      const isExpanded = !!expandedChapterIds[sec.id || `ch_${i}`];
+                      const subCount = sec.subsections?.length || 0;
+
+                      return (
+                        <div
+                          key={sec.id || i}
+                          className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-1.5 transition-colors"
+                        >
+                          <div
+                            onClick={() =>
+                              setExpandedChapterIds((prev) => ({
+                                ...prev,
+                                [sec.id || `ch_${i}`]: !prev[sec.id || `ch_${i}`],
+                              }))
+                            }
+                            className="flex items-center justify-between cursor-pointer group"
+                          >
+                            <span className="text-xs font-serif font-bold text-[#FAF9F5] group-hover:text-[#C3644B] transition-colors truncate">
+                              {sec.title}
+                            </span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {subCount > 0 && (
+                                <span className="text-[10px] font-mono text-[#88726D] bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                                  {subCount} Subsections
+                                </span>
+                              )}
+                              <ChevronDown
+                                className={`size-3.5 text-[#88726D] transition-transform duration-200 ${
+                                  isExpanded ? "rotate-180 text-[#C3644B]" : ""
+                                }`}
+                              />
+                            </div>
+                          </div>
+
+                          <p className="text-[11px] text-[#A38B86] line-clamp-1">{sec.brief}</p>
+
+                          {/* Nested Subsections */}
+                          {isExpanded && sec.subsections && sec.subsections.length > 0 && (
+                            <div className="pl-3 pt-2 border-l border-white/10 space-y-1.5 animate-in fade-in duration-200">
+                              {sec.subsections.map((sub, sIdx) => (
+                                <div
+                                  key={sub.id || sIdx}
+                                  className="text-[11px] font-mono text-[#A38B86] flex items-start gap-2 bg-white/[0.02] p-1.5 rounded-lg border border-white/5"
+                                >
+                                  <span className="text-[#C3644B] font-bold shrink-0">
+                                    {sub.title.split(" ")[0]}
+                                  </span>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-[#FAF9F5] font-sans font-medium">
+                                      {sub.title.replace(/^\d+\.\d+\s*/, "")}
+                                    </div>
+                                    <div className="text-[10px] text-[#88726D] truncate">{sub.brief}</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1244,6 +1862,25 @@ export default function PaperLoopApp() {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* History Archive Trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  fetchPastDocuments();
+                  setShowHistoryModal(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer"
+                title="View Document History"
+              >
+                <Clock className="size-3.5 text-[#C3644B]" />
+                <span className="hidden md:inline">History</span>
+                {pastDocuments.length > 0 && (
+                  <span className="bg-[#C3644B]/20 text-[#FAF9F5] text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                    {pastDocuments.length}
+                  </span>
+                )}
+              </button>
+
               {/* Live Streaming State Badge */}
               <div className="flex items-center gap-2 text-xs font-mono bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
                 <span className={`w-2 h-2 rounded-full ${isStreaming ? "bg-[#C3644B] animate-ping" : "bg-emerald-500"}`} />
@@ -1298,7 +1935,7 @@ export default function PaperLoopApp() {
               {assembledBlobUrl ? (
                 <a
                   href={assembledBlobUrl}
-                  download={assembledFilename || `Paperrrrrr_${outline.title}.${format}`}
+                  download={assembledFilename || `PaperLoop_${outline.title}.${format}`}
                   className="inline-flex items-center gap-2 bg-[#C3644B] hover:bg-[#97422C] text-white px-4 py-1.5 rounded-lg text-xs font-mono font-bold transition-all shadow-md"
                 >
                   <Download className="size-3.5" />
@@ -1586,7 +2223,7 @@ export default function PaperLoopApp() {
                           if (assembledBlobUrl) {
                             const link = document.createElement("a");
                             link.href = assembledBlobUrl;
-                            link.download = assembledFilename || `Paperrrrrr_${outline.title}.pptx`;
+                            link.download = assembledFilename || `PaperLoop_${outline.title}.pptx`;
                             link.click();
                           }
                         }}
@@ -1607,7 +2244,7 @@ export default function PaperLoopApp() {
                           if (assembledBlobUrl) {
                             const link = document.createElement("a");
                             link.href = assembledBlobUrl;
-                            link.download = assembledFilename || `Paperrrrrr_${outline.title}.xlsx`;
+                            link.download = assembledFilename || `PaperLoop_${outline.title}.xlsx`;
                             link.click();
                           }
                         }}
@@ -1630,55 +2267,109 @@ export default function PaperLoopApp() {
           onClose={() => setShowAuthModal(false)}
           title={authMode === "signup" ? "Create PaperLoop Account" : "Sign In to Studio"}
         >
-          <form onSubmit={handleAuthSubmit} className="space-y-4">
-            {authMode === "signup" && (
+          <div className="space-y-4">
+            {/* One-Click Google Authentication */}
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/auth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "google" }),
+                  });
+                  const data = await res.json();
+                  if (data.user) {
+                    setUser(data.user);
+                    try {
+                      localStorage.setItem("paperrrrrr_user", JSON.stringify(data.user));
+                    } catch (e) {}
+                    setShowAuthModal(false);
+                    fetchPastDocuments();
+                  }
+                } catch (e: any) {
+                  alert("Google Sign-In Error: " + e.message);
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-[#FAF9F5] transition-all cursor-pointer shadow-sm hover:border-white/20"
+            >
+              <svg className="size-4" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <div className="flex items-center gap-3 my-2">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-[10px] font-mono uppercase text-[#73726F]">or with email</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            <form onSubmit={handleAuthSubmit} className="space-y-3.5">
+              {authMode === "signup" && (
+                <div>
+                  <label className="text-xs font-mono text-[#A38B86]">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={authName}
+                    onChange={(e) => setAuthName(e.target.value)}
+                    className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1"
+                    placeholder="e.g. Dr. Jane Vance"
+                  />
+                </div>
+              )}
               <div>
-                <label className="text-xs font-mono text-[#A38B86]">Your Name</label>
+                <label className="text-xs font-mono text-[#A38B86]">Email Address</label>
                 <input
-                  type="text"
+                  type="email"
                   required
-                  value={authName}
-                  onChange={(e) => setAuthName(e.target.value)}
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
                   className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1"
-                  placeholder="e.g. Dr. Jane Doe"
+                  placeholder="vance@university.edu"
                 />
               </div>
-            )}
-            <div>
-              <label className="text-xs font-mono text-[#A38B86]">Email Address</label>
-              <input
-                type="email"
-                required
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1"
-                placeholder="name@university.edu"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-mono text-[#A38B86]">Password</label>
-              <input
-                type="password"
-                required
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1"
-                placeholder="••••••••"
-              />
-            </div>
-            <div className="flex justify-between items-center pt-2">
-              <button
-                type="button"
-                onClick={() => setAuthMode(authMode === "signup" ? "login" : "signup")}
-                className="text-xs font-mono text-[#C3644B] hover:underline cursor-pointer"
-              >
-                {authMode === "signup" ? "Already have an account? Sign in" : "Need an account? Sign up"}
-              </button>
-              <Button type="submit" variant="primary" size="sm">
-                {authMode === "signup" ? "Sign Up" : "Sign In"}
-              </Button>
-            </div>
-          </form>
+              <div>
+                <label className="text-xs font-mono text-[#A38B86]">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="flex justify-between items-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAuthMode(authMode === "signup" ? "login" : "signup")}
+                  className="text-xs font-mono text-[#C3644B] hover:underline cursor-pointer"
+                >
+                  {authMode === "signup" ? "Already have an account? Sign in" : "Need an account? Sign up"}
+                </button>
+                <Button type="submit" variant="primary" size="sm">
+                  {authMode === "signup" ? "Sign Up" : "Sign In"}
+                </Button>
+              </div>
+            </form>
+          </div>
         </Modal>
       )}
 
@@ -1725,6 +2416,75 @@ export default function PaperLoopApp() {
                 </Button>
               </div>
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ==================================================================== */}
+      {/* DOCUMENT HISTORY MODAL                                               */}
+      {/* ==================================================================== */}
+      {showHistoryModal && (
+        <Modal
+          isOpen={showHistoryModal}
+          onClose={() => setShowHistoryModal(false)}
+          title="Document History & Archive"
+        >
+          <div className="space-y-4">
+            <div className="flex justify-between items-center text-xs font-mono text-[#A38B86]">
+              <span>Saved Manuscripts ({pastDocuments.length})</span>
+              <button
+                type="button"
+                onClick={fetchPastDocuments}
+                className="hover:text-white flex items-center gap-1 cursor-pointer"
+              >
+                <RotateCw className="size-3" /> Refresh
+              </button>
+            </div>
+
+            {pastDocuments.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 font-mono text-xs space-y-2 border border-white/5 rounded-xl bg-white/[0.02]">
+                <Clock className="size-6 text-[#C3644B] mx-auto opacity-60" />
+                <p>No documents generated yet.</p>
+                <p className="text-[11px] text-[#73726F]">Generate a document to build your persistent research archive.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5 max-h-96 overflow-y-auto custom-scrollbar pr-1">
+                {pastDocuments.map((doc, dIdx) => (
+                  <div
+                    key={doc._id || doc.id || dIdx}
+                    className="p-3.5 rounded-xl bg-white/5 hover:bg-white/[0.08] border border-white/10 transition-all flex flex-col gap-2 group"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-serif font-bold text-[#FAF9F5] truncate group-hover:text-[#C3644B] transition-colors">
+                          {doc.title}
+                        </h4>
+                        <p className="text-[11px] text-[#A38B86] truncate mt-0.5">{doc.subtitle || doc.prompt}</p>
+                      </div>
+                      <span className="text-[10px] font-mono uppercase bg-[#C3644B]/20 text-[#FFB4A2] border border-[#C3644B]/30 px-2 py-0.5 rounded-full shrink-0 font-bold">
+                        {(doc.format || "docx").toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] font-mono text-[#73726F]">
+                      <span>
+                        {doc.updatedAt
+                          ? new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+                          : "Saved Manuscript"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => loadHistoryDocument(doc)}
+                        className="text-[#FAF9F5] hover:text-[#C3644B] font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Open in Workspace</span>
+                        <ArrowRight className="size-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Modal>
       )}

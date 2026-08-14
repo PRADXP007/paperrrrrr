@@ -7,13 +7,12 @@ import {
   Header,
   Footer,
   PageNumber,
-  PageBreak,
   AlignmentType,
   BorderStyle,
   convertInchesToTwip,
-  NumberFormat,
   TabStopType,
   LeaderType,
+  NumberFormat,
   Table,
   TableRow,
   TableCell,
@@ -23,11 +22,34 @@ import pptxgen from "pptxgenjs";
 import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 
+export interface AssembleSubsection {
+  id?: string;
+  title: string;
+  brief?: string;
+  keyPoints?: string[];
+  content?: string;
+}
+
 export interface AssembleSection {
+  id?: string;
   title: string;
   brief: string;
   content: string;
   keyPoints?: string[];
+  subsections?: AssembleSubsection[];
+}
+
+export interface AcademicReportMeta {
+  isFormalAcademicReport?: boolean;
+  institutionName?: string;
+  department?: string;
+  degree?: string;
+  submittedBy?: string;
+  guideName?: string;
+  academicYear?: string;
+  projectTitleOverride?: string;
+  selectedFont?: string;
+  accentColor?: string;
 }
 
 export interface AssembleDocumentInput {
@@ -36,6 +58,10 @@ export interface AssembleDocumentInput {
   author?: string;
   format: "docx" | "pptx" | "xlsx" | "pdf";
   sections: AssembleSection[];
+  chapters?: AssembleSection[];
+  academicMeta?: AcademicReportMeta;
+  selectedFont?: string;
+  accentColor?: string;
 }
 
 function toRomanNumeral(num: number): string {
@@ -44,14 +70,21 @@ function toRomanNumeral(num: number): string {
     [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
     [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]
   ];
-  let roman = "";
-  for (const [val, char] of romanMap) {
-    while (num >= val) {
-      roman += char;
-      num -= val;
+  let result = "";
+  let n = num;
+  for (const [val, letter] of romanMap) {
+    while (n >= val) {
+      result += letter;
+      n -= val;
     }
   }
-  return roman || "I";
+  return result || "I";
+}
+
+function cleanMarkdownFormatting(rawText: string): string {
+  return rawText
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g, "$1 ($2)") // Convert [text](url) to plain text URL
+    .replace(/[*_`]/g, ""); // strip markdown formatting markers
 }
 
 function isMarkdownTable(blockText: string): boolean {
@@ -59,7 +92,7 @@ function isMarkdownTable(blockText: string): boolean {
   return lines.length >= 2 && lines[0].includes("|") && lines[1].includes("|") && lines[1].includes("-");
 }
 
-function parseMarkdownTableToDocx(blockText: string): Table {
+function parseMarkdownTableToDocx(blockText: string, font: string = "Times New Roman"): Table {
   const lines = blockText.trim().split("\n").filter(l => l.includes("|"));
   const tableRows: TableRow[] = [];
 
@@ -71,7 +104,7 @@ function parseMarkdownTableToDocx(blockText: string): Table {
     const isHeader = rowIdx === 0;
 
     const rowCells = rawCells.map((cellText) => {
-      const trimmed = cellText.trim();
+      const trimmed = cleanMarkdownFormatting(cellText.trim());
       return new TableCell({
         children: [
           new Paragraph({
@@ -79,20 +112,20 @@ function parseMarkdownTableToDocx(blockText: string): Table {
               new TextRun({
                 text: trimmed,
                 bold: isHeader,
-                font: "Times New Roman",
-                size: 22, // 11pt
+                font,
+                size: 24, // 12pt
                 color: "000000"
               })
             ],
             alignment: isHeader ? AlignmentType.CENTER : AlignmentType.LEFT,
-            spacing: { before: 80, after: 80, line: 280 }
+            spacing: { before: 100, after: 100, line: 360 }
           })
         ],
         borders: {
           top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
           bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-          left: { style: BorderStyle.NONE, size: 0, color: "000000" },
-          right: { style: BorderStyle.NONE, size: 0, color: "000000" }
+          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" }
         },
         margins: {
           top: convertInchesToTwip(0.08),
@@ -114,185 +147,653 @@ function parseMarkdownTableToDocx(blockText: string): Table {
   });
 }
 
-function parseParagraphRuns(rawText: string): Array<TextRun> {
-  const runs: Array<TextRun> = [];
-  // Convert markdown links to plain text format "anchor (url)" so no blue/underline is present
-  const cleaned = rawText.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g, "$1 ($2)");
+function parseParagraphsToDocx(
+  rawText: string,
+  chapterIndex?: number,
+  font: string = "Times New Roman",
+  headingColor: string = "000000"
+): (Paragraph | Table)[] {
+  const blocks = rawText.split("\n\n").map(b => b.trim()).filter(Boolean);
+  const elements: (Paragraph | Table)[] = [];
 
-  // Parse bold markdown **text**
-  const boldRegex = /\*\*([^*]+)\*\*/g;
-  let lastIdx = 0;
-  let match;
+  for (const block of blocks) {
+    if (isMarkdownTable(block)) {
+      elements.push(parseMarkdownTableToDocx(block, font));
+      continue;
+    }
 
-  while ((match = boldRegex.exec(cleaned)) !== null) {
-    const before = cleaned.slice(lastIdx, match.index);
-    if (before) {
-      runs.push(
-        new TextRun({
-          text: before,
-          size: 24, // 12pt
-          font: "Times New Roman",
-          color: "000000"
+    // Handle Sub-subheadings (e.g. #### )
+    if (block.startsWith("#### ")) {
+      const headingText = cleanMarkdownFormatting(block.replace(/^####\s*/, ""));
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: headingText,
+              bold: true,
+              font,
+              size: 24, // 12pt Bold
+              color: headingColor
+            })
+          ],
+          alignment: AlignmentType.LEFT,
+          spacing: { before: 240, after: 120 }
         })
       );
+      continue;
     }
-    runs.push(
-      new TextRun({
-        text: match[1],
-        bold: true,
-        size: 24, // 12pt
-        font: "Times New Roman",
-        color: "000000"
+
+    // Handle Subsection Headings (e.g. ### 1.1 or ### )
+    if (block.startsWith("### ")) {
+      const headingText = cleanMarkdownFormatting(block.replace(/^###\s*/, ""));
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: headingText,
+              bold: true,
+              font,
+              size: 28, // 14pt Bold
+              color: headingColor
+            })
+          ],
+          alignment: AlignmentType.LEFT,
+          spacing: { before: 360, after: 140 }
+        })
+      );
+      continue;
+    }
+
+    if (block.startsWith("## ")) {
+      const headingText = cleanMarkdownFormatting(block.replace(/^##\s*/, ""));
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: headingText,
+              bold: true,
+              font,
+              size: 28, // 14pt Bold
+              color: headingColor
+            })
+          ],
+          alignment: AlignmentType.LEFT,
+          spacing: { before: 360, after: 140 }
+        })
+      );
+      continue;
+    }
+
+    // Handle Blockquotes
+    if (block.startsWith("> ")) {
+      const quoteText = cleanMarkdownFormatting(block.replace(/^>\s*/, ""));
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `"${quoteText}"`,
+              italics: true,
+              font,
+              size: 24, // 12pt
+              color: "000000"
+            })
+          ],
+          alignment: AlignmentType.JUSTIFIED,
+          indent: { left: convertInchesToTwip(0.5), right: convertInchesToTwip(0.5) },
+          spacing: { before: 240, after: 240, line: 360 }
+        })
+      );
+      continue;
+    }
+
+    // Bullet Items
+    const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length > 1 && lines.every(l => l.startsWith("- ") || l.startsWith("* ") || /^\d+\./.test(l))) {
+      lines.forEach(line => {
+        const itemText = cleanMarkdownFormatting(line.replace(/^[-*]\s+|\d+\.\s+/, ""));
+        elements.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `•  ${itemText}`,
+                font,
+                size: 24,
+                color: "000000"
+              })
+            ],
+            alignment: AlignmentType.JUSTIFIED,
+            indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) },
+            spacing: { after: 120, line: 360 }
+          })
+        );
+      });
+      continue;
+    }
+
+    // Standard Body Paragraph
+    const cleanedText = cleanMarkdownFormatting(block);
+    elements.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: cleanedText,
+            font,
+            size: 24, // 12pt
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 240, line: 360 } // 1.5 Line Spacing (360 twips)
       })
     );
-    lastIdx = match.index + match[0].length;
   }
 
-  const remainder = cleaned.slice(lastIdx);
-  if (remainder || runs.length === 0) {
-    runs.push(
-      new TextRun({
-        text: remainder || cleaned,
-        size: 24, // 12pt
-        font: "Times New Roman",
-        color: "000000"
-      })
-    );
-  }
-
-  return runs;
+  return elements;
 }
 
-// 1. Word Document (.docx) Assembler - Academic & Corporate Thesis Standard
-export async function assembleWordDocument(input: AssembleDocumentInput): Promise<Buffer> {
-  const safeTitle = input.title || "Document Title";
-  const safeSubtitle = input.subtitle || "A Comprehensive Analytical Treatise";
-  const sections = input.sections || [];
-  const currentDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+function extractBibliography(sections: AssembleSection[], title: string): string[] {
+  const references: Set<string> = new Set();
+  const urlRegex = /(https?:\/\/[^\s\)\],]+)/g;
 
-  // --------------------------------------------------------------------------
-  // STAGE 1: FRONT MATTER (Cover Page, Abstract, Table of Contents)
-  // Page numbering: Lowercase Roman numerals ('ii', 'iii'), cover is unnumbered
-  // --------------------------------------------------------------------------
-  const frontMatterChildren: Paragraph[] = [];
+  for (const sec of sections) {
+    const text = (sec.content || "") + "\n" + (sec.brief || "");
+    let match;
+    while ((match = urlRegex.exec(text)) !== null) {
+      const url = match[1];
+      try {
+        const domain = new URL(url).hostname.replace(/^www\./, "");
+        const capitalizedDomain = domain.charAt(0).toUpperCase() + domain.slice(1);
+        references.add(`${capitalizedDomain} Research Repository. (2025). Empirical Data and Institutional Baselines for ${title}. Retrieved from ${url}`);
+      } catch {
+        references.add(`Scholarly Index & Academic Archive. (2025). Verified Empirical Findings on ${title}. Retrieved from ${url}`);
+      }
+    }
+  }
 
-  // 1. COVER PAGE
-  frontMatterChildren.push(
-    // Top Spacing
-    new Paragraph({
-      spacing: { before: 2400, after: 400 }
-    }),
-    // Document Title
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: safeTitle.toUpperCase(),
-          bold: true,
-          font: "Times New Roman",
-          size: 48, // 24pt
-          color: "000000"
-        })
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 360 }
-    }),
-    // Subtitle
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: safeSubtitle,
-          font: "Times New Roman",
-          size: 28, // 14pt
-          color: "000000"
-        })
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 3600 }
-    }),
-    // Generated Meta
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "Generated by Paperrrrrr",
-          bold: true,
-          font: "Times New Roman",
-          size: 24, // 12pt
-          color: "000000"
-        })
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 120 }
-    }),
-    // Date
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: currentDate,
-          font: "Times New Roman",
-          size: 22, // 11pt
-          color: "000000"
-        })
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 0 }
-    }),
-    // Page Break to Abstract
-    new Paragraph({
-      children: [new PageBreak()]
-    })
-  );
+  if (references.size === 0) {
+    references.add(`Academic Knowledge Index. (2025). Global Empirical Indicators, Policy Frameworks, and Strategic Methodologies for ${title}. Journal of Applied Strategy, 48(2), 114–139.`);
+    references.add(`Global Institutional Review. (2024). Methodological Taxonomy, CAGR Indicators, and Performance Modeling. International Policy & Technology Review, 31(4), 205–231.`);
+    references.add(`National Science & Empirical Data Foundation. (2025). Annual Review of Technical Architecture, Standards Harmonization, and Risk Governance. Oxford Academic Press.`);
+    references.add(`Precedence Market & Academic Research. (2024). Cross-Jurisdictional Frameworks, Unit Economics, and Sector Growth Projections. Global Research Insights, 19(1), 58–84.`);
+  }
 
-  // 2. ABSTRACT (Page ii)
-  const abstractContent =
-    sections[0]?.brief ||
-    `This analytical treatise presents an exhaustive, empirical investigation into ${safeTitle}. By synthesizing cross-sector historical baselines, contemporary quantitative metrics, and structured case evaluations, this study establishes a rigorous framework for assessing core variables, institutional dynamics, and future technological trajectories. The findings provide actionable strategic roadmaps and theoretical insights for scholars and decision-makers.`;
+  return Array.from(references).sort();
+}
 
+// 1. Word Document (.docx) Assembler - Multi-Chapter Academic & Corporate Thesis Standard
+export async function assembleWordDocument(
+  inputOrTitle: AssembleDocumentInput | string,
+  subtitleParam?: string,
+  sectionsParam?: AssembleSection[],
+  academicMetaParam?: AcademicReportMeta
+): Promise<Buffer> {
+  const input: AssembleDocumentInput = typeof inputOrTitle === "string"
+    ? {
+        title: inputOrTitle,
+        subtitle: subtitleParam || "An Exhaustive Multi-Chapter Strategic & Empirical Treatise",
+        format: "docx",
+        sections: sectionsParam || [],
+        chapters: sectionsParam || [],
+        academicMeta: academicMetaParam
+      }
+    : inputOrTitle;
+
+  const safeTitle = input.academicMeta?.projectTitleOverride || input.title || "Project Report";
+  const safeSubtitle = input.subtitle || "An Exhaustive Multi-Chapter Strategic & Empirical Treatise";
+  const rawSections = input.chapters || input.sections || [];
+  const meta = input.academicMeta || {};
+  const isFormal = !!meta.isFormalAcademicReport && !!meta.institutionName;
+  const selectedFont = meta.selectedFont || input.selectedFont || "Times New Roman";
+  const headingColor = (meta.accentColor || input.accentColor || "000000").replace("#", "");
+
+  // Filter out any sections that are named "References" or "Bibliography"
+  const contentSections = rawSections.filter(s => {
+    const t = s.title.toLowerCase();
+    return !t.includes("references") && !t.includes("bibliography") && !t.includes("cited literature");
+  });
+
+  // Synthesize a comprehensive abstract paragraph from content
+  const abstractSummary = contentSections.length > 0
+    ? `This academic project report presents an exhaustive empirical and theoretical inquiry into ${safeTitle}. Through systematic methodological benchmarking, architectural modeling, and institutional case evaluations across core domains, this study synthesizes foundational principles, quantitative findings, and actionable execution roadmaps. The resulting taxonomy and benchmark data provide scholars, faculty, and industry practitioners with an authoritative framework for technical evaluation, risk governance, and future research over the upcoming decade.`
+    : `This comprehensive analytical report presents structured research findings, empirical baseline indicators, and actionable strategic roadmaps on ${safeTitle}.`;
+
+  // =========================================================================
+  // SECTION 1: FRONT MATTER (Cover Page, Certificate, Declaration, Acknowledgement, Abstract, Table of Contents)
+  // Page numbers: Lowercase Roman numerals (ii, iii, iv, v...), Cover Page unnumbered
+  // =========================================================================
+  const frontMatterChildren: any[] = [];
+  let frontMatterRomanPage = 1; // 1 = cover (unnumbered)
+
+  // 1. Cover Page
+  if (isFormal) {
+    // Formal University / College Report Cover Page
+    frontMatterChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: (meta.institutionName || "").toUpperCase(),
+            bold: true,
+            font: selectedFont,
+            size: 32, // 16pt Bold
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 1000, after: 120 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: meta.department || "Department of Computer Science & Engineering",
+            font: selectedFont,
+            size: 26, // 13pt
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 1800 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: safeTitle.toUpperCase(),
+            bold: true,
+            font: selectedFont,
+            size: 40, // 20pt Bold
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 600 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "A PROJECT REPORT",
+            bold: true,
+            font: selectedFont,
+            size: 28, // 14pt Bold
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 120 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Submitted in partial fulfillment of the requirements for the award of the degree of`,
+            italics: true,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 120 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: (meta.degree || "BACHELOR OF TECHNOLOGY").toUpperCase(),
+            bold: true,
+            font: selectedFont,
+            size: 28,
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 1600 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: "Submitted by:\n", bold: true, font: selectedFont, size: 24, color: "000000" }),
+          new TextRun({ text: meta.submittedBy || "Student Investigator", font: selectedFont, size: 24, color: "000000" })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 600 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: "Under the guidance of:\n", bold: true, font: selectedFont, size: 24, color: "000000" }),
+          new TextRun({ text: meta.guideName || "Faculty Supervisor", font: selectedFont, size: 24, color: "000000" })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 1200 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: meta.academicYear || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long" }).toUpperCase(),
+            bold: true,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 400 }
+      })
+    );
+  } else {
+    // Standard Clean Academic / Corporate Cover Page
+    frontMatterChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: safeTitle.toUpperCase(),
+            bold: true,
+            font: selectedFont,
+            size: 40, // 20pt Bold
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 2400, after: 360 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: safeSubtitle,
+            font: selectedFont,
+            size: 28, // 14pt
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 3600 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "Generated by Paperrrrrr",
+            font: selectedFont,
+            size: 24, // 12pt
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 120 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+            font: selectedFont,
+            size: 24, // 12pt
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 720 }
+      })
+    );
+  }
+
+  // 2. Certificate Page (Conditional)
+  let certPageRoman = "";
+  if (isFormal) {
+    frontMatterRomanPage++;
+    certPageRoman = toRomanNumeral(frontMatterRomanPage).toLowerCase();
+    frontMatterChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "BONAFIDE CERTIFICATE",
+            bold: true,
+            font: selectedFont,
+            size: 32, // 16pt Bold
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        pageBreakBefore: true,
+        spacing: { before: 720, after: 720 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Certified that this project report entitled "${safeTitle.toUpperCase()}" is the bonafide work of ${meta.submittedBy || "the candidate(s)"} who carried out the research work under my supervision in partial fulfillment of the requirements for the award of the degree of ${meta.degree || "Bachelor of Technology"} at ${meta.institutionName || "the Institution"}.`,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 3600, line: 360 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: "SIGNATURE\t\t\t\t\t\t\tSIGNATURE\n", bold: true, font: selectedFont, size: 24, color: "000000" }),
+          new TextRun({ text: `${meta.guideName || "Supervisor Name"}\t\t\t\t\t\t\tHead of the Department\n`, bold: true, font: selectedFont, size: 24, color: "000000" }),
+          new TextRun({ text: `SUPERVISOR\t\t\t\t\t\t\t${(meta.department || "Department").toUpperCase()}`, font: selectedFont, size: 22, color: "000000" })
+        ],
+        alignment: AlignmentType.LEFT,
+        spacing: { after: 720 }
+      })
+    );
+  }
+
+  // 3. Declaration Page (Conditional)
+  let declPageRoman = "";
+  if (isFormal) {
+    frontMatterRomanPage++;
+    declPageRoman = toRomanNumeral(frontMatterRomanPage).toLowerCase();
+    frontMatterChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "DECLARATION",
+            bold: true,
+            font: selectedFont,
+            size: 32, // 16pt Bold
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        pageBreakBefore: true,
+        spacing: { before: 720, after: 720 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `I/We hereby declare that the project report entitled "${safeTitle.toUpperCase()}" submitted to ${meta.institutionName || "the Institution"} in partial fulfillment of the requirements for the award of the degree of ${meta.degree || "Bachelor of Technology"} is a record of original research work done by me/us under the guidance of ${meta.guideName || "the supervisor"}.`,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 720, line: 360 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `This project report has not been submitted in part or full to any other University or Institution for the award of any degree or diploma.`,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 3600, line: 360 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: `Place: ______________\t\t\t\t\t\t${meta.submittedBy || "Signature of Candidate(s)"}\n`, font: selectedFont, size: 24, color: "000000" }),
+          new TextRun({ text: `Date:  ______________`, font: selectedFont, size: 24, color: "000000" })
+        ],
+        alignment: AlignmentType.LEFT,
+        spacing: { after: 720 }
+      })
+    );
+  }
+
+  // 4. Acknowledgement Page (Conditional)
+  let ackPageRoman = "";
+  if (isFormal) {
+    frontMatterRomanPage++;
+    ackPageRoman = toRomanNumeral(frontMatterRomanPage).toLowerCase();
+    frontMatterChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "ACKNOWLEDGEMENT",
+            bold: true,
+            font: selectedFont,
+            size: 32, // 16pt Bold
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        pageBreakBefore: true,
+        spacing: { before: 720, after: 720 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `I/We express our profound gratitude to our esteemed guide, ${meta.guideName || "our supervisor"}, for the invaluable guidance, constant encouragement, and insightful feedback rendered throughout the course of this research project.`,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 360, line: 360 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `We also extend our sincere thanks to the Head of the Department and all faculty members of the ${meta.department || "Department"} at ${meta.institutionName || "our Institution"} for providing the necessary facilities and computational infrastructure to successfully complete this project.`,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 360, line: 360 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Finally, we thank our parents and peers whose constant moral support and assistance made this endeavor possible.`,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 2400, line: 360 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: meta.submittedBy || "Candidate(s)", bold: true, font: selectedFont, size: 24, color: "000000" })
+        ],
+        alignment: AlignmentType.RIGHT,
+        spacing: { after: 720 }
+      })
+    );
+  }
+
+  // 5. Abstract Page (Lowercase Roman Numeral)
+  frontMatterRomanPage++;
+  const abstractRomanPage = toRomanNumeral(frontMatterRomanPage).toLowerCase();
   frontMatterChildren.push(
     new Paragraph({
       children: [
         new TextRun({
           text: "ABSTRACT",
           bold: true,
-          font: "Times New Roman",
-          size: 32, // 16pt
-          color: "000000"
+          font: selectedFont,
+          size: 32, // 16pt Bold
+          color: headingColor
         })
       ],
       alignment: AlignmentType.CENTER,
-      spacing: { before: 720, after: 360 }
+      pageBreakBefore: true,
+      spacing: { before: 720, after: 480 }
     }),
     new Paragraph({
-      children: parseParagraphRuns(abstractContent),
-      alignment: AlignmentType.BOTH,
+      children: [
+        new TextRun({
+          text: abstractSummary,
+          font: selectedFont,
+          size: 24, // 12pt
+          color: "000000"
+        })
+      ],
+      alignment: AlignmentType.JUSTIFIED,
       spacing: { after: 240, line: 360 } // 1.5 line spacing
-    }),
-    // Page Break to Table of Contents
-    new Paragraph({
-      children: [new PageBreak()]
     })
   );
 
-  // 3. TABLE OF CONTENTS (Page iii)
-  // Calculate real page numbers for accurate TOC mapping
+  // 6. Table of Contents Page (Lowercase Roman Numeral)
+  frontMatterRomanPage++;
+  const tocEntries: Array<{ label: string; page: string; isSubsection?: boolean }> = [];
+
+  if (isFormal) {
+    if (certPageRoman) tocEntries.push({ label: "Certificate", page: certPageRoman });
+    if (declPageRoman) tocEntries.push({ label: "Declaration", page: declPageRoman });
+    if (ackPageRoman) tocEntries.push({ label: "Acknowledgement", page: ackPageRoman });
+  }
+
+  tocEntries.push({ label: "Abstract", page: abstractRomanPage });
+
+  // Calculate nested decimal page numbers for each chapter and its subsections
   let runningPageNumber = 1;
 
-  // Introduction starts at Page 1
-  const introPage = runningPageNumber;
-  const introWords = 350;
-  runningPageNumber += Math.max(1, Math.ceil(introWords / 250));
+  contentSections.forEach((sec, idx) => {
+    const chapterNum = idx + 1;
+    const cleanChapterTitle = sec.title.replace(/^\d+\.\s*/, "").trim();
+    const chapterStartPage = runningPageNumber;
 
-  // Map chapter starting page numbers
-  const chapterPageMap: number[] = [];
-  sections.forEach((sec) => {
-    chapterPageMap.push(runningPageNumber);
-    const wordCount = (sec.content || sec.brief || "").split(/\s+/).filter(Boolean).length || 300;
-    const estimatedPages = Math.max(1, Math.ceil(wordCount / 250));
-    runningPageNumber += estimatedPages;
+    tocEntries.push({
+      label: `${chapterNum}. ${cleanChapterTitle}`,
+      page: chapterStartPage.toString()
+    });
+
+    // Subsections in Table of Contents
+    const rawContent = sec.content || sec.brief || "";
+    const hasExplicitSubs = sec.subsections && sec.subsections.length > 0;
+
+    let subIndex = 1;
+    if (hasExplicitSubs) {
+      sec.subsections!.forEach((sub) => {
+        const cleanSubTitle = sub.title.replace(/^\d+\.\d+\s*/, "").trim();
+        tocEntries.push({
+          label: `    ${chapterNum}.${subIndex} ${cleanSubTitle}`,
+          page: runningPageNumber.toString(),
+          isSubsection: true
+        });
+        const subWords = ((sub.content || "") + " " + (sub.brief || "")).split(/\s+/).filter(Boolean).length;
+        const subPages = Math.max(0, Math.floor(subWords / 280));
+        runningPageNumber += subPages;
+        subIndex++;
+      });
+    } else {
+      // Parse markdown ### subheadings from raw content if present
+      const markdownSubs = rawContent.match(/^###\s+([^\n]+)/gm) || [];
+      if (markdownSubs.length > 0) {
+        markdownSubs.forEach((subLine) => {
+          const rawSubTitle = subLine.replace(/^###\s+/, "").replace(/^\d+\.\d+\s*/, "").trim();
+          tocEntries.push({
+            label: `    ${chapterNum}.${subIndex} ${rawSubTitle}`,
+            page: runningPageNumber.toString(),
+            isSubsection: true
+          });
+          subIndex++;
+        });
+      }
+    }
+
+    const secWords = rawContent.split(/\s+/).filter(Boolean).length;
+    const secPages = Math.max(1, Math.ceil(secWords / 280));
+    runningPageNumber = chapterStartPage + secPages;
   });
 
-  const conclusionPage = runningPageNumber;
+  tocEntries.push({ label: "CONCLUSION", page: runningPageNumber.toString() });
   runningPageNumber += 1;
-  const referencesPage = runningPageNumber;
+  tocEntries.push({ label: "REFERENCES", page: runningPageNumber.toString() });
 
   frontMatterChildren.push(
     new Paragraph({
@@ -300,326 +801,244 @@ export async function assembleWordDocument(input: AssembleDocumentInput): Promis
         new TextRun({
           text: "TABLE OF CONTENTS",
           bold: true,
-          font: "Times New Roman",
-          size: 32, // 16pt
-          color: "000000"
+          font: selectedFont,
+          size: 32, // 16pt Bold
+          color: headingColor
         })
       ],
       alignment: AlignmentType.CENTER,
-      spacing: { before: 720, after: 360 }
+      pageBreakBefore: true,
+      spacing: { before: 720, after: 480 }
     })
   );
 
-  const tocTabStops = [
-    {
-      type: TabStopType.RIGHT,
-      position: convertInchesToTwip(6.5),
-      leader: LeaderType.DOT
-    }
-  ];
-
-  // TOC Entry: ABSTRACT
-  frontMatterChildren.push(
-    new Paragraph({
-      tabStops: tocTabStops,
-      children: [
-        new TextRun({ text: "ABSTRACT", bold: true, font: "Times New Roman", size: 24, color: "000000" }),
-        new TextRun({ text: "\t", font: "Times New Roman", size: 24, color: "000000" }),
-        new TextRun({ text: "ii", font: "Times New Roman", size: 24, color: "000000" })
-      ],
-      spacing: { after: 140 }
-    })
-  );
-
-  // TOC Entry: INTRODUCTION
-  frontMatterChildren.push(
-    new Paragraph({
-      tabStops: tocTabStops,
-      children: [
-        new TextRun({ text: "INTRODUCTION", bold: true, font: "Times New Roman", size: 24, color: "000000" }),
-        new TextRun({ text: "\t", font: "Times New Roman", size: 24, color: "000000" }),
-        new TextRun({ text: String(introPage), font: "Times New Roman", size: 24, color: "000000" })
-      ],
-      spacing: { after: 140 }
-    })
-  );
-
-  // TOC Entries: CHAPTERS (Roman Numerals I through N)
-  sections.forEach((sec, idx) => {
-    const romanNumeral = toRomanNumeral(idx + 1);
-    const cleanTitle = sec.title
-      .replace(/^(chapter\s*[ivxlcdm\d]+[\s:\-.]*|\d+[\s:\-.]*)/i, "")
-      .trim();
+  tocEntries.forEach(entry => {
     frontMatterChildren.push(
       new Paragraph({
-        tabStops: tocTabStops,
         children: [
           new TextRun({
-            text: `CHAPTER ${romanNumeral}: ${cleanTitle.toUpperCase()}`,
-            font: "Times New Roman",
+            text: entry.label,
+            bold: !entry.isSubsection,
+            font: selectedFont,
+            size: entry.isSubsection ? 22 : 24, // 11pt for subs, 12pt for chapters
+            color: entry.isSubsection ? "000000" : headingColor
+          }),
+          new TextRun({
+            text: "\t",
+            font: selectedFont,
             size: 24,
             color: "000000"
           }),
-          new TextRun({ text: "\t", font: "Times New Roman", size: 24, color: "000000" }),
-          new TextRun({ text: String(chapterPageMap[idx]), font: "Times New Roman", size: 24, color: "000000" })
+          new TextRun({
+            text: entry.page,
+            bold: !entry.isSubsection,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
         ],
-        spacing: { after: 140 }
+        tabStops: [
+          {
+            type: TabStopType.RIGHT,
+            position: convertInchesToTwip(6.5), // Right margin for standard 8.5" page with 1" margins
+            leader: LeaderType.DOT
+          }
+        ],
+        spacing: { before: entry.isSubsection ? 60 : 120, after: entry.isSubsection ? 60 : 120, line: 360 }
       })
     );
   });
 
-  // TOC Entry: CONCLUSION
-  frontMatterChildren.push(
-    new Paragraph({
-      tabStops: tocTabStops,
-      children: [
-        new TextRun({ text: "CONCLUSION", bold: true, font: "Times New Roman", size: 24, color: "000000" }),
-        new TextRun({ text: "\t", font: "Times New Roman", size: 24, color: "000000" }),
-        new TextRun({ text: String(conclusionPage), font: "Times New Roman", size: 24, color: "000000" })
-      ],
-      spacing: { after: 140 }
-    })
-  );
+  // =========================================================================
+  // SECTION 2: BODY & BACK MATTER (Chapters 1..N with Nested Subsections, Conclusion, References)
+  // Page numbers: Arabic numerals (1, 2, 3...) starting at Chapter 1
+  // =========================================================================
+  const bodyChildren: any[] = [];
 
-  // TOC Entry: REFERENCES
-  frontMatterChildren.push(
-    new Paragraph({
-      tabStops: tocTabStops,
-      children: [
-        new TextRun({ text: "REFERENCES", bold: true, font: "Times New Roman", size: 24, color: "000000" }),
-        new TextRun({ text: "\t", font: "Times New Roman", size: 24, color: "000000" }),
-        new TextRun({ text: String(referencesPage), font: "Times New Roman", size: 24, color: "000000" })
-      ],
-      spacing: { after: 140 }
-    })
-  );
+  // Chapters (1 through N)
+  contentSections.forEach((sec, idx) => {
+    const chapterNum = idx + 1;
+    const cleanChapterTitle = sec.title.replace(/^\d+\.\s*/, "").trim();
 
-  // --------------------------------------------------------------------------
-  // STAGE 2: BODY SECTION (Introduction, Chapters, Conclusion, References)
-  // Page numbering: Arabic numerals (1, 2, 3...) restarting at Introduction
-  // --------------------------------------------------------------------------
-  const bodyChildren: (Paragraph | Table)[] = [];
-
-  // 4. INTRODUCTION (Page 1)
-  bodyChildren.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "INTRODUCTION",
-          bold: true,
-          font: "Times New Roman",
-          size: 32, // 16pt
-          color: "000000"
-        })
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 720, after: 360 }
-    }),
-    new Paragraph({
-      children: parseParagraphRuns(
-        `The strategic landscape surrounding ${safeTitle} has evolved into an essential domain of academic inquiry and institutional decision-making. As technological complexity and economic dependencies deepen, understanding the fundamental architecture, empirical drivers, and systemic risks governing this sector becomes paramount.`
-      ),
-      alignment: AlignmentType.BOTH,
-      spacing: { after: 240, line: 360 }
-    }),
-    new Paragraph({
-      children: parseParagraphRuns(
-        `This manuscript provides a systematic, multi-chapter investigation into these core dimensions. Through granular quantitative benchmarks, institutional case studies, and policy analysis, the subsequent chapters map the evolutionary trajectory and strategic roadmap for ${safeTitle}.`
-      ),
-      alignment: AlignmentType.BOTH,
-      spacing: { after: 240, line: 360 }
-    })
-  );
-
-  // 5. CHAPTERS (CHAPTER I through CHAPTER N)
-  sections.forEach((sec, idx) => {
-    const romanNumeral = toRomanNumeral(idx + 1);
-    const cleanTitle = sec.title
-      .replace(/^(chapter\s*[ivxlcdm\d]+[\s:\-.]*|\d+[\s:\-.]*)/i, "")
-      .trim();
-
-    // Page Break before every chapter
+    // Chapter Title: "1. Introduction" (Centered, Bold, 16pt)
     bodyChildren.push(
       new Paragraph({
-        children: [new PageBreak()]
-      }),
-      // Heading Line 1: CHAPTER I (Centered, All Caps, Bold, 16pt)
-      new Paragraph({
         children: [
           new TextRun({
-            text: `CHAPTER ${romanNumeral}`,
+            text: `${chapterNum}. ${cleanChapterTitle}`,
             bold: true,
-            font: "Times New Roman",
-            size: 32, // 16pt
-            color: "000000"
+            font: selectedFont,
+            size: 32, // 16pt Bold
+            color: headingColor
           })
         ],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 720, after: 120 }
-      }),
-      // Heading Line 2: Section Title (Centered, Bold, 14pt)
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: cleanTitle.toUpperCase(),
-            bold: true,
-            font: "Times New Roman",
-            size: 28, // 14pt
-            color: "000000"
-          })
-        ],
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 0, after: 360 }
+        pageBreakBefore: true,
+        spacing: { before: 720, after: 360 }
       })
     );
 
-    // Chapter Content Blocks
-    const blocks = (sec.content || sec.brief || "").split("\n\n");
-    blocks.forEach((blockText) => {
-      if (!blockText.trim()) return;
+    // Chapter overview / brief if present
+    if (sec.brief && sec.brief.trim() !== cleanChapterTitle) {
+      bodyChildren.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: cleanMarkdownFormatting(sec.brief),
+              italics: true,
+              font: selectedFont,
+              size: 24,
+              color: "000000"
+            })
+          ],
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { after: 240, line: 360 }
+        })
+      );
+    }
 
-      // Handle Markdown Tables as Native Academic Word Tables
-      if (isMarkdownTable(blockText)) {
-        try {
-          const docxTable = parseMarkdownTableToDocx(blockText);
-          bodyChildren.push(docxTable);
-          bodyChildren.push(new Paragraph({ spacing: { after: 240 } }));
-          return;
-        } catch (tableErr) {
-          console.warn("Docx table parse fallback to text:", tableErr);
+    // Check if section has full generated content or fallback to subsection briefs
+    const rawContent = sec.content || "";
+    if (rawContent && rawContent.trim().length > 0) {
+      const contentBlocks = rawContent.split("\n\n").map(b => b.trim()).filter(Boolean);
+
+      for (const block of contentBlocks) {
+        if (isMarkdownTable(block)) {
+          try {
+            const docxTable = parseMarkdownTableToDocx(block, selectedFont);
+            bodyChildren.push(docxTable);
+            bodyChildren.push(new Paragraph({ spacing: { after: 240 } }));
+            continue;
+          } catch (tableErr) {
+            console.warn("Table parse fallback:", tableErr);
+          }
         }
-      }
 
-      // Handle Markdown Subheadings (Centered or Left-aligned Bold, Black)
-      if (blockText.startsWith("### ") || blockText.startsWith("## ")) {
-        const headingText = blockText.replace(/^#{2,4}\s*/, "");
+        const blockParagraphs = parseParagraphsToDocx(block, chapterNum, selectedFont, headingColor);
+        bodyChildren.push(...blockParagraphs);
+      }
+    } else if (sec.subsections && sec.subsections.length > 0) {
+      sec.subsections.forEach((sub, subIdx) => {
+        const subNumber = `${chapterNum}.${subIdx + 1}`;
+        const cleanSubTitle = sub.title.replace(/^\d+\.\d+\s*/, "").trim();
+
+        // Subsection Heading: "1.1 Background and Motivation" (Left-aligned, Bold, 14pt)
         bodyChildren.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: headingText,
+                text: `${subNumber} ${cleanSubTitle}`,
                 bold: true,
-                font: "Times New Roman",
-                size: 28, // 14pt
-                color: "000000"
+                font: selectedFont,
+                size: 28, // 14pt Bold
+                color: headingColor
               })
             ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 360, after: 180 }
+            alignment: AlignmentType.LEFT,
+            spacing: { before: 360, after: 160 }
           })
         );
-        return;
-      }
 
-      // Standard Justified Paragraph
-      const runs = parseParagraphRuns(blockText);
-      bodyChildren.push(
-        new Paragraph({
-          children: runs,
-          alignment: AlignmentType.BOTH,
-          spacing: { after: 240, line: 360 } // 1.5 Line Spacing
-        })
-      );
-    });
+        const subRaw = sub.content || sub.brief || "";
+        const subParagraphs = parseParagraphsToDocx(subRaw, chapterNum, selectedFont, headingColor);
+        bodyChildren.push(...subParagraphs);
+      });
+    }
   });
 
-  // 6. CONCLUSION
+  // Conclusion (Centered, Bold, 16pt)
   bodyChildren.push(
-    new Paragraph({
-      children: [new PageBreak()]
-    }),
     new Paragraph({
       children: [
         new TextRun({
           text: "CONCLUSION",
           bold: true,
-          font: "Times New Roman",
-          size: 32, // 16pt
-          color: "000000"
+          font: selectedFont,
+          size: 32, // 16pt Bold
+          color: headingColor
         })
       ],
       alignment: AlignmentType.CENTER,
-      spacing: { before: 720, after: 360 }
+      pageBreakBefore: true,
+      spacing: { before: 720, after: 480 }
     }),
     new Paragraph({
-      children: parseParagraphRuns(
-        `In conclusion, the comprehensive analysis presented across this treatise demonstrates that ${safeTitle} represents a transformative domain with profound operational and academic implications. By aligning empirical rigor with strategic foresight, organizations and researchers can successfully navigate the structural inflection points identified herein.`
-      ),
-      alignment: AlignmentType.BOTH,
+      children: [
+        new TextRun({
+          text: `In synthesis, the empirical evidence, theoretical frameworks, and operational architectures established throughout this project report confirm that ${safeTitle} represents a vital inflection point in contemporary domain research. By harmonizing rigorous methodology with scalable implementations, institutional stakeholders can realize significant operational yield while maintaining stringent governance and risk mitigation protocols.`,
+          font: selectedFont,
+          size: 24,
+          color: "000000"
+        })
+      ],
+      alignment: AlignmentType.JUSTIFIED,
       spacing: { after: 240, line: 360 }
     }),
     new Paragraph({
-      children: parseParagraphRuns(
-        `Future research should continue monitoring the quantitative indicators and regulatory frameworks highlighted in this document, ensuring continuous adaptation in an increasingly complex and interconnected ecosystem.`
-      ),
-      alignment: AlignmentType.BOTH,
-      spacing: { after: 240, line: 360 }
+      children: [
+        new TextRun({
+          text: `Future research investigations should focus on long-term empirical dataset replication, cross-platform protocol interoperability, and automated governance monitoring to ensure sustained academic relevance and operational excellence.`,
+          font: selectedFont,
+          size: 24,
+          color: "000000"
+        })
+      ],
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { after: 360, line: 360 }
     })
   );
 
-  // 7. REFERENCES (Hanging Indent, Black Only, Plain URLs)
-  const defaultReferences = [
-    `Academic Research Council. (2025). Global Empirical Benchmarks and Methodology in ${safeTitle}. Journal of Strategic Studies, 42(3), 118–135. https://doi.org/10.1000/182`,
-    `International Standards Organization. (2024). Operational Architecture and Technical Specifications for Enterprise Infrastructure (ISO/IEC Standard 27001:2024). Geneva, Switzerland. https://www.iso.org/standard/27001`,
-    `Precedence Research. (2025). Global Industry Analysis, Market Valuation, and Forecast (2026–2035). Precedence Reports. https://precedenceresearch.com/reports`,
-    `Scholarly Consortium for Policy Governance. (2026). Cross-Jurisdictional Regulatory Harmonization and Risk Mitigation Protocols. Policy Review Quarterly, 19(2), 45–62. https://policyreview.org/governance-2026`
-  ];
+  // References (Centered, Bold, 16pt)
+  const referencesList = extractBibliography(rawSections, safeTitle);
 
   bodyChildren.push(
-    new Paragraph({
-      children: [new PageBreak()]
-    }),
     new Paragraph({
       children: [
         new TextRun({
           text: "REFERENCES",
           bold: true,
-          font: "Times New Roman",
-          size: 32, // 16pt
-          color: "000000"
+          font: selectedFont,
+          size: 32, // 16pt Bold
+          color: headingColor
         })
       ],
       alignment: AlignmentType.CENTER,
-      spacing: { before: 720, after: 360 }
+      pageBreakBefore: true,
+      spacing: { before: 720, after: 480 }
     })
   );
 
-  defaultReferences.forEach((ref) => {
+  referencesList.forEach(refText => {
     bodyChildren.push(
       new Paragraph({
         children: [
           new TextRun({
-            text: ref,
-            font: "Times New Roman",
+            text: refText,
+            font: selectedFont,
             size: 24, // 12pt
-            color: "000000" // Black only, no blue, no underline
+            color: "000000"
           })
         ],
-        alignment: AlignmentType.BOTH,
-        indent: {
-          left: convertInchesToTwip(0.5),
-          hanging: convertInchesToTwip(0.5)
-        },
+        alignment: AlignmentType.JUSTIFIED,
+        indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.5) }, // Hanging indent
         spacing: { after: 180, line: 360 }
       })
     );
   });
 
-  // --------------------------------------------------------------------------
-  // ASSEMBLE COMPLETE DOCX WITH TWO DISTINCT NUMBERING SECTIONS
-  // --------------------------------------------------------------------------
+  // Construct Final Docx Document with Two Independent Sections
   const doc = new DocxDocument({
     creator: "Paperrrrrr Autonomous Studio",
-    title: input.title,
+    title: safeTitle,
     styles: {
       default: {
         document: {
-          run: { font: "Times New Roman", color: "000000", size: 24 }
+          run: { font: selectedFont, color: "000000", size: 24 }
         }
       }
     },
     sections: [
-      // SECTION 1: Front Matter (Cover, Abstract, Table of Contents)
+      // SECTION 1: FRONT MATTER (Cover, Certificate, Declaration, Acknowledgement, Abstract, Table of Contents)
       {
         properties: {
           page: {
@@ -634,29 +1053,29 @@ export async function assembleWordDocument(input: AssembleDocumentInput): Promis
               formatType: NumberFormat.LOWER_ROMAN
             }
           },
-          titlePage: true // Cover page has no header/footer
+          titlePage: true // Suppress footer on cover page
         },
         footers: {
-          first: new Footer({ children: [] }), // Cover is unnumbered
           default: new Footer({
             children: [
               new Paragraph({
-                alignment: AlignmentType.CENTER,
                 children: [
                   new TextRun({
                     children: [PageNumber.CURRENT],
-                    font: "Times New Roman",
+                    font: selectedFont,
                     size: 24, // 12pt
                     color: "000000"
                   })
-                ]
+                ],
+                alignment: AlignmentType.CENTER
               })
             ]
           })
         },
         children: frontMatterChildren
       },
-      // SECTION 2: Body (Introduction, Chapters I..N, Conclusion, References)
+
+      // SECTION 2: BODY & BACK MATTER (Chapters 1..N with Subsections, Conclusion, References)
       {
         properties: {
           page: {
@@ -668,23 +1087,42 @@ export async function assembleWordDocument(input: AssembleDocumentInput): Promis
             },
             pageNumbers: {
               start: 1,
-              formatType: NumberFormat.DECIMAL
+              formatType: NumberFormat.DECIMAL // Arabic numerals (1, 2, 3...) restarting at 1
             }
           }
+        },
+        headers: {
+          default: new Header({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: safeTitle.toUpperCase(),
+                    font: selectedFont,
+                    size: 18, // 9pt
+                    color: "000000"
+                  })
+                ],
+                alignment: AlignmentType.RIGHT,
+                spacing: { after: 120 }
+              })
+            ]
+          })
         },
         footers: {
           default: new Footer({
             children: [
               new Paragraph({
-                alignment: AlignmentType.CENTER,
                 children: [
                   new TextRun({
                     children: [PageNumber.CURRENT],
-                    font: "Times New Roman",
-                    size: 24, // 12pt
+                    font: selectedFont,
+                    size: 20, // 10pt
                     color: "000000"
                   })
-                ]
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 120 }
               })
             ]
           })

@@ -1,23 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/mongodb";
-import { createSessionToken } from "@/lib/auth";
+import { createSessionToken, extractAuthUser } from "@/lib/auth";
+import { findLocalUserByEmail, saveLocalUser } from "@/lib/localStore";
 import User from "@/models/User";
+
+export async function GET(req: NextRequest) {
+  try {
+    const authUser = await extractAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ user: null });
+    }
+    return NextResponse.json({ user: authUser });
+  } catch (error: any) {
+    return NextResponse.json({ user: null });
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action, name, email, password } = body;
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    if (action === "logout") {
+      const res = NextResponse.json({ success: true, message: "Logged out" });
+      res.cookies.set("auth_token", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 0,
+        path: "/"
+      });
+      return res;
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      const demoUser = { id: "demo-user-1", name: name || email.split("@")[0], email };
-      const token = await createSessionToken(demoUser);
-      const res = NextResponse.json({ user: demoUser, token });
+    if (action === "google") {
+      const gEmail = email || "researcher.scholar@gmail.com";
+      const gName = name || "Institutional Researcher";
+      const googleUser = {
+        _id: `g_user_${Date.now()}`,
+        name: gName,
+        email: gEmail.toLowerCase(),
+        provider: "google"
+      };
+
+      const saved = saveLocalUser(googleUser);
+      const authUser = { id: saved._id, name: saved.name, email: saved.email };
+      const token = await createSessionToken(authUser);
+
+      const res = NextResponse.json({ user: authUser, token });
       res.cookies.set("auth_token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -28,16 +59,76 @@ export async function POST(req: NextRequest) {
       return res;
     }
 
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    }
+
+    const conn = await connectToDatabase();
+
+    if (!conn) {
+      // Local fallback auth
+      if (action === "signup") {
+        const existing = findLocalUserByEmail(email);
+        if (existing) {
+          return NextResponse.json({ error: "User already exists with this email" }, { status: 400 });
+        }
+
+        const passwordHash = await bcrypt.hash(password, 10);
+        const newUser = saveLocalUser({
+          name: name || email.split("@")[0],
+          email: email.toLowerCase(),
+          passwordHash
+        });
+
+        const authUser = { id: newUser._id, name: newUser.name, email: newUser.email };
+        const token = await createSessionToken(authUser);
+
+        const res = NextResponse.json({ user: authUser, token });
+        res.cookies.set("auth_token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 30 * 24 * 60 * 60,
+          path: "/"
+        });
+        return res;
+      } else {
+        const user = findLocalUserByEmail(email);
+        if (!user) {
+          return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+        }
+
+        const valid = await bcrypt.compare(password, user.passwordHash);
+        if (!valid) {
+          return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+        }
+
+        const authUser = { id: user._id, name: user.name, email: user.email };
+        const token = await createSessionToken(authUser);
+
+        const res = NextResponse.json({ user: authUser, token });
+        res.cookies.set("auth_token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 30 * 24 * 60 * 60,
+          path: "/"
+        });
+        return res;
+      }
+    }
+
+    // MongoDB Connected Auth
     if (action === "signup") {
-      const existing = await (User as any).findOne({ email });
+      const existing = await (User as any).findOne({ email: email.toLowerCase() });
       if (existing) {
-        return NextResponse.json({ error: "User already exists" }, { status: 400 });
+        return NextResponse.json({ error: "User already exists with this email" }, { status: 400 });
       }
 
       const passwordHash = await bcrypt.hash(password, 10);
       const user = await (User as any).create({
         name: name || email.split("@")[0],
-        email,
+        email: email.toLowerCase(),
         passwordHash
       });
 
@@ -54,7 +145,7 @@ export async function POST(req: NextRequest) {
       });
       return res;
     } else {
-      const user = await (User as any).findOne({ email });
+      const user = await (User as any).findOne({ email: email.toLowerCase() });
       if (!user) {
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }

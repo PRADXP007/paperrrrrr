@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeTavilyResearch } from "@/lib/tavily";
-import { generateStructuredOutline, generateSectionProse } from "@/lib/ai";
+import { generateStructuredOutline, generateSectionProse, calculateDocumentBudget, expandSectionProse, filterDuplicateParagraphs } from "@/lib/ai";
 import { connectToDatabase } from "@/lib/mongodb";
 import { extractAuthUser } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
       docId: incomingDocId,
       approvedOutline,
       referenceNotes,
+      pageCount,
+      customChapterCount,
+      font = "Times New Roman",
+      accentColor = "000000",
+      additionalRequirements,
       customGeminiKey,
       customOpenAIKey,
       geminiModel = "gemini-3.6-flash"
@@ -40,6 +45,13 @@ export async function POST(req: NextRequest) {
     if (!prompt && !approvedOutline) {
       return NextResponse.json({ error: "Prompt or approved outline is required" }, { status: 400 });
     }
+
+    const docBudget = calculateDocumentBudget(prompt, {
+      pageCount,
+      customChapterCount,
+      font,
+      targetLength
+    });
 
     const encoder = new TextEncoder();
 
@@ -83,7 +95,7 @@ export async function POST(req: NextRequest) {
                 format,
                 tone,
                 audience,
-                targetLength,
+                targetLength: docBudget.label,
                 docType,
                 title: outline?.title || (prompt ? prompt.charAt(0).toUpperCase() + prompt.slice(1) : "Document"),
                 researchSummary: researchBundle?.answer || "",
@@ -101,12 +113,27 @@ export async function POST(req: NextRequest) {
             sendEvent({
               type: "status",
               step: "outline_start",
-              message: `Structuring JSON outline with Google Gemini (${geminiModel})...`
+              message: `Structuring ${docBudget.chapterCount}-chapter outline with Google Gemini (${geminiModel})...`
             });
 
             outline = await generateStructuredOutline(
               prompt,
-              { format, tone, audience, targetLength, docType, referenceNotes, customGeminiKey, customOpenAIKey, geminiModel },
+              {
+                format,
+                tone,
+                audience,
+                targetLength: docBudget.label,
+                docType,
+                referenceNotes,
+                pageCount: docBudget.pageCount,
+                customChapterCount: docBudget.chapterCount,
+                font: docBudget.font,
+                accentColor,
+                additionalRequirements,
+                customGeminiKey,
+                customOpenAIKey,
+                geminiModel
+              },
               researchBundle
             );
 
@@ -114,7 +141,8 @@ export async function POST(req: NextRequest) {
               type: "outline_done",
               outline,
               docId,
-              message: `Structured outline framed with ${outline.sections.length} core sections.`
+              budget: docBudget,
+              message: `Structured outline framed with ${outline.sections.length} core chapters (Target: ~${docBudget.totalTargetWords.toLocaleString()} words across ${docBudget.pageCount} pages).`
             });
 
             try {
@@ -132,17 +160,19 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // STEP 3: Section-by-Section Prose Drafting with Real-time Events
+          // STEP 3: Section-by-Section Prose Drafting with Real-time Events & Budget Enforcement
           const sections = outline.sections || [];
-          const compiledSections: Array<{ id: string; title: string; brief: string; content: string }> = [];
+          let compiledSections: Array<{ id: string; title: string; brief: string; content: string; subsections?: any[] }> = [];
 
-          console.log(`[Stream Pipeline] Initiating prose generation for ${sections.length} approved sections using ${geminiModel}...`);
+          console.log(`[Stream Pipeline] Initiating prose generation for ${sections.length} approved sections (Budget: ~${docBudget.wordsPerChapterTarget} words/chapter)...`);
 
           for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
             const normSectionId = section.id || `sec_${i + 1}`;
+            const subCount = section.subsections && section.subsections.length > 0 ? section.subsections.length : 3;
+            const targetSubWords = Math.round(docBudget.wordsPerChapterTarget / subCount);
 
-            console.log(`[Stream Pipeline] -> Section ${i + 1}/${sections.length} STARTED: "${section.title}" (ID: ${normSectionId})`);
+            console.log(`[Stream Pipeline] -> Section ${i + 1}/${sections.length} STARTED: "${section.title}" (ID: ${normSectionId}) [Target: ~${docBudget.wordsPerChapterTarget} words]`);
 
             sendEvent({
               type: "status",
@@ -151,7 +181,7 @@ export async function POST(req: NextRequest) {
               total: sections.length,
               sectionId: normSectionId,
               title: section.title,
-              message: `Drafting Section ${i + 1} of ${sections.length}: "${section.title}"...`
+              message: `Drafting Section ${i + 1} of ${sections.length}: "${section.title}" (Target: ~${docBudget.wordsPerChapterTarget} words)...`
             });
 
             const filteredSources = (researchBundle?.results || []).filter((src: any) =>
@@ -166,21 +196,69 @@ export async function POST(req: NextRequest) {
                 outline.title,
                 section,
                 filteredSources,
-                { customGeminiKey, customOpenAIKey, geminiModel, docType, tone, referenceNotes, format, targetLength }
+                {
+                  customGeminiKey,
+                  customOpenAIKey,
+                  geminiModel,
+                  docType,
+                  tone,
+                  referenceNotes,
+                  format,
+                  targetLength: docBudget.label,
+                  targetChapterWords: docBudget.wordsPerChapterTarget,
+                  targetSubsectionWords: targetSubWords,
+                  additionalRequirements
+                }
               );
+
+              // POST-GENERATION WORD COUNT CHECK & TARGETED EXPANSION PASS
+              const initialWords = prose.split(/\s+/).filter(Boolean).length;
+              if (initialWords < docBudget.wordsPerChapterTarget * 0.75 && (format === "docx" || format === "pdf")) {
+                console.log(`[Stream Pipeline] Section ${i + 1} undershot word budget (${initialWords}/${docBudget.wordsPerChapterTarget} words). Running targeted research expansion...`);
+                sendEvent({
+                  type: "status",
+                  step: "section_expanding",
+                  index: i,
+                  total: sections.length,
+                  sectionId: normSectionId,
+                  title: section.title,
+                  message: `Enriching Section ${i + 1} ("${section.title}") with freshly grounded research to meet word target...`
+                });
+
+                let expansionSources: any[] = [];
+                try {
+                  const targetedQuery = `${outline.title} ${section.title} ${section.brief}`.slice(0, 200);
+                  const expansionBundle = await executeTavilyResearch(targetedQuery, { depth: "standard" });
+                  expansionSources = expansionBundle?.results || [];
+                } catch (tavilyErr) {
+                  console.warn("[Stream Pipeline] Targeted expansion research fallback:", tavilyErr);
+                  expansionSources = filteredSources;
+                }
+
+                prose = await expandSectionProse(
+                  outline.title,
+                  section,
+                  prose,
+                  docBudget.wordsPerChapterTarget,
+                  expansionSources.length > 0 ? expansionSources : filteredSources,
+                  { customGeminiKey, customOpenAIKey, geminiModel, tone }
+                );
+              }
             } catch (sectionErr: any) {
               console.error(`[Stream Pipeline] ❌ Error drafting Section ${i + 1} ("${section.title}"):`, sectionErr);
               prose = `[Generation Notice: Section "${section.title}" encountered a processing latency error. Focus: ${section.brief}]`;
             }
 
+            const finalWords = prose.split(/\s+/).filter(Boolean).length;
             const duration = Date.now() - startTime;
-            console.log(`[Stream Pipeline] ✓ Section ${i + 1}/${sections.length} COMPLETED in ${duration}ms (${prose.length} chars). Emitting section_done SSE event.`);
+            console.log(`[Stream Pipeline] ✓ Section ${i + 1}/${sections.length} COMPLETED in ${duration}ms (${finalWords} words). Target was ${docBudget.wordsPerChapterTarget} words.`);
 
             compiledSections.push({
               id: normSectionId,
               title: section.title,
               brief: section.brief,
-              content: prose
+              content: prose,
+              subsections: section.subsections
             });
 
             sendEvent({
@@ -191,7 +269,9 @@ export async function POST(req: NextRequest) {
               title: section.title,
               brief: section.brief,
               content: prose,
-              message: `Section ${i + 1} ("${section.title}") completed.`
+              wordCount: finalWords,
+              subsections: section.subsections,
+              message: `Section ${i + 1} ("${section.title}") completed (${finalWords} words).`
             });
 
             // Update MongoDB section status incrementally
@@ -213,11 +293,14 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // STEP 4: Assembled and Completed
+          // STEP 4: Assembled and Completed (with Anti-Duplication Filtering)
+          compiledSections = filterDuplicateParagraphs(compiledSections);
+          const grandTotalWords = compiledSections.reduce((acc, s) => acc + (s.content ? s.content.split(/\s+/).filter(Boolean).length : 0), 0);
+
           sendEvent({
             type: "status",
             step: "assembling",
-            message: `Finalizing ${format.toUpperCase()} document metadata & formatting...`
+            message: `Finalizing ${format.toUpperCase()} manuscript (${grandTotalWords.toLocaleString()} total words, ~${docBudget.pageCount} pages)...`
           });
 
           sendEvent({
@@ -227,7 +310,11 @@ export async function POST(req: NextRequest) {
             subtitle: outline.subtitle,
             format,
             sections: compiledSections,
-            message: "Generation complete. Ready for instant download."
+            totalWords: grandTotalWords,
+            pageCount: docBudget.pageCount,
+            font: docBudget.font,
+            accentColor,
+            message: `Generation complete. Manuscript rendered at ${grandTotalWords.toLocaleString()} words across ${compiledSections.length} chapters (~${docBudget.pageCount} pages).`
           });
 
           controller.close();
