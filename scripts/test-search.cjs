@@ -8,7 +8,7 @@ async function runSearch(queryPrompt) {
   if (!apiKey || apiKey.trim() === "" || apiKey === "tvly-your_key_here") {
     console.error("\n⚠️  TAVILY_API_KEY is not set in `.env.local`!");
     console.log("Please add your key to `.env.local`: TAVILY_API_KEY=tvly-...\n");
-    console.log("Here is the exact format of the raw sourced snippets bundle that PaperLoop generates:\n");
+    console.log("Here is the exact format of the raw sourced snippets bundle that Paperrrrrr generates:\n");
     
     const sampleOutput = {
       query: queryPrompt,

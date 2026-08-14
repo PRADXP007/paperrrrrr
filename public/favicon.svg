@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="favGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E07A5F" />
+      <stop offset="100%" stop-color="#97422C" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#181412" />
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="#C3644B" stroke-width="2" stroke-opacity="0.4" />
+  <!-- Crisp P Monogram with Manuscript Fold -->
+  <path d="M 16 12 
+           L 35 12 
+           C 47 12 53 19 53 28 
+           C 53 37 47 44 35 44 
+           L 26 44 
+           L 26 52 
+           L 16 52 Z" 
+        fill="url(#favGrad)" />
+  <path d="M 26 21 
+           L 34 21 
+           C 40 21 43 24 43 28 
+           C 43 32 40 35 34 35 
+           L 26 35 Z" 
+        fill="#181412" />
+  <!-- Little Spark -->
+  <circle cx="48" cy="14" r="3.5" fill="#FFB4A2" />
+</svg>

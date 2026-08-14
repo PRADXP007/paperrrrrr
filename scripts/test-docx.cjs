@@ -22,7 +22,7 @@ const {
 const documentData = {
   title: "Renewable Energy Adoption in India: Current Landscape, Policy Drivers, and Future Trajectory",
   subtitle: "A Comprehensive Analysis of Solar, Wind, and Green Hydrogen Integration by 2030",
-  author: "PaperLoop Document Studio",
+  author: "Paperrrrrr Document Studio",
   sections: [
     {
       title: "1. Executive Summary & Current Renewable Energy Baseline",
@@ -43,7 +43,7 @@ const documentData = {
   ]
 };
 
-async function buildWordDocument(data, outputFilename = "PaperLoop_Generated_Report.docx") {
+async function buildWordDocument(data, outputFilename = "Paperrrrrr_Generated_Report.docx") {
   console.log(`\n==================================================`);
   console.log(`📄 STAGE 4: ASSEMBLING EDITABLE WORD DOCUMENT (.docx)`);
   console.log(`Title: "${data.title}"`);
@@ -129,9 +129,9 @@ async function buildWordDocument(data, outputFilename = "PaperLoop_Generated_Rep
     });
   });
 
-  // Create Document with PaperLoop typography styles & margins
+  // Create Document with Paperrrrrr typography styles & margins
   const doc = new Document({
-    creator: "PaperLoop Document Studio",
+    creator: "Paperrrrrr Document Studio",
     title: data.title,
     description: data.subtitle,
     styles: {
@@ -154,7 +154,7 @@ async function buildWordDocument(data, outputFilename = "PaperLoop_Generated_Rep
             font: "Georgia",
             size: 52, // 26pt
             bold: true,
-            color: "97422C" // PaperLoop Terracotta primary
+            color: "97422C" // Paperrrrrr Terracotta primary
           }
         },
         {
@@ -201,7 +201,7 @@ async function buildWordDocument(data, outputFilename = "PaperLoop_Generated_Rep
           default: new Header({
             children: [
               new Paragraph({
-                text: "PaperLoop Document Studio — Research Report",
+                text: "Paperrrrrr Document Studio — Research Report",
                 alignment: AlignmentType.RIGHT,
                 style: "Subtitle"
               })

@@ -48,6 +48,7 @@ import {
   Send,
   Sliders,
 } from "lucide-react";
+import { PaperrrrrrLogo } from "@/components/PaperrrrrrLogo";
 
 interface ResearchSource {
   index: number;
@@ -87,7 +88,7 @@ interface GeneratedOutline {
   sections: OutlineSection[];
 }
 
-export default function PaperLoopApp() {
+export default function PaperrrrrrApp() {
   // --------------------------------------------------------------------------
   // Explicit 3-Screen Workflow State: 'home' | 'thinking' | 'workspace'
   // --------------------------------------------------------------------------
@@ -1125,7 +1126,7 @@ export default function PaperLoopApp() {
                 if (resAssemble.ok) {
                   const blob = await resAssemble.blob();
                   const downloadUrl = URL.createObjectURL(blob);
-                  const filename = `PaperLoop_${(projectTitleOverride || targetOutline.title).replace(/[^a-zA-Z0-9_\-]/g, "_")}.${targetOutline.format || format}`;
+                  const filename = `Paperrrrrr_${(projectTitleOverride || targetOutline.title).replace(/[^a-zA-Z0-9_\-]/g, "_")}.${targetOutline.format || format}`;
 
                   setAssembledBlobUrl(downloadUrl);
                   setAssembledFilename(filename);
@@ -1232,12 +1233,7 @@ export default function PaperLoopApp() {
           {/* Minimal Top Header */}
           <header className="w-full flex items-center justify-between py-2">
             <div className="flex items-center gap-3">
-              <div className="size-8 rounded-lg bg-[#C3644B] text-white flex items-center justify-center font-serif text-base font-bold shadow-sm">
-                P
-              </div>
-              <span className="font-serif text-xl font-bold tracking-tight text-[#E5E2E1]">
-                Paperrrrrr
-              </span>
+              <PaperrrrrrLogo size="md" />
               <span className="text-[11px] font-sans uppercase tracking-widest text-[#88726D] px-2 py-0.5 rounded border border-white/10 font-semibold">
                 Document Studio
               </span>
@@ -1657,12 +1653,7 @@ export default function PaperLoopApp() {
           {/* Header */}
           <header className="w-full flex items-center justify-between py-2 border-b border-white/5">
             <div className="flex items-center gap-3">
-              <div className="size-8 rounded-lg bg-[#C3644B] text-white flex items-center justify-center font-serif text-base font-bold shadow-sm">
-                P
-              </div>
-              <span className="font-serif text-lg font-bold tracking-tight text-[#E5E2E1]">
-                Paperrrrrr
-              </span>
+              <PaperrrrrrLogo size="md" />
               <span className="text-[11px] font-sans text-[#88726D] px-2 py-0.5 rounded border border-white/10 font-semibold uppercase tracking-wider">
                 Reasoning &amp; Synthesis
               </span>
@@ -1862,12 +1853,7 @@ export default function PaperLoopApp() {
                 onClick={() => setScreen("home")}
                 className="flex items-center gap-2 cursor-pointer group focus:outline-none"
               >
-                <div className="size-7 rounded-md bg-[#C3644B] text-white flex items-center justify-center font-serif text-sm font-bold shadow-sm group-hover:scale-105 transition-transform">
-                  P
-                </div>
-                <span className="font-serif text-lg font-bold tracking-tight text-[#FAF9F5]">
-                  Paperrrrrr
-                </span>
+                <PaperrrrrrLogo size="sm" />
               </button>
 
               {/* Minimal Breadcrumb */}
@@ -2151,7 +2137,7 @@ export default function PaperLoopApp() {
                       <div className="ms-word-canvas w-full rounded-sm p-10 sm:p-14 bg-white text-gray-900 min-h-[720px] shadow-2xl relative flex flex-col justify-between">
                         {/* Running Top Header */}
                         <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] font-serif text-gray-500 uppercase tracking-wider">
-                          <span>PaperLoop Autonomous Document Studio</span>
+                          <span>Paperrrrrr Autonomous Document Studio</span>
                           <span>Empirical Research Series</span>
                         </div>
 
@@ -2220,7 +2206,7 @@ export default function PaperLoopApp() {
 
                             {/* Running Bottom Footer */}
                             <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-[10px] font-serif text-gray-500">
-                              <span>PaperLoop Publication Standard</span>
+                              <span>Paperrrrrr Publication Standard</span>
                               <span>Page {idx + 2} of {outline.sections.length + 1}</span>
                             </div>
                           </div>
@@ -2242,7 +2228,7 @@ export default function PaperLoopApp() {
                           if (assembledBlobUrl) {
                             const link = document.createElement("a");
                             link.href = assembledBlobUrl;
-                            link.download = assembledFilename || `PaperLoop_${outline.title}.pptx`;
+                            link.download = assembledFilename || `Paperrrrrr_${outline.title}.pptx`;
                             link.click();
                           }
                         }}
@@ -2263,7 +2249,7 @@ export default function PaperLoopApp() {
                           if (assembledBlobUrl) {
                             const link = document.createElement("a");
                             link.href = assembledBlobUrl;
-                            link.download = assembledFilename || `PaperLoop_${outline.title}.xlsx`;
+                            link.download = assembledFilename || `Paperrrrrr_${outline.title}.xlsx`;
                             link.click();
                           }
                         }}

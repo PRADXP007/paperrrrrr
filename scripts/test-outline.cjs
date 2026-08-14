@@ -47,7 +47,7 @@ async function generateOutline(userPrompt, options = {}, researchBundle = defaul
   if (apiKey && process.env.OPENAI_API_KEY) {
     try {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const systemPrompt = `You are a professional document architect for PaperLoop. 
+      const systemPrompt = `You are a professional document architect for Paperrrrrr. 
 Given a user prompt, desired metadata, and a research bundle with numbered sources, create a detailed structured JSON outline.
 Every section MUST have:
 - "id": string (sec_1, sec_2...)
