@@ -66,7 +66,7 @@ export function Modal({
 
       {/* Modal Dialog */}
       <div
-        className={`relative z-10 w-full ${maxWidthStyles[maxWidth]} rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl transition-all animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col my-8 ${className}`}
+        className={`relative z-10 w-full ${maxWidthStyles[maxWidth]} rounded-2xl bg-[#131418] border border-white/10 shadow-2xl transition-all animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col my-8 font-sans ${className}`}
         role="dialog"
         aria-modal="true"
       >

@@ -1228,7 +1228,7 @@ export default function PaperLoopApp() {
       {/* SCREEN 1: HOMEPAGE (CALM, MINIMAL SINGLE-PROMPT FOCUS)               */}
       {/* ==================================================================== */}
       {screen === "home" && (
-        <div className="min-h-screen flex flex-col justify-between relative z-10 px-4 sm:px-8 py-6 max-w-5xl mx-auto w-full">
+        <div className="min-h-screen flex flex-col justify-between relative z-10 px-4 sm:px-8 py-6 max-w-5xl mx-auto w-full font-sans">
           {/* Minimal Top Header */}
           <header className="w-full flex items-center justify-between py-2">
             <div className="flex items-center gap-3">
@@ -1236,9 +1236,9 @@ export default function PaperLoopApp() {
                 P
               </div>
               <span className="font-serif text-xl font-bold tracking-tight text-[#E5E2E1]">
-                PaperLoop
+                Paperrrrrr
               </span>
-              <span className="text-[11px] font-mono uppercase tracking-widest text-[#88726D] px-2 py-0.5 rounded border border-white/10">
+              <span className="text-[11px] font-sans uppercase tracking-widest text-[#88726D] px-2 py-0.5 rounded border border-white/10 font-semibold">
                 Document Studio
               </span>
             </div>
@@ -1250,7 +1250,7 @@ export default function PaperLoopApp() {
                   fetchPastDocuments();
                   setShowHistoryModal(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer font-medium"
               >
                 <Clock className="size-3.5 text-[#C3644B]" />
                 <span>History</span>
@@ -1264,7 +1264,7 @@ export default function PaperLoopApp() {
               <button
                 type="button"
                 onClick={() => setShowSettingsModal(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-sans text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer font-medium"
               >
                 <Sparkles className="size-3.5 text-[#C3644B]" />
                 <span>
@@ -1277,14 +1277,14 @@ export default function PaperLoopApp() {
               </button>
 
               {user ? (
-                <div className="flex items-center gap-2 text-xs font-mono bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                <div className="flex items-center gap-2 text-xs font-sans bg-white/5 border border-white/10 px-3 py-1 rounded-full">
                   <div className="size-5 rounded-full bg-[#C3644B] text-white flex items-center justify-center font-bold text-[10px]">
                     {(user.name || user.email || "U")[0].toUpperCase()}
                   </div>
                   <span className="text-[#FAF9F5] max-w-[100px] truncate">{user.name || user.email}</span>
                   <button
                     onClick={handleSignOut}
-                    className="text-[#88726D] hover:text-[#FAF9F5] ml-1 transition-colors cursor-pointer"
+                    className="text-[#88726D] hover:text-[#FAF9F5] ml-1 transition-colors cursor-pointer text-xs"
                     title="Sign Out"
                   >
                     Sign Out
@@ -1296,7 +1296,7 @@ export default function PaperLoopApp() {
                     setAuthMode("login");
                     setShowAuthModal(true);
                   }}
-                  className="text-xs font-mono text-[#FAF9F5] bg-white/5 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
+                  className="text-xs font-sans text-[#FAF9F5] bg-white/5 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer font-medium"
                 >
                   Sign In
                 </button>
@@ -1370,7 +1370,7 @@ export default function PaperLoopApp() {
 
                 {/* Attached File Chip if present */}
                 {attachedFileName && (
-                  <div className="flex items-center gap-2 mt-2 ml-4 text-xs font-mono text-[#C3644B]">
+                  <div className="flex items-center gap-2 mt-2 ml-4 text-xs font-sans text-[#C3644B]">
                     <Paperclip className="size-3" />
                     <span>Attached: {attachedFileName}</span>
                     <button
@@ -1388,9 +1388,9 @@ export default function PaperLoopApp() {
 
                 {/* File Upload Popover */}
                 {showFileAttachPopover && (
-                  <div className="absolute top-full left-0 mt-3 p-4 glass-panel rounded-2xl w-full max-w-sm z-30 shadow-2xl space-y-3">
+                  <div className="absolute top-full left-0 mt-3 p-4 glass-panel rounded-2xl w-full max-w-sm z-30 shadow-2xl space-y-3 font-sans">
                     <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                      <span className="text-xs font-mono uppercase text-[#A38B86]">Attach Reference Material</span>
+                      <span className="text-xs font-sans uppercase text-[#A38B86] font-semibold tracking-wider">Attach Reference Material</span>
                       <button onClick={() => setShowFileAttachPopover(false)} className="text-[#88726D] hover:text-white">
                         <X className="size-4" />
                       </button>
@@ -1401,9 +1401,9 @@ export default function PaperLoopApp() {
                       type="file"
                       accept=".txt,.md,.pdf,.docx"
                       onChange={handleFileUpload}
-                      className="text-xs text-[#A38B86] file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-[#C3644B]/20 file:text-[#FFB4A2] file:cursor-pointer"
+                      className="text-xs text-[#A38B86] file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-[#C3644B]/20 file:text-[#FFB4A2] file:cursor-pointer font-sans"
                     />
-                    {isUploadingFile && <p className="text-xs font-mono text-[#C3644B] animate-pulse">Extracting text...</p>}
+                    {isUploadingFile && <p className="text-xs font-sans text-[#C3644B] animate-pulse">Extracting text...</p>}
                   </div>
                 )}
 
@@ -1642,8 +1642,8 @@ export default function PaperLoopApp() {
           </main>
 
           {/* Minimal Bottom Footer */}
-          <footer className="w-full flex items-center justify-between text-xs font-mono text-[#73726F] py-3 border-t border-white/5">
-            <span>PaperLoop Studio • Real-time Neural Synthesis</span>
+          <footer className="w-full flex items-center justify-between text-xs font-sans text-[#73726F] py-3 border-t border-white/5">
+            <span>Paperrrrrr Studio • Real-time Neural Synthesis</span>
             <span>Gemini 3.6 Flash &amp; Tavily Neural Web</span>
           </footer>
         </div>
@@ -1653,7 +1653,7 @@ export default function PaperLoopApp() {
       {/* SCREEN 2: DEDICATED THINKING & INFORMATION GATHERING SCREEN          */}
       {/* ==================================================================== */}
       {screen === "thinking" && (
-        <div className="min-h-screen flex flex-col justify-between relative z-10 px-4 sm:px-8 py-6 max-w-4xl mx-auto w-full">
+        <div className="min-h-screen flex flex-col justify-between relative z-10 px-4 sm:px-8 py-6 max-w-4xl mx-auto w-full font-sans">
           {/* Header */}
           <header className="w-full flex items-center justify-between py-2 border-b border-white/5">
             <div className="flex items-center gap-3">
@@ -1661,15 +1661,15 @@ export default function PaperLoopApp() {
                 P
               </div>
               <span className="font-serif text-lg font-bold tracking-tight text-[#E5E2E1]">
-                PaperLoop
+                Paperrrrrr
               </span>
-              <span className="text-[11px] font-mono text-[#88726D] px-2 py-0.5 rounded border border-white/10">
+              <span className="text-[11px] font-sans text-[#88726D] px-2 py-0.5 rounded border border-white/10 font-semibold uppercase tracking-wider">
                 Reasoning &amp; Synthesis
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs font-mono text-[#A38B86]">
-              <span className="flex items-center gap-1.5">
+            <div className="flex items-center gap-3 text-xs font-sans text-[#A38B86]">
+              <span className="flex items-center gap-1.5 font-medium">
                 <Clock className="size-3.5 text-[#C3644B]" />
                 {thinkingSeconds}s elapsed
               </span>
@@ -1688,8 +1688,8 @@ export default function PaperLoopApp() {
               </div>
 
               {/* Progress Context Bar */}
-              <div className="font-mono text-xs text-[#A38B86] flex flex-col gap-2 bg-white/5 p-4 rounded-xl border border-white/5">
-                <div className="flex justify-between items-center">
+              <div className="font-sans text-xs text-[#A38B86] flex flex-col gap-2 bg-white/5 p-4 rounded-xl border border-white/5">
+                <div className="flex justify-between items-center font-medium">
                   <span>Model Context Window</span>
                   <span className="text-[#C3644B]">Allocated (Gemini 3.6 Flash)</span>
                 </div>
@@ -1705,10 +1705,10 @@ export default function PaperLoopApp() {
               {/* Active Tavily Research Sources Queue */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-mono uppercase tracking-wider text-[#A38B86]">
+                  <h3 className="text-xs font-sans uppercase tracking-wider text-[#A38B86] font-semibold">
                     Referenced Research Entities
                   </h3>
-                  <span className="text-[11px] font-mono text-[#C3644B]">
+                  <span className="text-[11px] font-sans text-[#C3644B] font-semibold">
                     {researchBundle?.results?.length || 2} live sources
                   </span>
                 </div>
@@ -1726,7 +1726,7 @@ export default function PaperLoopApp() {
                           <div className="text-xs font-medium text-[#FAF9F5] truncate">
                             {source.title}
                           </div>
-                          <div className="text-[11px] font-mono text-[#88726D] truncate">
+                          <div className="text-[11px] font-sans text-[#88726D] truncate">
                             {source.url}
                           </div>
                           {source.snippet && (
@@ -1740,7 +1740,7 @@ export default function PaperLoopApp() {
                   ) : (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
                       <Globe className="size-4 text-[#C3644B] animate-spin shrink-0" />
-                      <div className="text-xs font-mono text-[#A38B86]">
+                      <div className="text-xs font-sans text-[#A38B86]">
                         Querying real-time empirical vectors for {prompt}...
                       </div>
                     </div>
@@ -1751,9 +1751,9 @@ export default function PaperLoopApp() {
               {/* Dynamic Outline Framing Preview with Expandable Chapters & Subsections */}
               {outline && (
                 <div className="space-y-3 pt-3 border-t border-white/10">
-                  <div className="flex justify-between items-center text-xs font-mono text-[#A38B86]">
+                  <div className="flex justify-between items-center text-xs font-sans text-[#A38B86]">
                     <span className="font-bold text-[#FAF9F5]">Outline Architecture</span>
-                    <span className="text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded">
+                    <span className="text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded font-semibold">
                       {outline.sections.length} Chapters Structured
                     </span>
                   </div>
@@ -1782,7 +1782,7 @@ export default function PaperLoopApp() {
                             </span>
                             <div className="flex items-center gap-2 shrink-0">
                               {subCount > 0 && (
-                                <span className="text-[10px] font-mono text-[#88726D] bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                                <span className="text-[10px] font-sans text-[#88726D] bg-white/5 px-2 py-0.5 rounded-full border border-white/5 font-medium">
                                   {subCount} Subsections
                                 </span>
                               )}
@@ -1802,7 +1802,7 @@ export default function PaperLoopApp() {
                               {sec.subsections.map((sub, sIdx) => (
                                 <div
                                   key={sub.id || sIdx}
-                                  className="text-[11px] font-mono text-[#A38B86] flex items-start gap-2 bg-white/[0.02] p-1.5 rounded-lg border border-white/5"
+                                  className="text-[11px] font-sans text-[#A38B86] flex items-start gap-2 bg-white/[0.02] p-1.5 rounded-lg border border-white/5"
                                 >
                                   <span className="text-[#C3644B] font-bold shrink-0">
                                     {sub.title.split(" ")[0]}
@@ -1843,7 +1843,7 @@ export default function PaperLoopApp() {
           </main>
 
           {/* Minimal Footer */}
-          <footer className="w-full flex items-center justify-between text-xs font-mono text-[#73726F] py-2 border-t border-white/5">
+          <footer className="w-full flex items-center justify-between text-xs font-sans text-[#73726F] py-2 border-t border-white/5">
             <span>Research &amp; Outline Generation Active</span>
             <span>Auto-advancing to split workspace...</span>
           </footer>
@@ -1854,9 +1854,9 @@ export default function PaperLoopApp() {
       {/* SCREEN 3: THE SPLIT WORKSPACE (CODE & PREVIEW SIDE BY SIDE)          */}
       {/* ==================================================================== */}
       {screen === "workspace" && outline && (
-        <div className="min-h-screen flex flex-col justify-between bg-[#0A0A0A] text-[#E5E2E1] relative z-10">
+        <div className="min-h-screen flex flex-col justify-between bg-[#0A0A0A] text-[#E5E2E1] relative z-10 font-sans">
           {/* Top Minimal Workspace Navigation */}
-          <header className="w-full bg-[#121316]/90 backdrop-blur-xl border-b border-white/10 px-6 py-3 sticky top-0 z-50 flex items-center justify-between">
+          <header className="w-full bg-[#121316]/90 backdrop-blur-xl border-b border-white/10 px-6 py-3 sticky top-0 z-50 flex items-center justify-between font-sans">
             <div className="flex items-center gap-6">
               <button
                 onClick={() => setScreen("home")}
@@ -1866,17 +1866,17 @@ export default function PaperLoopApp() {
                   P
                 </div>
                 <span className="font-serif text-lg font-bold tracking-tight text-[#FAF9F5]">
-                  PaperLoop
+                  Paperrrrrr
                 </span>
               </button>
 
               {/* Minimal Breadcrumb */}
-              <div className="hidden md:flex items-center gap-2 text-xs font-mono text-[#88726D]">
+              <div className="hidden md:flex items-center gap-2 text-xs font-sans text-[#88726D]">
                 <span>Documents</span>
                 <ChevronRight className="size-3 text-[#55423E]" />
                 <span className="text-[#A38B86] truncate max-w-xs">{outline.title}</span>
                 <ChevronRight className="size-3 text-[#55423E]" />
-                <span className="text-[#C3644B]">Split Workspace</span>
+                <span className="text-[#C3644B] font-medium">Split Workspace</span>
               </div>
             </div>
 
@@ -1888,7 +1888,7 @@ export default function PaperLoopApp() {
                   fetchPastDocuments();
                   setShowHistoryModal(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer font-medium"
                 title="View Document History"
               >
                 <Clock className="size-3.5 text-[#C3644B]" />
@@ -1901,9 +1901,9 @@ export default function PaperLoopApp() {
               </button>
 
               {/* Live Streaming State Badge */}
-              <div className="flex items-center gap-2 text-xs font-mono bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-2 text-xs font-sans bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
                 <span className={`w-2 h-2 rounded-full ${isStreaming ? "bg-[#C3644B] animate-ping" : "bg-emerald-500"}`} />
-                <span className="text-[#FAF9F5]">
+                <span className="text-[#FAF9F5] font-medium">
                   {isStreaming
                     ? `Drafting ${readySectionsCount + 1}/${outline.sections.length}`
                     : "Assembled & Ready"}
@@ -1911,7 +1911,7 @@ export default function PaperLoopApp() {
               </div>
 
               {/* Format Canvas Switcher */}
-              <div className="hidden sm:flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5 text-xs font-mono">
+              <div className="hidden sm:flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5 text-xs font-sans">
                 <button
                   type="button"
                   onClick={() => setActiveViewerMode("word")}
@@ -1954,8 +1954,8 @@ export default function PaperLoopApp() {
               {assembledBlobUrl ? (
                 <a
                   href={assembledBlobUrl}
-                  download={assembledFilename || `PaperLoop_${outline.title}.${format}`}
-                  className="inline-flex items-center gap-2 bg-[#C3644B] hover:bg-[#97422C] text-white px-4 py-1.5 rounded-lg text-xs font-mono font-bold transition-all shadow-md"
+                  download={assembledFilename || `Paperrrrrr_${outline.title}.${format}`}
+                  className="inline-flex items-center gap-2 bg-[#C3644B] hover:bg-[#97422C] text-white px-4 py-1.5 rounded-lg text-xs font-sans font-bold transition-all shadow-md"
                 >
                   <Download className="size-3.5" />
                   <span>Download {format.toUpperCase()}</span>
@@ -1963,7 +1963,7 @@ export default function PaperLoopApp() {
               ) : (
                 <button
                   disabled
-                  className="inline-flex items-center gap-2 bg-white/10 text-[#88726D] px-4 py-1.5 rounded-lg text-xs font-mono cursor-not-allowed"
+                  className="inline-flex items-center gap-2 bg-white/10 text-[#88726D] px-4 py-1.5 rounded-lg text-xs font-sans cursor-not-allowed"
                 >
                   <Download className="size-3.5" />
                   <span>{isStreaming ? "Compiling..." : "Export"}</span>
@@ -1973,13 +1973,13 @@ export default function PaperLoopApp() {
           </header>
 
           {/* Main Split-Screen Workspace Grid */}
-          <main className="flex-1 w-full flex flex-col lg:flex-row h-[calc(100vh-60px)] overflow-hidden">
+          <main className="flex-1 w-full flex flex-col lg:flex-row h-[calc(100vh-60px)] overflow-hidden font-sans">
             {/* ------------------------------------------------------------ */}
             {/* LEFT SIDE: "CODE" / STRUCTURED CONTENT STREAM (45% Width)    */}
             {/* ------------------------------------------------------------ */}
             <section className="w-full lg:w-[45%] h-full flex flex-col border-r border-white/10 bg-[#0E0F12]">
               {/* Left Side Header Tabs */}
-              <div className="h-11 px-4 border-b border-white/10 bg-white/[0.02] flex items-center justify-between text-xs font-mono">
+              <div className="h-11 px-4 border-b border-white/10 bg-white/[0.02] flex items-center justify-between text-xs font-sans">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setWorkspaceTab("code")}
@@ -2009,9 +2009,9 @@ export default function PaperLoopApp() {
 
               {/* Left Side Content Body */}
               {workspaceTab === "code" ? (
-                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-mono text-xs text-[#E5E2E1] leading-relaxed space-y-4">
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-[#E5E2E1] leading-relaxed space-y-4">
                   {/* Document Title Header Block */}
-                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
+                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-1 font-sans">
                     <div className="text-base font-serif font-bold text-[#FAF9F5]"># {outline.title}</div>
                     <div className="text-xs text-[#A38B86] italic">*{outline.subtitle}*</div>
                     <div className="text-[11px] text-[#73726F] pt-1">
@@ -2031,7 +2031,7 @@ export default function PaperLoopApp() {
                     return (
                       <div
                         key={sec.id || idx}
-                        className={`p-4 rounded-xl border transition-all ${
+                        className={`p-4 rounded-xl border transition-all font-sans ${
                           isCurrent
                             ? "bg-[#97422C]/10 border-[#C3644B]/60 shadow-lg"
                             : content
@@ -2042,15 +2042,15 @@ export default function PaperLoopApp() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-bold text-[#FAF9F5]">## {sec.title}</span>
                           {content ? (
-                            <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                            <span className="text-[10px] text-emerald-400 font-sans font-medium flex items-center gap-1">
                               <Check className="size-3" /> Drafted
                             </span>
                           ) : isCurrent ? (
-                            <span className="text-[10px] text-[#C3644B] font-mono animate-pulse">
+                            <span className="text-[10px] text-[#C3644B] font-sans font-medium animate-pulse">
                               Streaming...
                             </span>
                           ) : (
-                            <span className="text-[10px] text-[#73726F] font-mono">Queued</span>
+                            <span className="text-[10px] text-[#73726F] font-sans font-medium">Queued</span>
                           )}
                         </div>
 
@@ -2068,7 +2068,7 @@ export default function PaperLoopApp() {
                   })}
 
                   {isStreaming && (
-                    <div className="flex items-center gap-2 text-xs text-[#C3644B] pt-2 font-mono">
+                    <div className="flex items-center gap-2 text-xs text-[#C3644B] pt-2 font-sans font-medium">
                       <span className="w-2 h-2 rounded-full bg-[#C3644B] animate-ping" />
                       <span>Streaming tokens in real time...</span>
                       <span className="inline-block w-2 h-4 bg-[#C3644B] cursor-blink" />
@@ -2077,12 +2077,12 @@ export default function PaperLoopApp() {
                 </div>
               ) : (
                 /* Tab 2: Logs View */
-                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-mono text-xs text-[#A38B86] space-y-2 bg-[#090A0D]">
-                  <div className="text-[11px] text-[#55423E] pb-2 border-b border-white/5">
-                    // PaperLoop Neural Streaming Log • Gemini 3.6 Flash
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-[#A38B86] space-y-2 bg-[#090A0D]">
+                  <div className="text-[11px] text-[#55423E] pb-2 border-b border-white/5 font-sans">
+                    // Paperrrrrr Neural Streaming Log • Gemini 3.6 Flash
                   </div>
                   {streamTimelineEvents.map((ev) => (
-                    <div key={ev.id} className="flex items-start gap-2 text-[11px] leading-relaxed">
+                    <div key={ev.id} className="flex items-start gap-2 text-[11px] leading-relaxed font-sans">
                       <span className="text-[#55423E] shrink-0">[{ev.timestamp}]</span>
                       <div className="flex-1">
                         <span
@@ -2110,9 +2110,9 @@ export default function PaperLoopApp() {
             {/* ------------------------------------------------------------ */}
             {/* RIGHT SIDE: LIVE RENDERED INTERACTIVE CANVAS (55% Width)     */}
             {/* ------------------------------------------------------------ */}
-            <section className="w-full lg:w-[55%] h-full flex flex-col bg-[#141519] overflow-hidden relative">
+            <section className="w-full lg:w-[55%] h-full flex flex-col bg-[#141519] overflow-hidden relative font-sans">
               {/* Right Side Canvas Header / Mode Bar */}
-              <div className="h-11 px-6 border-b border-white/10 bg-white/[0.02] flex items-center justify-between text-xs font-mono text-[#88726D]">
+              <div className="h-11 px-6 border-b border-white/10 bg-white/[0.02] flex items-center justify-between text-xs font-sans text-[#88726D]">
                 <span className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   <span>Live Rendered Canvas</span>
@@ -2127,7 +2127,7 @@ export default function PaperLoopApp() {
                   >
                     <ZoomOut className="size-3.5" />
                   </button>
-                  <span className="text-[11px] font-mono text-[#A38B86] w-10 text-center">{zoomLevel}%</span>
+                  <span className="text-[11px] font-sans text-[#A38B86] w-10 text-center font-medium">{zoomLevel}%</span>
                   <button
                     onClick={() => setZoomLevel((z) => Math.min(130, z + 10))}
                     className="p-1 hover:text-white cursor-pointer"
@@ -2405,15 +2405,15 @@ export default function PaperLoopApp() {
           onClose={() => setShowSettingsModal(false)}
           title="Studio & AI Model Settings"
         >
-          <div className="space-y-4 text-xs font-mono">
+          <div className="space-y-4 text-xs font-sans">
             <div>
-              <label className="text-[#A38B86] block mb-1">Google Gemini API Key (BYOK)</label>
+              <label className="text-[#A38B86] block mb-1 font-medium">Google Gemini API Key (BYOK)</label>
               <input
                 type="password"
                 placeholder={hasCustomGeminiKey ? `Active Key: ${geminiKeyMasked}` : "AIzaSy..."}
                 value={customGeminiKeyInput}
                 onChange={(e) => setCustomGeminiKeyInput(e.target.value)}
-                className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-[#FAF9F5] outline-none"
+                className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-[#FAF9F5] outline-none font-sans focus:border-[#C3644B]"
               />
               <p className="text-[11px] text-[#73726F] mt-1">
                 Keys are encrypted with AES-256 GCM in your session.
@@ -2425,7 +2425,7 @@ export default function PaperLoopApp() {
                 <button
                   type="button"
                   onClick={handleClearKeys}
-                  className="text-rose-400 hover:underline cursor-pointer"
+                  className="text-rose-400 hover:underline cursor-pointer font-medium"
                 >
                   Clear Stored Key
                 </button>
@@ -2452,26 +2452,26 @@ export default function PaperLoopApp() {
           onClose={() => setShowHistoryModal(false)}
           title="Document History & Archive"
         >
-          <div className="space-y-4">
-            <div className="flex justify-between items-center text-xs font-mono text-[#A38B86]">
-              <span>Saved Manuscripts ({pastDocuments.length})</span>
+          <div className="space-y-4 font-sans text-xs">
+            <div className="flex justify-between items-center text-xs font-sans text-[#A38B86]">
+              <span className="font-semibold">Saved Manuscripts ({pastDocuments.length})</span>
               <button
                 type="button"
                 onClick={fetchPastDocuments}
-                className="hover:text-white flex items-center gap-1 cursor-pointer"
+                className="hover:text-white flex items-center gap-1 cursor-pointer font-medium"
               >
                 <RotateCw className="size-3" /> Refresh
               </button>
             </div>
 
             {pastDocuments.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 font-mono text-xs space-y-2 border border-white/5 rounded-xl bg-white/[0.02]">
+              <div className="p-8 text-center text-gray-500 font-sans text-xs space-y-2 border border-white/5 rounded-xl bg-white/[0.02]">
                 <Clock className="size-6 text-[#C3644B] mx-auto opacity-60" />
-                <p>No documents generated yet.</p>
+                <p className="font-medium text-[#FAF9F5]">No documents generated yet.</p>
                 <p className="text-[11px] text-[#73726F]">Generate a document to build your persistent research archive.</p>
               </div>
             ) : (
-              <div className="space-y-2.5 max-h-96 overflow-y-auto custom-scrollbar pr-1">
+              <div className="space-y-2.5 max-h-96 overflow-y-auto custom-scrollbar pr-1 font-sans">
                 {pastDocuments.map((doc, dIdx) => (
                   <div
                     key={doc._id || doc.id || dIdx}
@@ -2484,12 +2484,12 @@ export default function PaperLoopApp() {
                         </h4>
                         <p className="text-[11px] text-[#A38B86] truncate mt-0.5">{doc.subtitle || doc.prompt}</p>
                       </div>
-                      <span className="text-[10px] font-mono uppercase bg-[#C3644B]/20 text-[#FFB4A2] border border-[#C3644B]/30 px-2 py-0.5 rounded-full shrink-0 font-bold">
+                      <span className="text-[10px] font-sans uppercase bg-[#C3644B]/20 text-[#FFB4A2] border border-[#C3644B]/30 px-2 py-0.5 rounded-full shrink-0 font-bold">
                         {(doc.format || "docx").toUpperCase()}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] font-mono text-[#73726F]">
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] font-sans text-[#73726F]">
                       <span>
                         {doc.updatedAt
                           ? new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
