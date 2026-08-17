@@ -48,12 +48,11 @@ async function testFormat(format) {
 }
 
 async function run() {
-  console.log("Testing All 4 File Formats (/api/assemble)...");
+  console.log("Testing All 3 File Formats (/api/assemble)...");
   await testFormat("docx");
   await testFormat("pptx");
-  await testFormat("xlsx");
   await testFormat("pdf");
-  console.log("All 4 formats tested successfully!");
+  console.log("All 3 formats tested successfully!");
 }
 
 run().catch(console.error);

@@ -3,10 +3,10 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Paperrrrrr — Autonomous Research & Document Studio",
-  description: "Research, write, and assemble real editable Word docs, PowerPoint presentations, Excel spreadsheets, and PDFs with Gemini 2.5 Flash.",
+  description: "Research, write, and assemble real editable Word docs, PowerPoint presentations, and PDFs with Gemini 2.5 Flash.",
   applicationName: "Paperrrrrr",
   authors: [{ name: "Paperrrrrr Autonomous Studio" }],
-  keywords: ["AI document generator", "research reports", "academic thesis builder", "Word docx generator", "PowerPoint maker", "Excel spreadsheets", "Paperrrrrr"],
+  keywords: ["AI document generator", "research reports", "academic thesis builder", "Word docx generator", "PowerPoint maker", "PDF builder", "Paperrrrrr"],
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

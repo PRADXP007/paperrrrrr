@@ -7,7 +7,6 @@ import {
   Modal,
   Tabs,
   PPTXDeckViewer,
-  ExcelSheetViewer,
 } from "@/components/untitledui";
 import {
   Sparkles,
@@ -23,7 +22,6 @@ import {
   Key,
   Shield,
   Layers,
-  FileSpreadsheet,
   Presentation,
   UploadCloud,
   ArrowRight,
@@ -82,7 +80,7 @@ interface GeneratedOutline {
   title: string;
   subtitle: string;
   docType: string;
-  format: "docx" | "pptx" | "xlsx" | "pdf";
+  format: "docx" | "pptx" | "pdf";
   targetLength: string;
   chapters?: OutlineSection[];
   sections: OutlineSection[];
@@ -118,7 +116,7 @@ export default function PaperrrrrrApp() {
   // Screen 1: Home Prompt & Parameters
   const [prompt, setPrompt] = useState("");
   const [showParameters, setShowParameters] = useState(false);
-  const [format, setFormat] = useState<"docx" | "pptx" | "xlsx" | "pdf">("docx");
+  const [format, setFormat] = useState<"docx" | "pptx" | "pdf">("docx");
   const [docType, setDocType] = useState("Research Report");
   const [tone, setTone] = useState("Academic & Analytical");
   const [audience, setAudience] = useState("Scholars & Decision Makers");
@@ -177,8 +175,8 @@ export default function PaperrrrrrApp() {
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [showFileAttachPopover, setShowFileAttachPopover] = useState(false);
 
-  // Multi-Format Canvas Viewer Mode: 'word' | 'ppt' | 'excel'
-  const [activeViewerMode, setActiveViewerMode] = useState<"word" | "ppt" | "excel">("word");
+  // Multi-Format Canvas Viewer Mode: 'word' | 'ppt'
+  const [activeViewerMode, setActiveViewerMode] = useState<"word" | "ppt">("word");
 
   // Pipeline runtime state
   const [docId, setDocId] = useState<string | null>(null);
@@ -213,7 +211,7 @@ export default function PaperrrrrrApp() {
   const promptInputRef = useRef<HTMLInputElement | null>(null);
 
   // Autonomous Natural Language Format Detection
-  const detectedFormat = useMemo<"docx" | "pptx" | "xlsx" | "pdf">(() => {
+  const detectedFormat = useMemo<"docx" | "pptx" | "pdf">(() => {
     const p = prompt.toLowerCase();
     if (
       p.includes("slide") ||
@@ -224,18 +222,6 @@ export default function PaperrrrrrApp() {
       p.includes("pitch")
     ) {
       return "pptx";
-    }
-    if (
-      p.includes("excel") ||
-      p.includes("spreadsheet") ||
-      p.includes("sheet") ||
-      p.includes("xlsx") ||
-      p.includes("csv") ||
-      p.includes("financial model") ||
-      p.includes("budget") ||
-      p.includes("tracker")
-    ) {
-      return "xlsx";
     }
     if (p.includes("pdf")) {
       return "pdf";
@@ -947,8 +933,6 @@ export default function PaperrrrrrApp() {
 
     if (targetOutline.format === "pptx") {
       setActiveViewerMode("ppt");
-    } else if (targetOutline.format === "xlsx") {
-      setActiveViewerMode("excel");
     } else {
       setActiveViewerMode("word");
     }
@@ -1514,18 +1498,17 @@ export default function PaperrrrrrApp() {
                     <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-sans">
                       <div className="space-y-1.5">
                         <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Target Format</label>
-                        <div className="grid grid-cols-2 gap-1.5">
+                        <div className="grid grid-cols-3 gap-1.5">
                           {[
                             { key: "docx", label: "Word (.docx)", icon: <FileText className="size-3.5 text-blue-400" /> },
                             { key: "pptx", label: "PowerPoint (.pptx)", icon: <Presentation className="size-3.5 text-amber-400" /> },
-                            { key: "xlsx", label: "Excel (.xlsx)", icon: <FileSpreadsheet className="size-3.5 text-emerald-400" /> },
                             { key: "pdf", label: "Printable PDF", icon: <FileCheck className="size-3.5 text-rose-400" /> },
                           ].map((fmtOption) => (
                             <button
                               key={fmtOption.key}
                               type="button"
                               onClick={() => setFormat(fmtOption.key as any)}
-                              className={`flex items-center gap-1.5 p-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer border ${
+                              className={`flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer border ${
                                 format === fmtOption.key
                                   ? "bg-[#97422C]/30 border-[#C3644B] text-[#FAF9F5]"
                                   : "bg-white/5 border-transparent text-[#A38B86] hover:bg-white/10"
@@ -1916,15 +1899,6 @@ export default function PaperrrrrrApp() {
                 >
                   Slides
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveViewerMode("excel")}
-                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                    activeViewerMode === "excel" ? "bg-[#C3644B] text-white font-bold" : "text-[#88726D] hover:text-white"
-                  }`}
-                >
-                  Sheets
-                </button>
               </div>
 
               {/* Copy Markdown / Export Button */}
@@ -2229,27 +2203,6 @@ export default function PaperrrrrrApp() {
                             const link = document.createElement("a");
                             link.href = assembledBlobUrl;
                             link.download = assembledFilename || `Paperrrrrr_${outline.title}.pptx`;
-                            link.click();
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {/* CANVAS VIEWER 3: EXCEL (.xlsx) - Interactive Spreadsheet Viewer */}
-                  {activeViewerMode === "excel" && (
-                    <div className="w-full">
-                      <ExcelSheetViewer
-                        title={outline.title}
-                        subtitle={outline.subtitle}
-                        sections={outline.sections}
-                        generatedSections={generatedSections}
-                        isStreaming={isStreaming}
-                        onDownload={() => {
-                          if (assembledBlobUrl) {
-                            const link = document.createElement("a");
-                            link.href = assembledBlobUrl;
-                            link.download = assembledFilename || `Paperrrrrr_${outline.title}.xlsx`;
                             link.click();
                           }
                         }}

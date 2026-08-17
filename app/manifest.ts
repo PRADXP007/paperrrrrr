@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Paperrrrrr — Autonomous Research & Document Studio',
     short_name: 'Paperrrrrr',
-    description: 'Research, write, and assemble real editable Word docs, PowerPoint presentations, Excel spreadsheets, and PDFs with Gemini 2.5 Flash.',
+    description: 'Research, write, and assemble real editable Word docs, PowerPoint presentations, and PDFs with Gemini 2.5 Flash.',
     start_url: '/',
     display: 'standalone',
     background_color: '#0C111D',

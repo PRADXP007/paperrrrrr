@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   assembleWordDocument,
   assemblePowerPoint,
-  assembleExcelSheet,
   assemblePdfDocument,
   AssembleDocumentInput
 } from "@/lib/assembler";
@@ -50,11 +49,6 @@ export async function POST(req: NextRequest) {
         fileBuffer = await assemblePowerPoint(assembleInput);
         contentType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
         fileExtension = "pptx";
-        break;
-      case "xlsx":
-        fileBuffer = await assembleExcelSheet(assembleInput);
-        contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-        fileExtension = "xlsx";
         break;
       case "pdf":
         fileBuffer = await assemblePdfDocument(assembleInput);

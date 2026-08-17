@@ -25,7 +25,7 @@ export interface GeneratedOutline {
   title: string;
   subtitle: string;
   docType: string;
-  format: "docx" | "pptx" | "xlsx" | "pdf";
+  format: "docx" | "pptx" | "pdf";
   targetLength: string;
   chapters?: OutlineSection[];
   sections: OutlineSection[];
@@ -272,52 +272,6 @@ export function buildDynamicOutline(
         brief: `Synthesized key takeaways, strategic verdict, and definitive next steps for ${cleanTitle}.`,
         keyPoints: ["Core strategic verdict summary", "Immediate resource and partner requirements", "Contact, Q&A, and governance checkpoints"],
         relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
-      }
-    ];
-  } else if (options.format === "xlsx") {
-    subtitle = `Comprehensive Financial, Empirical & KPI Analytical Model (${options.tone || "Technical & Architectural"})`;
-    sections = [
-      {
-        id: "sheet_1",
-        title: "Sheet 1: Executive KPI Dashboard & Core Indices",
-        brief: `Master executive summary table tracking baseline volume, growth rates, performance indices, and health metrics for ${cleanTitle}.`,
-        keyPoints: ["Top 8 baseline metrics & KPI targets", "Variance percentages and status flags", "Formula calculations for index weighting"],
-        relevantSourceIndices: [1]
-      },
-      {
-        id: "sheet_2",
-        title: "Sheet 2: Historical Financials & Revenue Breakdown",
-        brief: `Granular annual/quarterly financial table tracking revenue streams, gross margins, and segment contributions for ${cleanTitle}.`,
-        keyPoints: ["Multi-year revenue distributions", "Cost of goods sold (COGS) and gross margin percentages", "Segment contribution breakdown"],
-        relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1]
-      },
-      {
-        id: "sheet_3",
-        title: "Sheet 3: Market Sizing, Segmentation & Regional CAGR",
-        brief: `Regional and demographic market sizing table with CAGR projections, market share, and addressable volume for ${cleanTitle}.`,
-        keyPoints: ["Regional TAM/SAM/SOM breakdown", "5-year forecasted CAGR percentages", "Penetration rates across market tiers"],
-        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1]
-      },
-      {
-        id: "sheet_4",
-        title: "Sheet 4: Unit Economics, OPEX & Capital Allocation",
-        brief: `Operational expenditure, cost structures, headcount modeling, and capital expenditure breakdown for ${cleanTitle}.`,
-        keyPoints: ["Direct vs indirect cost drivers", "OPEX by department (R&D, Sales, Ops)", "Capital deployment allocation matrix"],
-        relevantSourceIndices: srcCount >= 4 ? [3, 4] : [srcCount]
-      },
-      {
-        id: "sheet_5",
-        title: "Sheet 5: 5-Year Financial Forecast & Sensitivity Matrix",
-        brief: `Comprehensive 5-year pro-forma forecast model with bull/base/bear sensitivity analysis and IRR/ROI calculations for ${cleanTitle}.`,
-        keyPoints: ["Base case vs Bull case vs Bear case scenarios", "EBITDA margin projections and net present value (NPV)", "Sensitivity table across variable shifts"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
-      },
-      {
-        id: "sheet_6",
-        title: "Sheet 6: Risk Scoring & Compliance Audit Matrix",
-        brief: `Quantitative risk scoring table with probability weights, financial impact estimation, and mitigation status for ${cleanTitle}.`,
-        keyPoints: ["Risk categorization and severity scoring", "Expected monetary value (EMV) calculations", "Audit status and mitigation ownership"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 2, 4] : [1]
       }
     ];
   } else if (lengthSpec.pageCount >= 30) {
@@ -749,7 +703,6 @@ export async function generateSectionProse(
   const format = customKeys?.format || "docx";
   const targetLength = customKeys?.targetLength || "Unlimited & Exhaustive (Comprehensive In-Depth, 30–50 Pages)";
   const isPptx = format === "pptx";
-  const isXlsx = format === "xlsx";
   const isExhaustive = (format === "docx" || format === "pdf") && (targetLength.toLowerCase().includes("unlimited") || targetLength.toLowerCase().includes("detailed") || (customKeys?.targetChapterWords || 0) >= 600);
 
   const targetWords = customKeys?.targetChapterWords || 750;
@@ -770,24 +723,6 @@ Format the output as follows:
 > 💡 **KEY METRIC:** [Highlight statistic, e.g. $48.5B Market Opportunity by 2028 (+32.4% CAGR)]
 
 > 🎙️ **PRESENTER NOTES:** [2-3 sentences of articulate executive talking points and speaking guidance for the presenter].`;
-  } else if (isXlsx) {
-    formatInstruction = `- EXCEL SPREADSHEET ANALYTICAL MODEL FORMAT:
-Write a rich, comprehensive structured Markdown Data Table representing this analytical worksheet with headers, rows, numerical figures, percentages, currency metrics, and formula calculation summaries.
-Format the output as follows:
-### Worksheet: ${section.title}
-**Sheet Scope & Purpose:** ${section.brief}
-
-| Index | Metric / Line Item | Baseline (2023) | Current (2024) | Target (2025) | 5-Yr Forecast (2028) | Variance (%) | Status / Audit |
-| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| 01 | [Specific KPI / Revenue Stream] | $12.4M | $18.9M | $28.5M | $54.2M | +48.6% | Verified |
-| 02 | [Operational Variable / Cost] | $8.1M | $11.2M | $14.8M | $22.6M | +32.1% | On Target |
-...
-| -- | **Summary Total / Average** | **$45.2M** | **$68.1M** | **$104.2M** | **$198.5M** | **+52.4%** | **Formula Verified** |
-
-**Underlying Mathematical Models & Formula Logic:**
-* \`Variance (%) = (Forecast - Current) / Current\`
-* \`Weighted CAGR = (2028 Value / 2023 Value)^(1/5) - 1\`
-* Data substantiated by institutional citations: ${filteredSources.map(s => `[${s.title}](${s.url})`).join(", ")}`;
   } else if (section.subsections && section.subsections.length > 0) {
     formatInstruction = `- NESTED SUBSECTIONS & WORD BUDGET REQUIREMENT:
 Target Word Count for this entire chapter: approximately ${targetWords} words (~${targetSubWords} words per subsection).

@@ -22,7 +22,7 @@ export interface IDocument extends MongooseDocument {
   userId?: string;
   userEmail?: string;
   prompt: string;
-  format: "docx" | "pptx" | "xlsx" | "pdf";
+  format: "docx" | "pptx" | "pdf";
   docType: string;
   tone: string;
   audience: string;
@@ -60,7 +60,7 @@ const DocumentSchema = new Schema<IDocument>(
     userId: { type: String, index: true },
     userEmail: { type: String, index: true },
     prompt: { type: String, required: true },
-    format: { type: String, enum: ["docx", "pptx", "xlsx", "pdf"], default: "docx" },
+    format: { type: String, enum: ["docx", "pptx", "pdf"], default: "docx" },
     docType: { type: String, default: "Research Report" },
     tone: { type: String, default: "Academic & Analytical" },
     audience: { type: String, default: "General Academic" },
