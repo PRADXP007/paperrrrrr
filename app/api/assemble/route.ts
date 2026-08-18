@@ -33,6 +33,8 @@ export async function POST(req: NextRequest) {
       title: title || "Document",
       subtitle: safeSubtitle,
       format,
+      docType: body.docType,
+      isIEEEPaper: body.isIEEEPaper || body.docType === "Research Paper" || body.docType === "IEEE Research Paper",
       sections: safeSections,
       chapters: safeSections,
       selectedFont,

@@ -274,6 +274,83 @@ export function buildDynamicOutline(
         relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
       }
     ];
+  } else if (docType === "Research Paper" || docType === "IEEE Research Paper" || cleanTitle.toLowerCase().includes("ieee") || (cleanTitle.toLowerCase().includes("research paper") && options.format !== "pptx")) {
+    subtitle = `IEEE Conference & Journal Standard Manuscript`;
+    sections = [
+      {
+        id: "sec_abstract",
+        title: "Abstract & Keywords",
+        brief: `Comprehensive 150-250 word scholarly abstract framing the domain context, problem statement, methodological innovation, empirical results, and significance for ${cleanTitle}.`,
+        keyPoints: ["Background & problem motivation", "Proposed architectural or theoretical framework", "Quantitative benchmark results & efficiency gains", "Index keywords & domain taxonomy"],
+        relevantSourceIndices: [1]
+      },
+      {
+        id: "sec_1",
+        title: "I. INTRODUCTION",
+        brief: `Contextual background, domain urgency, formal problem formulation, key contributions, and paper organization for ${cleanTitle}.`,
+        keyPoints: ["Historical & industrial context", "Core challenges & baseline limitations", "Explicit itemized list of research contributions", "Paper structural roadmap"],
+        relevantSourceIndices: [1, 2],
+        subsections: [
+          { id: "sec_1_1", title: "A. Motivation and Domain Urgency", brief: `Contemporary technological and empirical drivers motivating innovation in ${cleanTitle}.` },
+          { id: "sec_1_2", title: "B. Formal Problem Formulation", brief: `Mathematical and architectural definition of operational bottlenecks.` },
+          { id: "sec_1_3", title: "C. Research Contributions & Organization", brief: `Itemized novel contributions and sequential structure of the manuscript.` }
+        ]
+      },
+      {
+        id: "sec_2",
+        title: "II. RELATED WORK & THEORETICAL FOUNDATIONS",
+        brief: `Exhaustive taxonomy of existing literature, baseline algorithms, comparative paradigms, and identified gaps for ${cleanTitle}.`,
+        keyPoints: ["Taxonomy of state-of-the-art literature", "Comparative analysis of prevailing paradigms", "Empirical gaps addressed by the proposed approach"],
+        relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1],
+        subsections: [
+          { id: "sec_2_1", title: "A. Taxonomy of Prior Approaches", brief: `Classification and historical trajectory of existing models and methods.` },
+          { id: "sec_2_2", title: "B. Baseline Limitations & Research Gaps", brief: `Critical analysis of vulnerabilities and computational bottlenecks in current paradigms.` }
+        ]
+      },
+      {
+        id: "sec_3",
+        title: "III. PROPOSED SYSTEM METHODOLOGY & ARCHITECTURE",
+        brief: `Rigorous mathematical formulation, algorithmic pipelines, component modules, and optimization protocols for ${cleanTitle}.`,
+        keyPoints: ["Mathematical formulation & system equations", "Architectural schematic & data pipelines", "Optimization theorems & algorithmic complexity"],
+        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1],
+        subsections: [
+          { id: "sec_3_1", title: "A. Mathematical Formulation & System Model", brief: `Formal mathematical equations, parameter notations, and boundary constraints.` },
+          { id: "sec_3_2", title: "B. Architectural Pipeline & Module Topology", brief: `Detailed component interactions, data flow representations, and protocols.` },
+          { id: "sec_3_3", title: "C. Algorithmic Complexity & Execution Safeguards", brief: `Time/space complexity analysis and convergence guarantees.` }
+        ]
+      },
+      {
+        id: "sec_4",
+        title: "IV. EXPERIMENTAL SETUP & EMPIRICAL RESULTS",
+        brief: `Quantitative testbed benchmarks, comparative baseline distributions, evaluation metrics, and ablation data for ${cleanTitle}.`,
+        keyPoints: ["Experimental testbed & dataset specifications", "Comparative benchmark tables against state-of-the-art", "Statistical significance & runtime latency"],
+        relevantSourceIndices: srcCount >= 3 ? [1, 2, 3] : [1],
+        subsections: [
+          { id: "sec_4_1", title: "A. Benchmark Testbeds & Dataset Synthesis", brief: `Experimental parameters, baseline configurations, and hardware/software setup.` },
+          { id: "sec_4_2", title: "B. Quantitative Benchmark Evaluation", brief: `Granular comparison tables evaluating accuracy, throughput, and efficiency.` },
+          { id: "sec_4_3", title: "C. Statistical Significance & Latency Analysis", brief: `Empirical distributions, p-values, and convergence rates across iterations.` }
+        ]
+      },
+      {
+        id: "sec_5",
+        title: "V. DISCUSSION, ABLATION ANALYSIS & THREATS TO VALIDITY",
+        brief: `In-depth ablation studies, architectural trade-offs, internal/external validity constraints, and practical deployment considerations.`,
+        keyPoints: ["Component-by-component ablation studies", "Operational trade-offs and computational costs", "Threats to internal and external validity"],
+        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1],
+        subsections: [
+          { id: "sec_5_1", title: "A. Ablation Experiments & Component Impact", brief: `Empirical isolation of individual system components and their contributions.` },
+          { id: "sec_5_2", title: "B. Critical Trade-offs & Deployment Constraints", brief: `Practical latency, memory, and bandwidth trade-offs in production.` },
+          { id: "sec_5_3", title: "C. Threats to Validity", brief: `Analysis of confounding variables and generalizability across diverse domains.` }
+        ]
+      },
+      {
+        id: "sec_6",
+        title: "VI. CONCLUSION & FUTURE WORK",
+        brief: `Scholarly synthesis of findings, verified impact on the research community, and high-priority open research directions for ${cleanTitle}.`,
+        keyPoints: ["Summary of verified empirical outcomes", "Key theoretical and engineering implications", "Prospective research avenues for future scholars"],
+        relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1]
+      }
+    ];
   } else if (lengthSpec.pageCount >= 30) {
     subtitle = `An Exhaustive Multi-Chapter Treatise (${lengthSpec.label})`;
     sections = [
@@ -557,6 +634,8 @@ export async function generateStructuredOutline(
   const docBudget = calculateDocumentBudget(prompt, options);
 
   const docTypePromptInstructions: Record<string, string> = {
+    "IEEE Research Paper": "Structure according to authentic IEEE Conference/Journal standard: Abstract & Keywords, I. INTRODUCTION, II. RELATED WORK & FOUNDATIONAL LITERATURE, III. PROPOSED SYSTEM METHODOLOGY & ARCHITECTURE, IV. EXPERIMENTAL SETUP & EMPIRICAL RESULTS, V. DISCUSSION, ABLATION ANALYSIS & THREATS TO VALIDITY, VI. CONCLUSION & FUTURE WORK, and REFERENCES.",
+    "Research Paper": "Structure according to authentic IEEE Conference/Journal standard: Abstract & Keywords, I. INTRODUCTION, II. RELATED WORK & FOUNDATIONAL LITERATURE, III. PROPOSED SYSTEM METHODOLOGY & ARCHITECTURE, IV. EXPERIMENTAL SETUP & EMPIRICAL RESULTS, V. DISCUSSION, ABLATION ANALYSIS & THREATS TO VALIDITY, VI. CONCLUSION & FUTURE WORK, and REFERENCES.",
     "Research Report": `Structure as a rigorous multi-chapter Academic Project Report with exactly ${docBudget.chapterCount} chapters, each with ${docBudget.subsectionsPerChapterMin} to ${docBudget.subsectionsPerChapterMax} subsections (e.g., 1.1, 1.2, 1.3). Total target output: ~${docBudget.pageCount} printed pages (~${docBudget.totalTargetWords.toLocaleString()} words).`,
     "Academic Essay": "Structure as a formal Academic Essay: Introduction & Thesis Statement, Theoretical Foundations & Counter-arguments, Critical Textual Synthesis, and Scholarly Conclusion.",
     "Literature Review": "Structure as a formal Literature Review: Methodological Scope & Taxonomy, Synthesis of Contemporary Scholarship, Empirical Gaps & Divergences, and Future Research Agenda.",
@@ -709,6 +788,8 @@ export async function generateSectionProse(
   const subCount = section.subsections && section.subsections.length > 0 ? section.subsections.length : 3;
   const targetSubWords = customKeys?.targetSubsectionWords || Math.round(targetWords / subCount);
 
+  const isIEEE = docType === "Research Paper" || docType === "IEEE Research Paper" || docType === "Conference Paper" || docTitle.toLowerCase().includes("ieee");
+
   let formatInstruction = "";
   if (isPptx) {
     formatInstruction = `- POWERPOINT PRESENTATION SLIDE FORMAT:
@@ -723,6 +804,16 @@ Format the output as follows:
 > 💡 **KEY METRIC:** [Highlight statistic, e.g. $48.5B Market Opportunity by 2028 (+32.4% CAGR)]
 
 > 🎙️ **PRESENTER NOTES:** [2-3 sentences of articulate executive talking points and speaking guidance for the presenter].`;
+  } else if (isIEEE) {
+    formatInstruction = `- IEEE 2-COLUMN RESEARCH PAPER STANDARD:
+Write rigorous, publication-grade academic prose adhering to IEEE conference/journal standards:
+1. FORMAL STRUCTURE: Dense, authoritative, mathematically grounded prose with active voice and precise engineering terminology.
+2. SUBSECTIONS: If writing subsections, format with capital letters (e.g. \`### A. Motivation and Domain Urgency\`, \`### B. System Architecture\`) and sub-subsections as \`#### 1) Algorithmic Pipeline:\`.
+3. MATHEMATICAL EQUATIONS: Provide formal mathematical models and equations centered with right-aligned numbering, e.g.:
+   $$E_{total} = \\sum_{i=1}^{N} \\alpha_i \\cdot x_i + \\beta \\quad (1)$$
+4. EMPIRICAL TABLES: Where appropriate, include markdown comparison tables formatted with IEEE table captions above the table (e.g., \`TABLE I. EMPIRICAL BENCHMARK EVALUATION\`).
+5. AUTHENTIC CITATIONS: Use strict IEEE in-text bracketed citations like [1], [2], [1]-[3] citing the research snippets provided below.
+6. TARGET DEPTH: Write 3-5 comprehensive paragraphs with verified empirical statistics.`;
   } else if (section.subsections && section.subsections.length > 0) {
     formatInstruction = `- NESTED SUBSECTIONS & WORD BUDGET REQUIREMENT:
 Target Word Count for this entire chapter: approximately ${targetWords} words (~${targetSubWords} words per subsection).

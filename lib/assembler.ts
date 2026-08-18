@@ -16,7 +16,8 @@ import {
   Table,
   TableRow,
   TableCell,
-  WidthType
+  WidthType,
+  SectionType
 } from "docx";
 import pptxgen from "pptxgenjs";
 import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
@@ -56,6 +57,8 @@ export interface AssembleDocumentInput {
   subtitle: string;
   author?: string;
   format: "docx" | "pptx" | "pdf";
+  docType?: string;
+  isIEEEPaper?: boolean;
   sections: AssembleSection[];
   chapters?: AssembleSection[];
   academicMeta?: AcademicReportMeta;
@@ -319,6 +322,511 @@ function extractBibliography(sections: AssembleSection[], title: string): string
   return Array.from(references).sort();
 }
 
+// ---------------------------------------------------------------------------
+// IEEE 2-Column Standard Research Paper & Conference Manuscript Formatter
+// ---------------------------------------------------------------------------
+function parseIEEEParagraphsToDocx(
+  rawText: string,
+  font: string = "Times New Roman",
+  headingColor: string = "000000"
+): (Paragraph | Table)[] {
+  const blocks = rawText.split("\n\n").map(b => b.trim()).filter(Boolean);
+  const elements: (Paragraph | Table)[] = [];
+  let tableCounter = 1;
+
+  for (const block of blocks) {
+    if (isMarkdownTable(block)) {
+      // Add IEEE Table Header ABOVE Table: TABLE I.  TABLE TYPE STYLES
+      const roman = toRomanNumeral(tableCounter++);
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `TABLE ${roman}.   EMPIRICAL METRICS & COMPARATIVE PERFORMANCE`,
+              bold: true,
+              font,
+              size: 16 // 8pt Bold Centered
+            })
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 180, after: 60 }
+        })
+      );
+      elements.push(parseMarkdownTableToDocx(block, font));
+      elements.push(
+        new Paragraph({
+          spacing: { after: 120 }
+        })
+      );
+      continue;
+    }
+
+    // Handle Sub-subheadings (e.g. #### ) -> 1) Heading:
+    if (block.startsWith("#### ")) {
+      const headingText = cleanMarkdownFormatting(block.replace(/^####\s*/, ""));
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `${headingText}: `,
+              italics: true,
+              font,
+              size: 20 // 10pt Italic
+            })
+          ],
+          alignment: AlignmentType.LEFT,
+          spacing: { before: 140, after: 60 }
+        })
+      );
+      continue;
+    }
+
+    // Handle Subsection Headings (e.g. ### ) -> A. Subsection Title (Italic Left-Aligned)
+    if (block.startsWith("### ")) {
+      const headingText = cleanMarkdownFormatting(block.replace(/^###\s*/, ""));
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: headingText,
+              italics: true,
+              bold: true,
+              font,
+              size: 20, // 10pt Italic Bold
+              color: headingColor
+            })
+          ],
+          alignment: AlignmentType.LEFT,
+          spacing: { before: 180, after: 80 }
+        })
+      );
+      continue;
+    }
+
+    if (block.startsWith("## ")) {
+      const headingText = cleanMarkdownFormatting(block.replace(/^##\s*/, ""));
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: headingText,
+              italics: true,
+              bold: true,
+              font,
+              size: 20, // 10pt Italic Bold
+              color: headingColor
+            })
+          ],
+          alignment: AlignmentType.LEFT,
+          spacing: { before: 200, after: 80 }
+        })
+      );
+      continue;
+    }
+
+    // Equations detection: e.g. mathematical equation blocks or formulas
+    if (block.includes(" = ") && (block.length < 80 || block.includes("$$"))) {
+      const cleanEq = cleanMarkdownFormatting(block.replace(/\$\$/g, ""));
+      elements.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `\t${cleanEq}\t(1)`,
+              italics: true,
+              font,
+              size: 20
+            })
+          ],
+          tabStops: [
+            { type: TabStopType.CENTER, position: 2400 },
+            { type: TabStopType.RIGHT, position: 4800 }
+          ],
+          alignment: AlignmentType.LEFT,
+          spacing: { before: 120, after: 120 }
+        })
+      );
+      continue;
+    }
+
+    // Bullet Items
+    const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length > 1 && lines.every(l => l.startsWith("- ") || l.startsWith("* ") || /^\d+\./.test(l))) {
+      lines.forEach(line => {
+        const itemText = cleanMarkdownFormatting(line.replace(/^[-*]\s+|\d+\.\s+/, ""));
+        elements.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `•  ${itemText}`,
+                font,
+                size: 19 // 9.5pt
+              })
+            ],
+            alignment: AlignmentType.JUSTIFIED,
+            indent: { left: convertInchesToTwip(0.2), hanging: convertInchesToTwip(0.12) },
+            spacing: { after: 60, line: 240 }
+          })
+        );
+      });
+      continue;
+    }
+
+    // Standard Body Paragraph (10pt Justified with 0.2" first-line indent)
+    const cleanedText = cleanMarkdownFormatting(block);
+    elements.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: cleanedText,
+            font,
+            size: 20 // 10pt
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        indent: { firstLine: convertInchesToTwip(0.2) },
+        spacing: { after: 100, line: 252 } // 1.05 Line Spacing
+      })
+    );
+  }
+
+  return elements;
+}
+
+export async function assembleIEEEWordDocument(input: AssembleDocumentInput): Promise<Buffer> {
+  const safeTitle = input.academicMeta?.projectTitleOverride || input.title || "Research Paper Title";
+  const rawSections = input.chapters || input.sections || [];
+  const meta = input.academicMeta || {};
+  const selectedFont = meta.selectedFont || input.selectedFont || "Times New Roman";
+  const headingColor = (meta.accentColor || input.accentColor || "000000").replace("#", "");
+
+  // Extract Abstract & Keywords or synthesize
+  let abstractText = "";
+  let keywordsText = "component, formatting, style, empirical analysis, neural architecture, IEEE standards";
+
+  const contentSections: AssembleSection[] = [];
+  rawSections.forEach((sec) => {
+    const tLower = sec.title.toLowerCase();
+    if (tLower.includes("abstract") || tLower.includes("executive summary")) {
+      abstractText = cleanMarkdownFormatting(sec.content || sec.brief || "");
+    } else if (tLower.includes("keyword")) {
+      keywordsText = cleanMarkdownFormatting(sec.content || sec.brief || "");
+    } else if (!tLower.includes("references") && !tLower.includes("bibliography")) {
+      contentSections.push(sec);
+    }
+  });
+
+  if (!abstractText) {
+    abstractText = `This paper presents a rigorous empirical and architectural inquiry into ${safeTitle}. By analyzing quantitative benchmarks, system formulations, and comparative baselines, we establish an integrated framework that addresses core operational bottlenecks. Experimental evaluations demonstrate significant efficiency and scalability advantages over traditional paradigms.`;
+  }
+
+  // Section 1: Single-Column Title & Author Affiliations Block
+  const headerChildren: any[] = [];
+
+  // IEEE Header Notice
+  headerChildren.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: "XXX-X-XXXX-XXXX-X/XX/$XX.00 ©20XX IEEE",
+          font: selectedFont,
+          size: 16, // 8pt
+          color: "555555"
+        })
+      ],
+      alignment: AlignmentType.LEFT,
+      spacing: { after: 180 }
+    })
+  );
+
+  // Paper Title (24pt Regular/Bold Centered)
+  headerChildren.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: safeTitle,
+          bold: true,
+          font: selectedFont,
+          size: 48, // 24pt
+          color: headingColor
+        })
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 120 }
+    })
+  );
+
+  // Note on subtitles
+  headerChildren.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: "*Note: Sub-titles are not captured in Xplore and should not be used",
+          italics: true,
+          font: selectedFont,
+          size: 18, // 9pt
+          color: "666666"
+        })
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 360 }
+    })
+  );
+
+  // Author Affiliation Grid (3-column Table)
+  const author1Name = meta.submittedBy || input.author || "1st Given Name Surname";
+  const author2Name = meta.guideName || "2nd Given Name Surname";
+  const author3Name = "3rd Given Name Surname";
+  const deptName = meta.department || "dept. name of organization";
+  const orgName = meta.institutionName || "name of organization";
+
+  const authorsTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top: { style: BorderStyle.NONE },
+      bottom: { style: BorderStyle.NONE },
+      left: { style: BorderStyle.NONE },
+      right: { style: BorderStyle.NONE },
+      insideHorizontal: { style: BorderStyle.NONE },
+      insideVertical: { style: BorderStyle.NONE }
+    },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({ children: [new TextRun({ text: author1Name, font: selectedFont, size: 20, bold: true })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: deptName, font: selectedFont, size: 18, italics: true })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: `(of Affiliation)\n${orgName}`, font: selectedFont, size: 18, italics: true })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: "City, Country", font: selectedFont, size: 18 })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: "email address or ORCID", font: selectedFont, size: 18 })], alignment: AlignmentType.CENTER })
+            ],
+            width: { size: 33, type: WidthType.PERCENTAGE }
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({ children: [new TextRun({ text: author2Name, font: selectedFont, size: 20, bold: true })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: deptName, font: selectedFont, size: 18, italics: true })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: `(of Affiliation)\n${orgName}`, font: selectedFont, size: 18, italics: true })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: "City, Country", font: selectedFont, size: 18 })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: "email address or ORCID", font: selectedFont, size: 18 })], alignment: AlignmentType.CENTER })
+            ],
+            width: { size: 34, type: WidthType.PERCENTAGE }
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({ children: [new TextRun({ text: author3Name, font: selectedFont, size: 20, bold: true })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: deptName, font: selectedFont, size: 18, italics: true })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: `(of Affiliation)\n${orgName}`, font: selectedFont, size: 18, italics: true })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: "City, Country", font: selectedFont, size: 18 })], alignment: AlignmentType.CENTER }),
+              new Paragraph({ children: [new TextRun({ text: "email address or ORCID", font: selectedFont, size: 18 })], alignment: AlignmentType.CENTER })
+            ],
+            width: { size: 33, type: WidthType.PERCENTAGE }
+          })
+        ]
+      })
+    ]
+  });
+
+  headerChildren.push(authorsTable);
+
+  // Spacing after author block
+  headerChildren.push(
+    new Paragraph({ spacing: { after: 240 } })
+  );
+
+  // Abstract Paragraph (Bold Italic Abstract— run-in)
+  headerChildren.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: "Abstract—",
+          bold: true,
+          italics: true,
+          font: selectedFont,
+          size: 19 // 9.5pt
+        }),
+        new TextRun({
+          text: abstractText.replace(/^Abstract[—\-:\s]*/i, ""),
+          bold: true,
+          font: selectedFont,
+          size: 19 // 9.5pt
+        })
+      ],
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { after: 140, line: 240 }
+    })
+  );
+
+  // Keywords Paragraph (Bold Italic Keywords— run-in)
+  headerChildren.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: "Keywords—",
+          bold: true,
+          italics: true,
+          font: selectedFont,
+          size: 19 // 9.5pt
+        }),
+        new TextRun({
+          text: keywordsText.replace(/^Keywords[—\-:\s]*/i, ""),
+          italics: true,
+          font: selectedFont,
+          size: 19 // 9.5pt
+        })
+      ],
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { after: 280, line: 240 }
+    })
+  );
+
+  // Section 2: 2-Column Body Content
+  const bodyChildren: any[] = [];
+
+  contentSections.forEach((sec, idx) => {
+    const rawTitle = sec.title.replace(/^\d+\.\s*/, "").replace(/^Slide \d+:\s*/, "");
+    const roman = toRomanNumeral(idx + 1);
+    const heading1Text = `${roman}. ${rawTitle.toUpperCase()}`;
+
+    // Heading 1: Roman Numeral, Centered / Small Caps, 10pt Bold
+    bodyChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: heading1Text,
+            bold: true,
+            font: selectedFont,
+            size: 20, // 10pt Bold
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 240, after: 120 }
+      })
+    );
+
+    // Section Content
+    const secBody = sec.content || sec.brief || "";
+    const parsedElements = parseIEEEParagraphsToDocx(secBody, selectedFont, headingColor);
+    bodyChildren.push(...parsedElements);
+  });
+
+  // Acknowledgment Section
+  bodyChildren.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: "ACKNOWLEDGMENT",
+          bold: true,
+          font: selectedFont,
+          size: 20,
+          color: headingColor
+        })
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 240, after: 120 }
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: `The authors would like to thank ${meta.institutionName || "the institutional laboratory and faculty mentors"} for providing computational infrastructure and technical support during this research inquiry.`,
+          font: selectedFont,
+          size: 19
+        })
+      ],
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { after: 160, line: 240 }
+    })
+  );
+
+  // References Section
+  const bibliography = extractBibliography(rawSections, safeTitle);
+  bodyChildren.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: "REFERENCES",
+          bold: true,
+          font: selectedFont,
+          size: 20,
+          color: headingColor
+        })
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 240, after: 120 }
+    })
+  );
+
+  bibliography.forEach((refStr, rIdx) => {
+    const formattedRef = refStr.startsWith("[") ? refStr : `[${rIdx + 1}]  ${refStr}`;
+    bodyChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: formattedRef,
+            font: selectedFont,
+            size: 17 // 8.5pt
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        indent: { left: convertInchesToTwip(0.25), hanging: convertInchesToTwip(0.25) },
+        spacing: { after: 80, line: 220 }
+      })
+    );
+  });
+
+  // Build Word Document with Continuous 2-Column Section
+  const doc = new DocxDocument({
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: selectedFont,
+            size: 20 // 10pt
+          }
+        }
+      }
+    },
+    sections: [
+      // Section 1: Single column (Header, Title, Authors, Abstract)
+      {
+        properties: {
+          page: {
+            margin: {
+              top: convertInchesToTwip(0.75),
+              bottom: convertInchesToTwip(1.0),
+              left: convertInchesToTwip(0.625),
+              right: convertInchesToTwip(0.625)
+            }
+          }
+        },
+        children: headerChildren
+      },
+      // Section 2: Two-column body
+      {
+        properties: {
+          type: SectionType.CONTINUOUS,
+          page: {
+            margin: {
+              top: convertInchesToTwip(0.75),
+              bottom: convertInchesToTwip(1.0),
+              left: convertInchesToTwip(0.625),
+              right: convertInchesToTwip(0.625)
+            }
+          },
+          column: {
+            count: 2,
+            space: 720 // 0.5" gap between columns
+          }
+        },
+        children: bodyChildren
+      }
+    ]
+  });
+
+  return await Packer.toBuffer(doc);
+}
+
 // 1. Word Document (.docx) Assembler - Multi-Chapter Academic & Corporate Thesis Standard
 export async function assembleWordDocument(
   inputOrTitle: AssembleDocumentInput | string,
@@ -336,6 +844,19 @@ export async function assembleWordDocument(
         academicMeta: academicMetaParam
       }
     : inputOrTitle;
+
+  const docTypeLower = (input.docType || "").toLowerCase();
+  const titleLower = (input.title || "").toLowerCase();
+  const isIEEE = input.isIEEEPaper ||
+    docTypeLower.includes("research paper") ||
+    docTypeLower.includes("ieee") ||
+    docTypeLower.includes("conference") ||
+    titleLower.includes("ieee") ||
+    (docTypeLower.includes("research") && !input.academicMeta?.isFormalAcademicReport);
+
+  if (isIEEE) {
+    return await assembleIEEEWordDocument(input);
+  }
 
   const safeTitle = input.academicMeta?.projectTitleOverride || input.title || "Project Report";
   const safeSubtitle = input.subtitle || "An Exhaustive Multi-Chapter Strategic & Empirical Treatise";
@@ -1134,198 +1655,563 @@ export async function assembleWordDocument(
   return await Packer.toBuffer(doc);
 }
 
-// 2. PowerPoint (.pptx) Assembler - Neat College & Corporate Presentation Deck
+// 2. PowerPoint (.pptx) Modern Multi-Layout Presentation Assembler
+export interface PPTXThemePalette {
+  name: string;
+  darkBg: string;
+  cardDarkBg: string;
+  lightBg: string;
+  cardLightBg: string;
+  cardBorder: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  textDark: string;
+  textMuted: string;
+  textLight: string;
+  textLightMuted: string;
+  headerFont: string;
+  bodyFont: string;
+}
+
+const PPTX_PALETTES: Record<string, PPTXThemePalette> = {
+  midnight: {
+    name: "Midnight Executive",
+    darkBg: "0F172A",
+    cardDarkBg: "1E293B",
+    lightBg: "FFFFFF",
+    cardLightBg: "F8FAFC",
+    cardBorder: "E2E8F0",
+    primary: "1E2761",
+    secondary: "3B82F6",
+    accent: "38BDF8",
+    textDark: "0F172A",
+    textMuted: "64748B",
+    textLight: "FFFFFF",
+    textLightMuted: "94A3B8",
+    headerFont: "Cambria",
+    bodyFont: "Calibri"
+  },
+  teal: {
+    name: "Teal Trust & Tech",
+    darkBg: "064E3B",
+    cardDarkBg: "065F46",
+    lightBg: "FFFFFF",
+    cardLightBg: "F0FDFA",
+    cardBorder: "CCFBF1",
+    primary: "028090",
+    secondary: "00A896",
+    accent: "02C39A",
+    textDark: "0F172A",
+    textMuted: "52525B",
+    textLight: "FFFFFF",
+    textLightMuted: "A7F3D0",
+    headerFont: "Cambria",
+    bodyFont: "Calibri"
+  },
+  terracotta: {
+    name: "Warm Terracotta",
+    darkBg: "292524",
+    cardDarkBg: "44403C",
+    lightBg: "FFFFFF",
+    cardLightBg: "FAF9F6",
+    cardBorder: "E7E5E4",
+    primary: "B85042",
+    secondary: "D97706",
+    accent: "A7BEAE",
+    textDark: "1C1917",
+    textMuted: "78716C",
+    textLight: "FFFFFF",
+    textLightMuted: "D6D3D1",
+    headerFont: "Cambria",
+    bodyFont: "Calibri"
+  },
+  ocean: {
+    name: "Ocean Gradient",
+    darkBg: "0B192C",
+    cardDarkBg: "1E3E62",
+    lightBg: "FFFFFF",
+    cardLightBg: "F0F9FF",
+    cardBorder: "BAE6FD",
+    primary: "065A82",
+    secondary: "1C7293",
+    accent: "0284C7",
+    textDark: "0F172A",
+    textMuted: "64748B",
+    textLight: "FFFFFF",
+    textLightMuted: "7DD3FC",
+    headerFont: "Cambria",
+    bodyFont: "Calibri"
+  }
+};
+
+function selectPPTXPalette(title: string, accentColor?: string): PPTXThemePalette {
+  const lower = (title + " " + (accentColor || "")).toLowerCase();
+  if (lower.includes("green") || lower.includes("forest") || lower.includes("eco") || lower.includes("sustain") || lower.includes("teal") || lower.includes("energy")) {
+    return PPTX_PALETTES.teal;
+  }
+  if (lower.includes("terracotta") || lower.includes("warm") || lower.includes("heritage") || lower.includes("legal") || lower.includes("culture")) {
+    return PPTX_PALETTES.terracotta;
+  }
+  if (lower.includes("ocean") || lower.includes("sea") || lower.includes("water") || lower.includes("cloud") || lower.includes("fintech")) {
+    return PPTX_PALETTES.ocean;
+  }
+  return PPTX_PALETTES.midnight;
+}
+
+function parsePPTXSlideContent(sec: AssembleSection) {
+  const rawText = sec.content || sec.brief || "";
+  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
+  const bullets: string[] = [];
+  let highlightMetric: string | null = null;
+  let presenterNotes: string | null = null;
+
+  lines.forEach((line) => {
+    if (line.includes("KEY METRIC:") || line.includes("HIGHLIGHT STAT:") || line.includes("💡")) {
+      highlightMetric = line
+        .replace(/^[>\s*#💡-]+/, "")
+        .replace(/\*\*KEY METRIC:\*\*/i, "")
+        .replace(/\[Source:[^\]]+\]\([^)]+\)/g, "")
+        .trim();
+    } else if (line.includes("PRESENTER NOTES:") || line.includes("🎙️") || line.includes("Speaker Notes:")) {
+      presenterNotes = line
+        .replace(/^[>\s*#🎙️-]+/, "")
+        .replace(/\*\*PRESENTER NOTES:\*\*/i, "")
+        .trim();
+    } else if (line.startsWith("*") || line.startsWith("-") || line.startsWith("•") || line.match(/^\d+\./)) {
+      const cleaned = line
+        .replace(/^[*•\-\d.]+\s*/, "")
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .trim();
+      if (cleaned.length > 5) bullets.push(cleaned);
+    } else if (line.length > 25 && !line.startsWith("#") && !line.startsWith(">")) {
+      const cleaned = line.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").trim();
+      bullets.push(cleaned);
+    }
+  });
+
+  if (bullets.length === 0 && sec.keyPoints && sec.keyPoints.length > 0) {
+    bullets.push(...sec.keyPoints);
+  }
+  if (bullets.length === 0 && sec.brief) {
+    bullets.push(sec.brief);
+  }
+
+  const titleLower = sec.title.toLowerCase();
+  let layoutType: "split" | "metrics" | "pillars" | "roadmap" = "split";
+
+  if (titleLower.includes("roadmap") || titleLower.includes("timeline") || titleLower.includes("phased") || titleLower.includes("execution")) {
+    layoutType = "roadmap";
+  } else if (titleLower.includes("metric") || titleLower.includes("financial") || titleLower.includes("benchmark") || titleLower.includes("growth") || titleLower.includes("economics")) {
+    layoutType = "metrics";
+  } else if (titleLower.includes("infrastructure") || titleLower.includes("technology") || titleLower.includes("competitive") || titleLower.includes("risk") || titleLower.includes("solution")) {
+    layoutType = "pillars";
+  }
+
+  const cleanNotes = presenterNotes || `Key executive briefing for ${sec.title}. Emphasize empirical evidence, operational milestones, and strategic relevance.`;
+
+  return { bullets, highlightMetric, presenterNotes: cleanNotes, layoutType };
+}
+
 export async function assemblePowerPoint(input: AssembleDocumentInput): Promise<Buffer> {
   const PptxClass = typeof pptxgen === "function" ? pptxgen : (pptxgen as any).default;
   const ppt = new PptxClass();
-  ppt.layout = "LAYOUT_16x9";
+  ppt.layout = "LAYOUT_16x9"; // 10.0" wide x 5.625" high
   ppt.title = input.title;
 
-  // Slide 1: Executive Title Cover Slide
+  const palette = selectPPTXPalette(input.title, input.accentColor);
+  let slideCounter = 1;
+
+  // ==========================================
+  // SLIDE 1: Title Slide (Dark Theme Sandwich Cover)
+  // ==========================================
   const slide1 = ppt.addSlide();
-  slide1.background = { color: "0F172A" }; // Deep Corporate Navy
+  slide1.background = { color: palette.darkBg };
 
-  // Top Accent Pill
+  // Top Pill Tag
   slide1.addShape(ppt.ShapeType.roundRect, {
-    x: 0.8, y: 0.8, w: 3.2, h: 0.35, fill: { color: "1E293B" }, line: { color: "38BDF8", width: 1 }
+    x: 0.8, y: 0.7, w: 2.8, h: 0.32,
+    fill: { color: palette.cardDarkBg },
+    line: { color: palette.accent, width: 1 },
+    rectRadius: 0.15
   });
-  slide1.addText("ACADEMIC & CORPORATE TREATISE", {
-    x: 0.8, y: 0.8, w: 3.2, h: 0.35,
-    fontFace: "Arial", fontSize: 10, color: "38BDF8", bold: true, align: "center"
+  slide1.addText("EXECUTIVE STRATEGY DECK", {
+    x: 0.8, y: 0.7, w: 2.8, h: 0.32,
+    fontFace: palette.bodyFont, fontSize: 9.5, color: palette.accent, bold: true, align: "center", margin: 0
   });
 
+  // Presentation Title (32pt Bold)
   slide1.addText(input.title, {
-    x: 0.8, y: 1.6, w: 11.5, h: 2.0,
-    fontFace: "Georgia", fontSize: 34, color: "FFFFFF", bold: true, wrap: true
+    x: 0.8, y: 1.3, w: 8.4, h: 1.8,
+    fontFace: palette.headerFont, fontSize: 32, color: palette.textLight, bold: true, wrap: true, margin: 0
   });
 
-  slide1.addText(input.subtitle, {
-    x: 0.8, y: 3.8, w: 11.5, h: 0.9,
-    fontFace: "Arial", fontSize: 15, color: "94A3B8", italic: true, wrap: true
+  // Subtitle
+  slide1.addText(input.subtitle || "Comprehensive Strategic Assessment & Empirical Analysis", {
+    x: 0.8, y: 3.2, w: 8.4, h: 0.8,
+    fontFace: palette.bodyFont, fontSize: 14, color: palette.textLightMuted, italic: true, wrap: true, margin: 0
   });
 
-  // Divider Line
-  slide1.addShape(ppt.ShapeType.line, {
-    x: 0.8, y: 5.0, w: 11.5, h: 0.0, line: { color: "334155", width: 1 }
+  // Metadata Footer
+  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  slide1.addText(`Prepared by: ${input.author || "Strategic Research Group"}   |   Date: ${dateStr}   |   16:9 Widescreen`, {
+    x: 0.8, y: 4.7, w: 8.4, h: 0.4,
+    fontFace: palette.bodyFont, fontSize: 10.5, color: palette.textLightMuted, margin: 0
   });
 
-  // Footer & Author Meta
-  slide1.addText(`Prepared by: ${input.author || "Academic & Corporate Review"}  |  Date: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, {
-    x: 0.8, y: 5.4, w: 11.5, h: 0.4,
-    fontFace: "Arial", fontSize: 11, color: "64748B"
-  });
+  slide1.addNotes(`Welcome everyone. Today we are presenting "${input.title}". We will review the strategic background, empirical data, architectural mechanics, and actionable recommendations.`);
 
-  // Slide 2: Executive Agenda & Taxonomy
+  // ==========================================
+  // SLIDE 2: Executive Agenda & Taxonomy (Light Canvas)
+  // ==========================================
+  slideCounter++;
   const slide2 = ppt.addSlide();
-  slide2.background = { color: "F8FAFC" };
+  slide2.background = { color: palette.lightBg };
 
-  slide2.addShape(ppt.ShapeType.rect, {
-    x: 0.8, y: 0.6, w: 11.7, h: 0.08, fill: { color: "0F172A" }
+  // Top Section Pill
+  slide2.addShape(ppt.ShapeType.roundRect, {
+    x: 0.8, y: 0.45, w: 1.8, h: 0.28,
+    fill: { color: palette.cardLightBg },
+    line: { color: palette.secondary, width: 1 },
+    rectRadius: 0.12
+  });
+  slide2.addText("TAXONOMY", {
+    x: 0.8, y: 0.45, w: 1.8, h: 0.28,
+    fontFace: palette.bodyFont, fontSize: 9, color: palette.secondary, bold: true, align: "center", margin: 0
   });
 
   slide2.addText("Executive Agenda & Content Taxonomy", {
-    x: 0.8, y: 0.8, w: 11.5, h: 0.6,
-    fontFace: "Georgia", fontSize: 22, color: "0F172A", bold: true
+    x: 0.8, y: 0.8, w: 8.4, h: 0.5,
+    fontFace: palette.headerFont, fontSize: 20, color: palette.textDark, bold: true, margin: 0
   });
 
-  const agendaColumns = 2;
-  const itemsPerCol = Math.ceil(input.sections.length / agendaColumns);
-  input.sections.slice(0, 16).forEach((sec, idx) => {
+  // 2-Column Grid of Agenda Items
+  const agendaList = input.sections.slice(0, 10);
+  const itemsPerCol = Math.ceil(agendaList.length / 2);
+
+  agendaList.forEach((sec, idx) => {
     const colIdx = Math.floor(idx / itemsPerCol);
     const rowIdx = idx % itemsPerCol;
-    const posX = colIdx === 0 ? 0.8 : 6.8;
-    const posY = 1.6 + (rowIdx * 0.55);
+    const posX = colIdx === 0 ? 0.8 : 5.1;
+    const posY = 1.45 + (rowIdx * 0.65);
+    const cleanTitle = sec.title.replace(/^\d+\.\s*/, "").replace(/^Slide \d+:\s*/, "");
 
-    slide2.addText(`${idx + 1}. ${sec.title.replace(/^\d+\.\s*/, "")}`, {
-      x: posX, y: posY, w: 5.6, h: 0.45,
-      fontFace: "Arial", fontSize: 11, color: "334155", bold: true
+    // Card Box
+    slide2.addShape(ppt.ShapeType.roundRect, {
+      x: posX, y: posY, w: 4.1, h: 0.52,
+      fill: { color: palette.cardLightBg },
+      line: { color: palette.cardBorder, width: 1 },
+      rectRadius: 0.1
+    });
+
+    // Number Badge
+    slide2.addText(String(idx + 1).padStart(2, "0"), {
+      x: posX + 0.12, y: posY + 0.1, w: 0.35, h: 0.32,
+      fontFace: palette.bodyFont, fontSize: 11, color: palette.secondary, bold: true, align: "center", margin: 0
+    });
+
+    // Title
+    slide2.addText(cleanTitle, {
+      x: posX + 0.55, y: posY + 0.1, w: 3.4, h: 0.32,
+      fontFace: palette.bodyFont, fontSize: 11, color: palette.textDark, bold: true, margin: 0
     });
   });
 
-  let slideCounter = 2;
+  slide2.addNotes("Here is our content taxonomy for today's briefing. We will move through each strategic domain systematically.");
 
-  // Content Slides: Clean Structured Corporate Layout
+  // Footer Slide 2
+  slide2.addText(`Slide ${slideCounter}  |  ${input.title.slice(0, 40)}`, {
+    x: 0.8, y: 5.15, w: 8.4, h: 0.3,
+    fontFace: palette.bodyFont, fontSize: 8.5, color: palette.textMuted, align: "right", margin: 0
+  });
+
+  // ==========================================
+  // CONTENT SLIDES (Multi-Layout Engine)
+  // ==========================================
   input.sections.forEach((sec, idx) => {
-    const rawParagraphs = (sec.content || sec.brief || "")
-      .split("\n\n")
-      .map((p) => p.trim())
-      .filter((p) => p.length > 0);
+    slideCounter++;
+    const slide = ppt.addSlide();
+    slide.background = { color: palette.lightBg };
 
-    const bulletItems: string[] = [];
-    rawParagraphs.forEach((para) => {
-      if (isMarkdownTable(para)) return; // Tables handled separately
-      const cleaned = para.replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1");
-      const sentences = cleaned.split(/(?<=[.?!])\s+/);
-      let currentBullet = "";
-      sentences.forEach((sent) => {
-        if ((currentBullet + " " + sent).length < 220) {
-          currentBullet += (currentBullet ? " " : "") + sent;
-        } else {
-          if (currentBullet) bulletItems.push(currentBullet);
-          currentBullet = sent;
-        }
-      });
-      if (currentBullet) bulletItems.push(currentBullet);
+    const { bullets, highlightMetric, presenterNotes, layoutType } = parsePPTXSlideContent(sec);
+    const cleanTitle = sec.title.replace(/^\d+\.\s*/, "").replace(/^Slide \d+:\s*/, "");
+
+    // Common Header Tag & Title
+    slide.addShape(ppt.ShapeType.roundRect, {
+      x: 0.8, y: 0.45, w: 1.4, h: 0.26,
+      fill: { color: palette.cardLightBg },
+      line: { color: palette.secondary, width: 1 },
+      rectRadius: 0.1
+    });
+    slide.addText(`SECTION ${idx + 1}`, {
+      x: 0.8, y: 0.45, w: 1.4, h: 0.26,
+      fontFace: palette.bodyFont, fontSize: 8.5, color: palette.secondary, bold: true, align: "center", margin: 0
     });
 
-    const itemsPerSlide = 3;
-    const totalSlideParts = Math.max(1, Math.ceil(bulletItems.length / itemsPerSlide));
+    slide.addText(cleanTitle, {
+      x: 0.8, y: 0.78, w: 8.4, h: 0.48,
+      fontFace: palette.headerFont, fontSize: 19, color: palette.textDark, bold: true, margin: 0
+    });
 
-    for (let part = 0; part < totalSlideParts; part++) {
-      slideCounter++;
-      const slide = ppt.addSlide();
-      slide.background = { color: "F8FAFC" };
+    // RENDER BY LAYOUT TYPE
+    if (layoutType === "metrics") {
+      // ----------------------------------------
+      // LAYOUT B: 3-Card Big Stat & KPI Highlights
+      // ----------------------------------------
+      const metricCards = [
+        {
+          label: "Primary Metric",
+          stat: highlightMetric ? highlightMetric.split(" ")[0] : "+48.5%",
+          desc: highlightMetric || bullets[0] || "Empirical baseline improvement observed across core benchmark parameters."
+        },
+        {
+          label: "Operational Velocity",
+          stat: "3.4x",
+          desc: bullets[1] || "Quantified efficiency multiplier across strategic workflows and system integrations."
+        },
+        {
+          label: "Target Alignment",
+          stat: "99.8%",
+          desc: bullets[2] || "High-fidelity compliance with institutional SLAs and regulatory governance standards."
+        }
+      ];
 
-      // Top Consistent Header Bar
-      slide.addShape(ppt.ShapeType.rect, {
-        x: 0.8, y: 0.5, w: 11.7, h: 0.06, fill: { color: "0284C7" }
+      metricCards.forEach((card, cIdx) => {
+        const posX = 0.8 + (cIdx * 2.9);
+        // Card Box
+        slide.addShape(ppt.ShapeType.roundRect, {
+          x: posX, y: 1.45, w: 2.65, h: 3.5,
+          fill: { color: palette.cardLightBg },
+          line: { color: palette.cardBorder, width: 1 },
+          rectRadius: 0.15
+        });
+
+        // Pill
+        slide.addText(card.label.toUpperCase(), {
+          x: posX + 0.2, y: 1.7, w: 2.25, h: 0.25,
+          fontFace: palette.bodyFont, fontSize: 8.5, color: palette.secondary, bold: true, margin: 0
+        });
+
+        // Large Stat Callout
+        slide.addText(card.stat, {
+          x: posX + 0.2, y: 2.05, w: 2.25, h: 0.7,
+          fontFace: palette.headerFont, fontSize: 28, color: palette.primary, bold: true, margin: 0
+        });
+
+        // Description
+        slide.addText(card.desc, {
+          x: posX + 0.2, y: 2.85, w: 2.25, h: 1.8,
+          fontFace: palette.bodyFont, fontSize: 11, color: palette.textDark, wrap: true, margin: 0
+        });
+      });
+    } else if (layoutType === "pillars") {
+      // ----------------------------------------
+      // LAYOUT C: 3 Strategic Pillar Columns
+      // ----------------------------------------
+      const pillars = [
+        { label: "01. Architecture & Protocol", points: bullets.slice(0, 2) },
+        { label: "02. Operational Scaling", points: bullets.slice(2, 4) },
+        { label: "03. Governance & Controls", points: bullets.slice(4, 6) }
+      ];
+
+      pillars.forEach((pillar, pIdx) => {
+        const posX = 0.8 + (pIdx * 2.9);
+        slide.addShape(ppt.ShapeType.roundRect, {
+          x: posX, y: 1.45, w: 2.65, h: 3.5,
+          fill: { color: palette.cardLightBg },
+          line: { color: palette.cardBorder, width: 1 },
+          rectRadius: 0.15
+        });
+
+        slide.addText(pillar.label, {
+          x: posX + 0.2, y: 1.65, w: 2.25, h: 0.35,
+          fontFace: palette.bodyFont, fontSize: 11, color: palette.primary, bold: true, margin: 0
+        });
+
+        const pillarBullets = (pillar.points.length > 0 ? pillar.points : [bullets[pIdx] || sec.brief]).map((text) => ({
+          text,
+          options: {
+            bullet: true,
+            fontFace: palette.bodyFont,
+            fontSize: 10.5,
+            color: palette.textDark,
+            paraSpaceAfter: 8
+          }
+        }));
+
+        slide.addText(pillarBullets, {
+          x: posX + 0.2, y: 2.1, w: 2.25, h: 2.6,
+          margin: 0
+        });
+      });
+    } else if (layoutType === "roadmap") {
+      // ----------------------------------------
+      // LAYOUT D: Horizontal Phased Roadmap / Timeline
+      // ----------------------------------------
+      const phases = [
+        { tag: "PHASE 1 (M1-M6)", title: "Foundational Deployment", desc: bullets[0] || "Core architecture setup, initial pilot integration, and validation baseline." },
+        { tag: "PHASE 2 (M7-M18)", title: "Enterprise Scaling", desc: bullets[1] || "Cross-functional rollout, volume expansion, and automated monitoring protocols." },
+        { tag: "PHASE 3 (M19-M36)", title: "Ecosystem Leadership", desc: bullets[2] || "Autonomous optimization, network effect capture, and long-term margin resilience." }
+      ];
+
+      phases.forEach((ph, phIdx) => {
+        const posX = 0.8 + (phIdx * 2.9);
+        slide.addShape(ppt.ShapeType.roundRect, {
+          x: posX, y: 1.45, w: 2.65, h: 3.5,
+          fill: { color: palette.cardLightBg },
+          line: { color: palette.cardBorder, width: 1 },
+          rectRadius: 0.15
+        });
+
+        // Phase Tag Pill
+        slide.addShape(ppt.ShapeType.roundRect, {
+          x: posX + 0.18, y: 1.65, w: 1.8, h: 0.26,
+          fill: { color: palette.lightBg },
+          line: { color: palette.secondary, width: 1 },
+          rectRadius: 0.1
+        });
+        slide.addText(ph.tag, {
+          x: posX + 0.18, y: 1.65, w: 1.8, h: 0.26,
+          fontFace: palette.bodyFont, fontSize: 8.5, color: palette.secondary, bold: true, align: "center", margin: 0
+        });
+
+        // Title
+        slide.addText(ph.title, {
+          x: posX + 0.18, y: 2.05, w: 2.25, h: 0.45,
+          fontFace: palette.bodyFont, fontSize: 12, color: palette.textDark, bold: true, margin: 0
+        });
+
+        // Description
+        slide.addText(ph.desc, {
+          x: posX + 0.18, y: 2.6, w: 2.25, h: 2.1,
+          fontFace: palette.bodyFont, fontSize: 11, color: palette.textDark, wrap: true, margin: 0
+        });
+      });
+    } else {
+      // ----------------------------------------
+      // LAYOUT A: Split 2-Column Focus + Evidence (Default)
+      // ----------------------------------------
+      // Left Card: Executive Scope & Key Stat
+      slide.addShape(ppt.ShapeType.roundRect, {
+        x: 0.8, y: 1.45, w: 2.8, h: 3.5,
+        fill: { color: palette.cardLightBg },
+        line: { color: palette.cardBorder, width: 1 },
+        rectRadius: 0.15
       });
 
-      const displayTitle = totalSlideParts > 1
-        ? `${idx + 1}. ${sec.title.replace(/^\d+\.\s*/, "")} (Part ${part + 1}/${totalSlideParts})`
-        : `${idx + 1}. ${sec.title.replace(/^\d+\.\s*/, "")}`;
-
-      slide.addText(displayTitle, {
-        x: 0.8, y: 0.7, w: 11.5, h: 0.6,
-        fontFace: "Georgia", fontSize: 20, color: "0F172A", bold: true
+      slide.addText("EXECUTIVE FOCUS", {
+        x: 1.0, y: 1.65, w: 2.4, h: 0.25,
+        fontFace: palette.bodyFont, fontSize: 9, color: palette.secondary, bold: true, margin: 0
       });
 
-      // Left Column: Executive Scope Card
-      slide.addShape(ppt.ShapeType.rect, {
-        x: 0.8, y: 1.5, w: 3.6, h: 4.8,
-        fill: { color: "FFFFFF" }, line: { color: "CBD5E1", width: 1 }
+      slide.addText(sec.brief || "Strategic analysis of operational factors, empirical metrics, and deployment directives.", {
+        x: 1.0, y: 2.0, w: 2.4, h: highlightMetric ? 1.5 : 2.6,
+        fontFace: palette.bodyFont, fontSize: 11, color: palette.textDark, italic: true, wrap: true, margin: 0
       });
 
-      slide.addShape(ppt.ShapeType.rect, {
-        x: 0.8, y: 1.5, w: 0.1, h: 4.8, fill: { color: "0284C7" }
+      if (highlightMetric) {
+        slide.addShape(ppt.ShapeType.roundRect, {
+          x: 1.0, y: 3.65, w: 2.4, h: 1.05,
+          fill: { color: palette.lightBg },
+          line: { color: palette.accent, width: 1 },
+          rectRadius: 0.1
+        });
+        slide.addText("KEY METRIC", {
+          x: 1.1, y: 3.75, w: 2.2, h: 0.2,
+          fontFace: palette.bodyFont, fontSize: 8, color: palette.secondary, bold: true, margin: 0
+        });
+        slide.addText(highlightMetric, {
+          x: 1.1, y: 4.0, w: 2.2, h: 0.6,
+          fontFace: palette.headerFont, fontSize: 11, color: palette.primary, bold: true, wrap: true, margin: 0
+        });
+      }
+
+      // Right Card: Strategic Findings & Takeaways
+      slide.addShape(ppt.ShapeType.roundRect, {
+        x: 3.8, y: 1.45, w: 5.4, h: 3.5,
+        fill: { color: palette.lightBg },
+        line: { color: palette.cardBorder, width: 1 },
+        rectRadius: 0.15
       });
 
-      slide.addText("EXECUTIVE FOCUS & SCOPE", {
-        x: 1.1, y: 1.8, w: 3.1, h: 0.4,
-        fontFace: "Arial", fontSize: 10, color: "0284C7", bold: true
+      slide.addText("STRATEGIC FINDINGS & EMPIRICAL EVIDENCE", {
+        x: 4.05, y: 1.65, w: 4.9, h: 0.25,
+        fontFace: palette.bodyFont, fontSize: 9, color: palette.primary, bold: true, margin: 0
       });
 
-      slide.addText(sec.brief, {
-        x: 1.1, y: 2.3, w: 3.1, h: 3.6,
-        fontFace: "Arial", fontSize: 12.5, color: "334155", italic: true, lineSpacing: 18
-      });
-
-      // Right Column: Empirical Takeaways Card
-      slide.addShape(ppt.ShapeType.rect, {
-        x: 4.7, y: 1.5, w: 7.8, h: 4.8,
-        fill: { color: "FFFFFF" }, line: { color: "CBD5E1", width: 1 }
-      });
-
-      slide.addText("EMPIRICAL FINDINGS & STRATEGIC INSIGHTS", {
-        x: 5.0, y: 1.8, w: 7.2, h: 0.4,
-        fontFace: "Arial", fontSize: 10, color: "0F172A", bold: true
-      });
-
-      const currentChunk = bulletItems.slice(part * itemsPerSlide, (part + 1) * itemsPerSlide);
-      const textObjects = currentChunk.map((item) => ({
+      const bulletObjs = bullets.slice(0, 4).map((item) => ({
         text: item,
         options: {
           bullet: true,
-          fontFace: "Arial",
-          fontSize: 12,
-          color: "1E293B",
-          lineSpacing: 18,
+          fontFace: palette.bodyFont,
+          fontSize: 11.5,
+          color: palette.textDark,
           paraSpaceAfter: 10
         }
       }));
 
-      slide.addText(textObjects, {
-        x: 5.0, y: 2.3, w: 7.2, h: 3.8,
-        valign: "top"
-      });
-
-      // Footer Slide Number
-      slide.addText(`Paperrrrrr Academic Deck  |  Slide ${slideCounter}`, {
-        x: 0.8, y: 6.8, w: 11.7, h: 0.3,
-        fontFace: "Arial", fontSize: 9.5, color: "94A3B8", align: "right"
+      slide.addText(bulletObjs, {
+        x: 4.05, y: 2.05, w: 4.9, h: 2.65,
+        margin: 0
       });
     }
+
+    // Slide Notes
+    slide.addNotes(presenterNotes);
+
+    // Footer
+    slide.addText(`Slide ${slideCounter}  |  ${input.title.slice(0, 40)}`, {
+      x: 0.8, y: 5.15, w: 8.4, h: 0.3,
+      fontFace: palette.bodyFont, fontSize: 8.5, color: palette.textMuted, align: "right", margin: 0
+    });
   });
 
-  // Concluding Slide
+  // ==========================================
+  // CONCLUDING SLIDE: Synthesis & Verdict (Dark Sandwich Back)
+  // ==========================================
   slideCounter++;
   const finalSlide = ppt.addSlide();
-  finalSlide.background = { color: "0F172A" };
+  finalSlide.background = { color: palette.darkBg };
 
-  finalSlide.addText("Synthesis & Strategic Verdict", {
-    x: 0.8, y: 1.5, w: 11.5, h: 1.2,
-    fontFace: "Georgia", fontSize: 30, color: "FFFFFF", bold: true
+  finalSlide.addShape(ppt.ShapeType.roundRect, {
+    x: 0.8, y: 0.8, w: 2.6, h: 0.32,
+    fill: { color: palette.cardDarkBg },
+    line: { color: palette.accent, width: 1 },
+    rectRadius: 0.15
+  });
+  finalSlide.addText("STRATEGIC VERDICT", {
+    x: 0.8, y: 0.8, w: 2.6, h: 0.32,
+    fontFace: palette.bodyFont, fontSize: 9.5, color: palette.accent, bold: true, align: "center", margin: 0
   });
 
-  finalSlide.addText("Rigorous empirical synthesis complete. Prepared for institutional and academic evaluation.", {
-    x: 0.8, y: 2.8, w: 11.5, h: 0.8,
-    fontFace: "Arial", fontSize: 15, color: "94A3B8", italic: true
+  finalSlide.addText("Synthesis & Strategic Directives", {
+    x: 0.8, y: 1.4, w: 8.4, h: 0.8,
+    fontFace: palette.headerFont, fontSize: 28, color: palette.textLight, bold: true, margin: 0
   });
 
-  finalSlide.addText("Thank You • Questions & Discussion", {
-    x: 0.8, y: 4.8, w: 11.5, h: 0.6,
-    fontFace: "Arial", fontSize: 18, color: "38BDF8", bold: true
+  finalSlide.addText("Comprehensive empirical synthesis complete. Architectural paradigms, market sizing, and execution milestones are aligned for institutional deployment.", {
+    x: 0.8, y: 2.3, w: 8.4, h: 0.9,
+    fontFace: palette.bodyFont, fontSize: 13, color: palette.textLightMuted, italic: true, wrap: true, margin: 0
   });
+
+  // Callout Action Box
+  finalSlide.addShape(ppt.ShapeType.roundRect, {
+    x: 0.8, y: 3.5, w: 8.4, h: 1.1,
+    fill: { color: palette.cardDarkBg },
+    line: { color: palette.accent, width: 1 },
+    rectRadius: 0.15
+  });
+
+  finalSlide.addText("Thank You   •   Questions & Discussion", {
+    x: 0.8, y: 3.65, w: 8.4, h: 0.4,
+    fontFace: palette.bodyFont, fontSize: 16, color: palette.accent, bold: true, align: "center", margin: 0
+  });
+  finalSlide.addText("Prepared for institutional review and executive decision-making.", {
+    x: 0.8, y: 4.1, w: 8.4, h: 0.35,
+    fontFace: palette.bodyFont, fontSize: 11, color: palette.textLightMuted, align: "center", margin: 0
+  });
+
+  finalSlide.addNotes("Thank you for your time. We are now open for executive questions, strategic evaluation, and discussion on next steps.");
 
   const buffer = (await ppt.stream()) as Buffer;
   return buffer;
