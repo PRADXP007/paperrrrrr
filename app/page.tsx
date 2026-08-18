@@ -1088,6 +1088,8 @@ export default function PaperrrrrrApp() {
                     title: projectTitleOverride || targetOutline.title,
                     subtitle: targetOutline.subtitle,
                     format: targetOutline.format || format,
+                    docType,
+                    isIEEEPaper: docType === "Research Paper" || docType === "IEEE Research Paper" || (targetOutline.title || "").toLowerCase().includes("ieee"),
                     sections: compiledSections,
                     chapters: compiledSections,
                     selectedFont,
