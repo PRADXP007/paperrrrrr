@@ -9,6 +9,7 @@
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![TailwindCSS v4](https://img.shields.io/badge/TailwindCSS-v4-38BDF8?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+[![Lenis Smooth Scroll](https://img.shields.io/badge/Lenis-Smooth%20Scroll-black?style=for-the-badge)](https://lenis.darkroom.engineering/)
 
 [**Explore Live Demo 🚀**](https://paperrrrrr.vercel.app) • [**Report Bug / Feedback**](https://github.com/PRADXP007/paperrrrrr/issues)
 
@@ -63,12 +64,14 @@ The production application is live and hosted on Vercel:
 - **Topic-Informed Palettes**: Automatically selects harmonious color palettes (60–70% dominant, supporting secondary, sharp accent).
 - **Native Speaker Notes**: Every slide contains presenter talking points in `slide.addNotes()`.
 
-### 3. 🔍 Empirical Grounding & Anti-Hallucination Engine
+### 3. 🔍 Empirical Grounding & HALLMARK Anti-AI-Smell Protocol
 - **Live Multi-Source Web Retrieval**: Queries live web datasets via Tavily API before generation.
 - **Zero Fabricated Numbers**: All quantitative data points, CAGR metrics, and benchmarks are grounded in real research snippets with authentic citation links.
+- **HALLMARK De-AI Prompt Architecture**: Strict negative constraints against generic AI clichés, robotic triplets (`Academic & Analytical`), uniform sentence cadence, and tell-words (*delve, tapestry, beacon, testament, elevate, cutting-edge*).
 - **Streaming Generation**: Real-time Server-Sent Events (SSE) streaming updates the UI chapter-by-chapter.
 
-### 4. 🖥️ Interactive Deck & Document Studio UI
+### 4. 🌊 Fluid UI & Lenis Smooth Scrolling
+- **Lenis Smooth Scroll**: 60–120fps physics-based momentum smooth scroll with anchor link support and accessibility compliance (`prefers-reduced-motion`).
 - **In-Browser Slide Viewer**: Full HD 1080p preview with single-slide view, full-deck grid gallery, thumbnail selector, and speaker notes toggle.
 - **Dynamic Word & Page Budgeter**: Real-time calculations for word counts, chapters, and printed pages based on document depth settings.
 - **Custom Model & Key Support**: Bring your own Google Gemini or OpenAI API keys directly in the UI.
@@ -82,6 +85,7 @@ The production application is live and hosted on Vercel:
 | **Framework** | [Next.js 16](https://nextjs.org/) (App Router, Turbopack, Server Actions, Route Handlers) |
 | **Language** | [TypeScript 5](https://www.typescriptlang.org/) |
 | **Frontend UI** | [React 19](https://react.dev/), [TailwindCSS v4](https://tailwindcss.com/), [Lucide Icons](https://lucide.dev/) |
+| **Smooth Scroll** | [Lenis](https://lenis.darkroom.engineering/) |
 | **Document Generation** | [`docx`](https://docx.js.org/) (Word .docx), [`pptxgenjs`](https://gitbrent.github.io/PptxGenJS/) (PowerPoint .pptx), [`pdfkit`](https://pdfkit.org/) (PDF) |
 | **AI Models** | [Google Gemini](https://ai.google.dev/) (`@google/genai` - `gemini-2.5-flash`, `gemini-3.6-flash`), [OpenAI](https://openai.com/) (`gpt-4o-mini`) |
 | **Live Research** | [Tavily AI Search](https://tavily.com/) (`@tavily/core`) |
@@ -101,24 +105,33 @@ paperrrrrr/
 ├── app/                          # Next.js 16 App Router
 │   ├── api/                      # Backend API Route Handlers
 │   │   ├── assemble/             # Assembles binary .docx, .pptx, .pdf files
+│   │   ├── auth/                 # User authentication & session handling
+│   │   ├── documents/            # Saved documents library endpoint
+│   │   ├── generate-section/     # Single section regeneration
 │   │   ├── generate-stream/      # SSE streaming document generator
 │   │   ├── outline/              # Structured outline synthesis
 │   │   └── research/             # Tavily live web research endpoint
-│   ├── layout.tsx                # Root layout and theme providers
+│   ├── layout.tsx                # Root layout, theme & SmoothScrollProvider
+│   ├── manifest.ts               # PWA web manifest definition
 │   └── page.tsx                  # Document Maker Studio main application
 ├── components/                   # Reusable UI component library
+│   ├── PaperrrrrrLogo.tsx        # Custom vector branding mark
+│   ├── SmoothScrollProvider.tsx  # Lenis smooth scroll React context provider
 │   └── untitledui/               # PPTXDeckViewer, Buttons, Badges, Modals
 ├── lib/                          # Core business logic & engines
 │   ├── ai.ts                     # AI orchestration, prompt engineering & schemas
 │   ├── assembler.ts              # DOCX, IEEE, PPTX, and PDF binary builders
+│   ├── auth.ts                   # JWT session validation
 │   ├── localStore.ts             # Client-side fallback storage
 │   ├── mongodb.ts                # Database connection helper
+│   ├── ratelimit.ts              # Token-bucket API rate limiter
 │   └── tavily.ts                 # Live search & snippet curation
-├── models/                       # Mongoose data schemas
+├── models/                       # Mongoose data schemas (User, Document)
 ├── scripts/                      # Verification and test suites
+│   ├── test-all-formats.cjs      # End-to-end multi-format verification
+│   ├── test-docx.cjs             # Word document builder test
 │   ├── test-ieee.cjs             # IEEE 2-column Word document test
-│   ├── test-ppt.cjs              # Modern multi-layout PPTX test
-│   └── test-all-formats.cjs      # End-to-end multi-format verification
+│   └── test-ppt.cjs              # Modern multi-layout PPTX test
 ├── package.json
 └── README.md
 ```
@@ -168,14 +181,17 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🧪 Testing Document Generation
 
-Run the standalone CLI test suites to generate sample documents locally:
+Run the standalone verification suites to test document compilation locally:
 
 ```bash
+# Test all document formats (DOCX, IEEE, PPTX, PDF)
+npm test
+
 # Test IEEE 2-Column Standard Word Document (.docx)
-npx tsx scripts/test-ieee.cjs
+npm run test:ieee
 
 # Test Modern Multi-Layout PowerPoint Presentation (.pptx)
-node scripts/test-ppt.cjs
+npm run test:ppt
 ```
 
 ---
