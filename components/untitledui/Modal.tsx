@@ -81,11 +81,11 @@ export function Modal({
               </div>
             )}
             <div className="flex flex-col">
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-snug">
+              <h3 className="text-base sm:text-lg font-bold text-gray-950 leading-snug">
                 {title}
               </h3>
               {description && (
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">
                   {description}
                 </p>
               )}
@@ -96,7 +96,7 @@ export function Modal({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <X className="size-4" />
           </button>
@@ -109,7 +109,7 @@ export function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="p-5 sm:p-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-3 bg-gray-50/50 dark:bg-gray-950/40">
+          <div className="p-5 sm:p-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-3 bg-gray-50/50">
             {footer}
           </div>
         )}

@@ -129,13 +129,7 @@ export function PaperrrrrrLogo({
       {/* Wordmark Lockup */}
       {showWordmark && (
         <span
-          className={`font-serif ${textDimensions} font-bold tracking-tight transition-colors ${
-            theme === "dark"
-              ? "text-white"
-              : theme === "light"
-              ? "text-gray-950"
-              : "text-gray-950 dark:text-white"
-          }`}
+          className={`font-serif ${textDimensions} font-bold tracking-tight text-[#111215] select-none`}
         >
           Paperrrrrr
         </span>

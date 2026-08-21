@@ -24,16 +24,16 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-[#7F56D9] text-white hover:bg-[#6941C6] active:bg-[#53389E] dark:bg-[#7F56D9] dark:hover:bg-[#6941C6] dark:active:bg-[#53389E] dark:text-white font-semibold shadow-sm border border-[#7F56D9] focus-visible:ring-4 focus-visible:ring-[#7F56D9]/20",
+    "bg-[#C3644B] text-white hover:bg-[#97422C] active:bg-[#7D3421] font-semibold shadow-sm border border-[#C3644B] focus-visible:ring-4 focus-visible:ring-[#C3644B]/20",
   secondary_gray:
-    "bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 font-semibold shadow-xs focus-visible:ring-4 focus-visible:ring-gray-200 dark:focus-visible:ring-gray-800",
+    "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 active:bg-gray-100 font-semibold shadow-xs focus-visible:ring-4 focus-visible:ring-gray-200",
   secondary_color:
-    "bg-[#F9F5FF] dark:bg-[#2C1C5F]/60 text-[#6941C6] dark:text-[#E9D7FE] border border-[#E9D7FE] dark:border-[#53389E] hover:bg-[#F4EBFF] active:bg-[#E9D7FE] font-semibold focus-visible:ring-4 focus-visible:ring-[#7F56D9]/20",
+    "bg-[#FFF4F0] text-[#97422C] border border-[#FFD5C8] hover:bg-[#FFEAE2] active:bg-[#FFD5C8] font-semibold focus-visible:ring-4 focus-visible:ring-[#C3644B]/20",
   tertiary_gray:
-    "bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800/80 active:bg-gray-200 font-semibold focus-visible:ring-4 focus-visible:ring-gray-200",
+    "bg-transparent text-gray-800 hover:bg-gray-100 active:bg-gray-200 font-semibold focus-visible:ring-4 focus-visible:ring-gray-200",
   destructive:
     "bg-[#D92D20] text-white hover:bg-[#B42318] active:bg-[#912018] font-semibold shadow-xs focus-visible:ring-4 focus-visible:ring-[#FDA29B]",
-  link: "bg-transparent text-[#6941C6] dark:text-[#9E77ED] hover:underline p-0 h-auto font-semibold focus-visible:ring-2 focus-visible:ring-[#7F56D9]",
+  link: "bg-transparent text-[#C3644B] hover:underline p-0 h-auto font-semibold focus-visible:ring-2 focus-visible:ring-[#C3644B]",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
