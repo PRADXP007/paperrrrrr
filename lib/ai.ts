@@ -697,7 +697,7 @@ Strict Structural Requirements:
 
   // 1. Primary AI Provider: Google Gemini (@google/genai)
   if (geminiApiKey) {
-    const requestedModel = options.geminiModel || "gemini-3.6-flash";
+    const requestedModel = options.geminiModel || "gemini-2.5-flash";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
@@ -864,7 +864,7 @@ ${formatInstruction}
 
   // 1. Primary AI Provider: Google Gemini (@google/genai)
   if (geminiApiKey) {
-    const requestedModel = customKeys?.geminiModel || "gemini-3.6-flash";
+    const requestedModel = customKeys?.geminiModel || "gemini-2.5-flash";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
@@ -1035,7 +1035,7 @@ STRICT EMPIRICAL GROUNDING & ZERO-HALLUCINATION RULES:
 6. Return the COMPLETE, expanded section markdown.`;
 
   if (geminiApiKey) {
-    const requestedModel = customKeys?.geminiModel || "gemini-3.6-flash";
+    const requestedModel = customKeys?.geminiModel || "gemini-2.5-flash";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
@@ -1169,7 +1169,7 @@ Instructions:
 - Return ONLY the revised markdown prose.`;
 
   if (geminiApiKey) {
-    const requestedModel = customKeys?.geminiModel || "gemini-3.6-flash";
+    const requestedModel = customKeys?.geminiModel || "gemini-2.5-flash";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;

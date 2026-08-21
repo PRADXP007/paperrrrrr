@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       userInstruction,
       customGeminiKey,
       customOpenAIKey,
-      geminiModel = "gemini-3.6-flash"
+      geminiModel = "gemini-2.5-flash"
     } = body;
 
     if (!section || !section.id) {

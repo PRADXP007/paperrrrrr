@@ -104,7 +104,7 @@ export default function PaperrrrrrApp() {
 
   // BYOK Settings State
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [geminiModel, setGeminiModel] = useState<string>("gemini-3.6-flash");
+  const [geminiModel, setGeminiModel] = useState<string>("gemini-2.5-flash");
   const [customGeminiKeyInput, setCustomGeminiKeyInput] = useState("");
   const [customOpenAIKeyInput, setCustomOpenAIKeyInput] = useState("");
   const [hasCustomGeminiKey, setHasCustomGeminiKey] = useState(false);
@@ -1252,8 +1252,8 @@ export default function PaperrrrrrApp() {
                 <span>
                   {hasCustomGeminiKey
                     ? `BYOK (${geminiKeyMasked})`
-                    : geminiModel === "gemini-3.6-flash"
-                    ? "Gemini 3.6 Flash"
+                    : geminiModel === "gemini-2.5-flash"
+                    ? "Gemini 2.5 Flash"
                     : geminiModel}
                 </span>
               </button>
