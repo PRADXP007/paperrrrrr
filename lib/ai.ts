@@ -639,13 +639,13 @@ export async function generateStructuredOutline(
     "Research Report": `Structure as a rigorous multi-chapter Academic Project Report with exactly ${docBudget.chapterCount} chapters, each with ${docBudget.subsectionsPerChapterMin} to ${docBudget.subsectionsPerChapterMax} subsections (e.g., 1.1, 1.2, 1.3). Total target output: ~${docBudget.pageCount} printed pages (~${docBudget.totalTargetWords.toLocaleString()} words).`,
     "Academic Essay": "Structure as a formal Academic Essay: Introduction & Thesis Statement, Theoretical Foundations & Counter-arguments, Critical Textual Synthesis, and Scholarly Conclusion.",
     "Literature Review": "Structure as a formal Literature Review: Methodological Scope & Taxonomy, Synthesis of Contemporary Scholarship, Empirical Gaps & Divergences, and Future Research Agenda.",
-    "Freeform Summary": "Structure as a concise Freeform Executive Summary: Core Takeaways, Structural Analysis of Themes, and Actionable Next Steps."
+    "Freeform Summary": "Structure as a concise Executive Summary: Core Takeaways, Structural Analysis of Themes, and Actionable Next Steps."
   };
 
   const systemPrompt = `You are Paperrrrrr's Lead Academic Document Architect. Output ONLY valid JSON matching this exact nested schema:
 {
   "title": "Document Title",
-  "subtitle": "An Exhaustive Multi-Chapter Strategic & Empirical Treatise",
+  "subtitle": "Comprehensive Academic & Empirical Project Report",
   "docType": "${docType}",
   "format": "${options.format || "docx"}",
   "targetLength": "${docBudget.label}",
@@ -679,8 +679,8 @@ export async function generateStructuredOutline(
 
 Document Type: ${docType} (${docTypePromptInstructions[docType] || docTypePromptInstructions["Research Report"]})
 Target Format: ${options.format || "docx"}
-Target Tone: ${options.tone || "Academic & Analytical"}
-Target Audience: ${options.audience || "Researchers, Faculty & Institutional Leaders"}
+Target Tone: ${options.tone || "Academic Paper"}
+Target Audience: ${options.audience || "Researchers & Practitioners"}
 Target Length: ${docBudget.label} (Explicit target: ~${docBudget.pageCount} printed pages, ~${docBudget.totalTargetWords.toLocaleString()} words across ${docBudget.chapterCount} chapters)
 
 ${options.referenceNotes ? `User Provided Background / Reference Notes:\n${options.referenceNotes}\n` : ""}
@@ -849,12 +849,16 @@ ${customKeys?.additionalRequirements ? `User Additional Requirements:\n${customK
 Filtered Research Snippets for this section ONLY:
 ${JSON.stringify(filteredSources, null, 2)}
 
-STRICT EMPIRICAL GROUNDING & ANTI-HALLUCINATION INSTRUCTIONS:
+STRICT EMPIRICAL GROUNDING & ANTI-AI-SMELL (HALLMARK) INSTRUCTIONS:
 1. ZERO FABRICATED NUMBERS: Every single quantitative statistic, percentage, dollar figure, and performance metric MUST come directly and verifiably from the provided Research Snippets above.
-2. If the retrieved Research Snippets DO NOT contain a specific quantitative metric for a given subtopic, you MUST discuss that topic conceptually, theoretically, and architecturally using qualitative domain analysis. DO NOT fabricate, guess, or invent plausible-sounding numbers, percentage improvements, or p-values.
+2. If the retrieved Research Snippets DO NOT contain a specific quantitative metric for a given subtopic, discuss that topic conceptually, theoretically, and architecturally using qualitative domain analysis. DO NOT fabricate, guess, or invent plausible-sounding numbers or percentage improvements.
 3. AUTHENTIC CITATIONS: Every markdown citation like [Source: Organization](URL) MUST reference a real URL from the provided Research Snippets. Never invent fake URLs or cite unrelated sources.
 4. NO TEMPLATED REPETITION: Every subsection must feature distinct arguments, operational mechanics, and synthesis. Do NOT repeat paragraph structures or copy-paste identical sentences.
-5. NATURAL HUMAN SYNTAX (AI Detection Score < 6%): Avoid stereotypical AI boilerplate phrases ('delve into', 'in conclusion', 'in this fast-paced world', 'testament to', 'crucial to note', 'beacon of', 'vibrant tapestry', 'it goes without saying'). Use genuine academic human tone with varied rhythm and burstiness.
+5. COMPLETE DE-AI / HUMANIZED SYNTAX (Zero AI Tell-Signs):
+   - PROHIBITED AI TELL-WORDS: Strictly NEVER use "delve", "tapestry", "beacon", "testament", "elevate", "cutting-edge", "game-changer", "seamless", "realm", "crucial", "harness", "leverage", "moreover", "furthermore", "in conclusion", "it is worth noting", "in this fast-paced world", "it goes without saying", "serves as a reminder", "intertwined".
+   - NO RULE-OF-THREE EPIDEMIC: Do not force symmetrical 3-item lists or triplet adjectives. Write natural, asymmetrical sentences.
+   - NO AI SANDWICH FORMULAS: Avoid generic introductions ("In today's landscape...") and redundant wrap-ups ("Overall, it is important to..."). Dive straight into the technical substance.
+   - BURSTINESS & RHYTHMIC VARIATION: Mix short, punchy declarative statements with detailed analytical explanations. Use active verbs and precise engineering/scholarly terminology.
 ${formatInstruction}
 - Output ONLY the section body markdown.`;
 
@@ -903,20 +907,20 @@ ${formatInstruction}
 
   // 3. Dynamic Section Prose Synthesizer strictly referencing the filtered research and brief
   if (filteredSources.length === 0 && !section.brief) {
-    return "[Generation Warning: This section could not be generated due to insufficient research context. Please retry with additional search queries.]";
+    return "[Section could not be generated due to insufficient source context. Please retry with additional search queries.]";
   }
 
   const citations = filteredSources
     .map((s) => `[Source: ${s.title}](${s.url})`)
     .join(", ");
 
-  let prefix = `The analysis for **${section.title}** examines the core dynamics of ${section.brief.toLowerCase()}`;
+  let prefix = `Section **${section.title}** addresses ${section.brief.toLowerCase()}`;
   if (docType === "Academic Essay") {
-    prefix = `In evaluating **${section.title}**, the central thesis posits that ${section.brief.toLowerCase()}`;
+    prefix = `In evaluating **${section.title}**, the central argument focuses on ${section.brief.toLowerCase()}`;
   } else if (docType === "Literature Review") {
-    prefix = `A systematic survey of scholarship regarding **${section.title}** demonstrates that ${section.brief.toLowerCase()}`;
+    prefix = `Scholarship regarding **${section.title}** highlights key dynamics in ${section.brief.toLowerCase()}`;
   } else if (docType === "Freeform Summary") {
-    prefix = `**Key Takeaway for ${section.title}:** ${section.brief}`;
+    prefix = `**Core Finding for ${section.title}:** ${section.brief}`;
   }
 
   if (section.subsections && section.subsections.length > 0) {
@@ -936,44 +940,44 @@ ${formatInstruction}
 
       if (variant === 0) {
         p1 = `### ${sub.title}\n\n` +
-          `A thorough investigation into ${cleanSub.toLowerCase()} establishes vital parameters for addressing ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Scholarly domain literature affirms that "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `By cataloging the underlying structural properties of ${cleanSub.toLowerCase()}, researchers can clarify conceptual ambiguities and establish reliable benchmarks for ongoing evaluation.`;
-        p2 = `From a systems-level vantage point, executing workflows in ${cleanSub.toLowerCase()} requires managing component coupling, latency profiles, and transactional boundaries. ` +
-          `Contemporary engineering paradigms emphasize modular separation to prevent cascading degradation and sustain end-to-end data fidelity across distributed components.`;
-        p3 = `Moving forward, operational success in ${cleanSub.toLowerCase()} depends on continuous calibration and proactive anomaly detection, ensuring that systems align reliably with institutional priorities.`;
+          `Understanding ${cleanSub.toLowerCase()} requires analyzing how ${sub.brief.toLowerCase()}. ` +
+          (sourceSnippet ? `Recent empirical research confirms: "${sourceSnippet}" ${sourceCitation}. ` : "") +
+          `By isolating the underlying parameters of ${cleanSub.toLowerCase()}, engineers and researchers establish practical operational benchmarks rather than relying on abstract assumptions.`;
+        p2 = `At the implementation level, workflows in ${cleanSub.toLowerCase()} must balance component dependencies against latency overhead. ` +
+          `Decoupled architectures reduce failure cascades and preserve state consistency across production nodes.`;
+        p3 = `Effective deployment relies on automated instrumentation, continuous regression testing, and predictable telemetry signals aligned directly with core project goals.`;
       } else if (variant === 1) {
         p1 = `### ${sub.title}\n\n` +
-          `Examining the empirical characteristics of ${cleanSub.toLowerCase()} reveals direct implications for ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Published benchmark analyses indicate that "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `This synthesis provides domain practitioners with verifiable baseline indicators necessary for rigorous performance assessment.`;
-        p2 = `In assessing operational environments for ${cleanSub.toLowerCase()}, data integrity guarantees and error containment protocols play a pivotal role. ` +
-          `Multi-variable stress tests corroborate that deterministic message routing and isolated execution boundaries significantly lower runtime volatility under variable workloads.`;
-        p3 = `Ultimately, institutionalizing robust verification protocols for ${cleanSub.toLowerCase()} enables cross-functional teams to iterate rapidly while preserving compliance and auditability.`;
+          `Field data from ${cleanSub.toLowerCase()} demonstrates clear constraints regarding ${sub.brief.toLowerCase()}. ` +
+          (sourceSnippet ? `Published findings report that "${sourceSnippet}" ${sourceCitation}. ` : "") +
+          `These baseline measurements give engineering teams actionable targets for throughput, error tolerance, and resource allocation.`;
+        p2 = `Operational environments handling ${cleanSub.toLowerCase()} demand strict integrity checks and isolated error boundaries. ` +
+          `Deterministic routing and bounded concurrency prevent tail-latency spikes during peak utilization windows.`;
+        p3 = `Teams that formalize these operational limits early avoid recurring technical debt and maintain stable execution cycles.`;
       } else if (variant === 2) {
         p1 = `### ${sub.title}\n\n` +
-          `The governance and policy dimensions of ${cleanSub.toLowerCase()} form a crucial foundation for managing ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Documented institutional surveys note that "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `Aligning technical execution with strategic directives ensures that operational milestones remain auditable and legally sound.`;
-        p2 = `Establishing clear accountability for ${cleanSub.toLowerCase()} demands well-defined authorization matrices, policy enforcement checkpoints, and immutable logging pipelines. ` +
-          `These safeguards minimize compliance drift and ensure that distributed operations adhere strictly to established security standards.`;
-        p3 = `Consequently, organizations that embed automated governance routines within ${cleanSub.toLowerCase()} foster transparent operational cultures and reduce regulatory exposure.`;
+          `Governance and architectural constraints in ${cleanSub.toLowerCase()} directly shape how ${sub.brief.toLowerCase()}. ` +
+          (sourceSnippet ? `Institutional reports show that "${sourceSnippet}" ${sourceCitation}. ` : "") +
+          `Aligning system design with strict compliance parameters keeps audit trails verifiable and runtime configurations reproducible.`;
+        p2 = `Enforcing access boundaries in ${cleanSub.toLowerCase()} requires explicit permission scopes and structured audit logs. ` +
+          `These controls eliminate configuration drift while maintaining predictable service behavior across distributed clusters.`;
+        p3 = `Automating validation checks during build and deployment phases ensures that security requirements remain active across every release.`;
       } else if (variant === 3) {
         p1 = `### ${sub.title}\n\n` +
-          `Analyzing the unit economics and lifecycle dynamics of ${cleanSub.toLowerCase()} clarifies key trade-offs in ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Market and industry evaluations demonstrate that "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `Quantifying these dimensions allows leadership to allocate capital effectively across multi-quarter implementation phases.`;
-        p2 = `Balancing initial provisioning costs against recurring operational expenditures in ${cleanSub.toLowerCase()} highlights the value of scalable, loosely-coupled infrastructure. ` +
-          `Adopting standardized abstraction layers reduces maintenance overhead and accelerates time-to-market for complex capabilities.`;
-        p3 = `In summary, sustainable economic outcomes in ${cleanSub.toLowerCase()} require regular cost modeling and disciplined resource stewardship across production environments.`;
+          `Evaluating the infrastructure costs and lifecycle patterns of ${cleanSub.toLowerCase()} highlights real trade-offs in ${sub.brief.toLowerCase()}. ` +
+          (sourceSnippet ? `Industry metrics document that "${sourceSnippet}" ${sourceCitation}. ` : "") +
+          `Tracking resource consumption per compute unit enables precise budgeting across multi-quarter roadmaps.`;
+        p2 = `Managing compute overhead in ${cleanSub.toLowerCase()} favors lightweight abstractions over heavy runtime dependencies. ` +
+          `Standardized interfaces reduce integration friction and simplify maintenance over extended service lifetimes.`;
+        p3 = `Disciplined resource monitoring and regular capacity reviews protect production systems from unexpected provisioning spikes.`;
       } else {
         p1 = `### ${sub.title}\n\n` +
-          `The methodological and comparative study of ${cleanSub.toLowerCase()} provides essential clarity on ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Leading academic inquiries emphasize that "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `Formulating clear taxonomy definitions ensures consistent communication among disparate engineering groups and stakeholders.`;
-        p2 = `Deploying ${cleanSub.toLowerCase()} at scale demands rigorous interface contracts, comprehensive regression testing, and real-time telemetry dashboards. ` +
-          `These mechanisms provide deep visibility into operational pipelines, enabling swift remediation of transient bottlenecks.`;
-        p3 = `Advancing the state of practice in ${cleanSub.toLowerCase()} will necessitate continuous collaboration between research institutions and industry leaders to codify best practices.`;
+          `A comparative evaluation of ${cleanSub.toLowerCase()} clarifies key operational requirements for ${sub.brief.toLowerCase()}. ` +
+          (sourceSnippet ? `Empirical studies indicate that "${sourceSnippet}" ${sourceCitation}. ` : "") +
+          `Standardizing component definitions ensures clear communication across development teams and prevents integration mismatches.`;
+        p2 = `Deploying ${cleanSub.toLowerCase()} requires comprehensive test suites, clear interface contracts, and real-time observability. ` +
+          `These practices provide immediate feedback during degradation events, enabling fast root-cause identification.`;
+        p3 = `Continued refinement of ${cleanSub.toLowerCase()} depends on shared benchmarks and rigorous peer review across engineering groups.`;
       }
 
       return `${p1}\n\n${p2}\n\n${p3}`;
@@ -981,12 +985,12 @@ ${formatInstruction}
   }
 
   const primarySource = filteredSources[0];
-  const primaryFact = primarySource?.snippet ? `Empirical research confirms that "${primarySource.snippet}" [Source: ${primarySource.title}](${primarySource.url}). ` : "";
+  const primaryFact = primarySource?.snippet ? `Verified research confirms that "${primarySource.snippet}" [Source: ${primarySource.title}](${primarySource.url}). ` : "";
 
   return `${prefix}\n\n` +
     primaryFact +
-    `Across observed institutional frameworks, rigorous implementation protocols demonstrate that systematic alignment reduces operational friction while enforcing domain integrity.\n\n` +
-    `Qualitative assessments indicate that structured governance models foster cross-functional collaboration and architectural consistency throughout the operational lifecycle.`;
+    `Production implementations indicate that disciplined interface boundaries and regular telemetry validation prevent operational bottlenecks while enforcing system reliability.\n\n` +
+    `Ongoing evaluation frameworks ensure that architectural standards adapt smoothly as project requirements expand.`;
 }
 
 /**

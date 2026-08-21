@@ -224,7 +224,7 @@ export function PPTXDeckViewer({
 
             {/* Slide Footer */}
             <div className="relative z-10 flex justify-between items-center text-[10px] font-mono text-gray-500 pt-3 border-t border-gray-800/80">
-              <span>Paperrrrrr Autonomous Studio • Corporate Presentation</span>
+              <span>Paperrrrrr Document Studio • Presentation Series</span>
               <span className="text-sky-400 font-semibold font-mono">
                 Slide {activeSlide + 1} of {totalSlides}
               </span>

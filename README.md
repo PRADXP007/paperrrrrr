@@ -1,8 +1,8 @@
 <div align="center">
 
-# 📄 Paperrrrrr — Autonomous Academic & Corporate Document Studio
+# 📄 Paperrrrrr — Academic & Research Document Studio
 
-**State-of-the-Art Multi-Format Document Generation: IEEE 2-Column Research Papers, Multi-Chapter Theses & Modern 16:9 Presentation Decks**
+**Publication-Grade Multi-Format Document Studio: IEEE 2-Column Papers, Multi-Chapter Project Reports & 16:9 Presentation Decks**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-paperrrrrr.vercel.app-7F56D9?style=for-the-badge&logo=vercel)](https://paperrrrrr.vercel.app)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-PRADXP007%2Fpaperrrrrr-181717?style=for-the-badge&logo=github)](https://github.com/PRADXP007/paperrrrrr)
@@ -18,11 +18,11 @@
 
 ## 🌟 Overview
 
-**Paperrrrrr** is an autonomous, publication-grade document synthesis platform. Powered by **Google Gemini 2.5/3.6 Flash** and **Tavily Live Web Retrieval**, Paperrrrrr automatically researches, outlines, structures, and compiles high-density academic and corporate deliverables into editable, perfectly styled files:
+**Paperrrrrr** is a publication-grade document synthesis platform. Powered by **Google Gemini 2.5/3.6 Flash** and **Tavily Live Web Retrieval**, Paperrrrrr researches, outlines, structures, and compiles high-density academic and project deliverables into editable, perfectly styled files:
 
 1. 📑 **Standard IEEE 2-Column Research Papers (.docx & .pdf)** — Full compliance with official IEEE conference & journal specifications (24pt title, 3-column author affiliation grid, run-in `Abstract—` & `Keywords—`, Roman numeral section headings, mathematical equations `(1)`, structured data tables, and bracketed references `[1]`).
 2. 📊 **Modern 16:9 Presentation Decks (.pptx)** — Widescreen slides powered by `pptxgenjs` with curated color palettes (*Midnight Executive*, *Teal Trust*, *Warm Terracotta*, *Ocean Gradient*), diverse layout engines (KPI metrics, split scope, 3-pillar columns, horizontal roadmaps), and automatic native speaker notes.
-3. 📚 **Exhaustive Academic & Corporate Theses (.docx & .pdf)** — Multi-chapter treatises (up to 50+ pages, 30,000+ words) complete with institutional front matter (Bonafide Certificate, Declaration, Acknowledgement, Abstract, Table of Contents with tab leaders, chapter scope summaries, and bibliography).
+3. 📚 **Academic & Project Reports (.docx & .pdf)** — Multi-chapter manuscripts complete with institutional front matter (Bonafide Certificate, Declaration, Acknowledgement, Abstract, Table of Contents with tab leaders, chapter scope summaries, and bibliography).
 
 ---
 

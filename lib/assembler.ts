@@ -837,7 +837,7 @@ export async function assembleWordDocument(
   const input: AssembleDocumentInput = typeof inputOrTitle === "string"
     ? {
         title: inputOrTitle,
-        subtitle: subtitleParam || "An Exhaustive Multi-Chapter Strategic & Empirical Treatise",
+        subtitle: subtitleParam || "Comprehensive Academic & Project Report",
         format: "docx",
         sections: sectionsParam || [],
         chapters: sectionsParam || [],
@@ -859,7 +859,7 @@ export async function assembleWordDocument(
   }
 
   const safeTitle = input.academicMeta?.projectTitleOverride || input.title || "Project Report";
-  const safeSubtitle = input.subtitle || "An Exhaustive Multi-Chapter Strategic & Empirical Treatise";
+  const safeSubtitle = input.subtitle || "Comprehensive Academic & Project Report";
   const rawSections = input.chapters || input.sections || [];
   const meta = input.academicMeta || {};
   const isFormal = !!meta.isFormalAcademicReport && !!meta.institutionName;
@@ -1548,7 +1548,7 @@ export async function assembleWordDocument(
 
   // Construct Final Docx Document with Two Independent Sections
   const doc = new DocxDocument({
-    creator: "Paperrrrrr Autonomous Studio",
+    creator: "Paperrrrrr Document Studio",
     title: safeTitle,
     styles: {
       default: {
@@ -2051,7 +2051,7 @@ export async function assemblePowerPoint(input: AssembleDocumentInput): Promise<
       const phases = [
         { tag: "PHASE 1 (M1-M6)", title: "Foundational Deployment", desc: bullets[0] || "Core architecture setup, initial pilot integration, and validation baseline." },
         { tag: "PHASE 2 (M7-M18)", title: "Enterprise Scaling", desc: bullets[1] || "Cross-functional rollout, volume expansion, and automated monitoring protocols." },
-        { tag: "PHASE 3 (M19-M36)", title: "Ecosystem Leadership", desc: bullets[2] || "Autonomous optimization, network effect capture, and long-term margin resilience." }
+        { tag: "PHASE 3 (M19-M36)", title: "Ecosystem Leadership", desc: bullets[2] || "Continuous optimization, network effect capture, and long-term margin resilience." }
       ];
 
       phases.forEach((ph, phIdx) => {

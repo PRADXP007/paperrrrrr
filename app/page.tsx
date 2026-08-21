@@ -118,9 +118,9 @@ export default function PaperrrrrrApp() {
   const [showParameters, setShowParameters] = useState(false);
   const [format, setFormat] = useState<"docx" | "pptx" | "pdf">("docx");
   const [docType, setDocType] = useState("Research Report");
-  const [tone, setTone] = useState("Academic & Analytical");
-  const [audience, setAudience] = useState("Scholars & Decision Makers");
-  const [targetLength, setTargetLength] = useState("Comprehensive In-Depth (6–8 Chapters)");
+  const [tone, setTone] = useState("Academic Paper");
+  const [audience, setAudience] = useState("Researchers & Academics");
+  const [targetLength, setTargetLength] = useState("Standard Report (6–8 Chapters)");
   const [researchDepth, setResearchDepth] = useState<"standard" | "deep">("standard");
 
   // Document Settings Panel (Font, Page Count, Accent Color, Chapters, Additional Requirements)
@@ -758,10 +758,10 @@ export default function PaperrrrrrApp() {
 
     return {
       title: capitalizedTitle,
-      subtitle: `An Exhaustive Multi-Chapter Strategic & Empirical Treatise (${tone})`,
+      subtitle: `Comprehensive Research Report (${tone})`,
       docType: dType,
       format: (fmt as any) || "docx",
-      targetLength: tLen || "Comprehensive In-Depth (6–8 Chapters)",
+      targetLength: tLen || "Standard Report (6–8 Chapters)",
       chapters,
       sections: chapters
     };
@@ -778,14 +778,14 @@ export default function PaperrrrrrApp() {
     setScreen("thinking");
     setIsResearching(true);
     setIsGeneratingOutline(true);
-    setStreamStatusText("Querying multi-vector live research via Tavily...");
+    setStreamStatusText("Searching live sources...");
 
     const initialEvent = {
       id: `ev_${Date.now()}`,
       timestamp: new Date().toLocaleTimeString(),
       type: "status" as const,
       title: "Live Web Research Initialized",
-      detail: `Connecting to real-time search vectors for: "${prompt}" (Depth: ${researchDepth.toUpperCase()})`,
+      detail: `Searching verified sources for: "${prompt}" (Depth: ${researchDepth.toUpperCase()})`,
     };
     setStreamTimelineEvents([initialEvent]);
 
@@ -837,7 +837,7 @@ export default function PaperrrrrrApp() {
         }
       }
     } catch (resErr) {
-      console.warn("Tavily research fetch notice, applying neural baseline:", resErr);
+      console.warn("Research fetch notice, applying baseline sources:", resErr);
     }
 
     setResearchBundle(activeResearchBundle);
@@ -854,8 +854,8 @@ export default function PaperrrrrrApp() {
       },
     ]);
 
-    // 2. Structured Outline Generation with Gemini 3.6 Flash
-    setStreamStatusText("Structuring publication taxonomy with Gemini 3.6 Flash...");
+    // 2. Structured Outline Generation
+    setStreamStatusText("Structuring document outline...");
 
     let finalOutline: GeneratedOutline | null = null;
 
@@ -902,7 +902,7 @@ export default function PaperrrrrrApp() {
     setOutline(finalOutline);
     setIsResearching(false);
     setIsGeneratingOutline(false);
-    setStreamStatusText("Research settled & outline framed. Launching split workspace...");
+    setStreamStatusText("Outline ready. Opening workspace...");
 
     setStreamTimelineEvents((prev) => [
       ...prev,
@@ -940,7 +940,7 @@ export default function PaperrrrrrApp() {
     setIsStreaming(true);
     setIsAssembledReady(false);
     setGeneratedSections({});
-    setStreamStatusText("Streaming live structured document with Gemini 3.6 Flash...");
+    setStreamStatusText("Drafting document...");
 
     const accumulatedSections: Record<string, string> = {};
 
@@ -950,8 +950,8 @@ export default function PaperrrrrrApp() {
         id: `ev_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         type: "status",
-        title: "Live SSE Stream Active",
-        detail: `Synthesizing ${targetOutline.sections.length} chapters with live citations.`,
+        title: "Live Stream Active",
+        detail: `Drafting ${targetOutline.sections.length} chapters with citations.`,
       },
     ]);
 
@@ -1032,7 +1032,7 @@ export default function PaperrrrrrApp() {
               } else if (event.type === "complete") {
                 setIsStreaming(false);
                 setActiveGeneratingSectionIndex(null);
-                setStreamStatusText("All chapters drafted. Building binary download package...");
+                setStreamStatusText("All chapters completed. Assembling download package...");
 
                 const compiledSections = (event.sections && event.sections.length > 0)
                   ? event.sections.map((s: any, idx: number) => ({
@@ -1117,7 +1117,7 @@ export default function PaperrrrrrApp() {
                   setAssembledBlobUrl(downloadUrl);
                   setAssembledFilename(filename);
                   setIsAssembledReady(true);
-                  setStreamStatusText("Complete manuscript ready for download.");
+                  setStreamStatusText("Document ready for download.");
 
                   setStreamTimelineEvents((prev) => [
                     ...prev,
@@ -1484,19 +1484,17 @@ export default function PaperrrrrrApp() {
                       </div>
                     </div>
 
-                    {/* Field: Additional Requirements & Instructions */}
                     <div className="space-y-1.5 pt-2 border-t border-white/10 font-sans">
                       <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Additional Instructions</label>
                       <textarea
                         rows={2}
                         value={additionalRequirements}
                         onChange={(e) => setAdditionalRequirements(e.target.value)}
-                        placeholder="Specific tone preferences, focus areas, case studies, or institutional requirements..."
+                        placeholder="e.g. Include IEEE citations, skip executive summary, focus on Section 4..."
                         className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none placeholder-[#73726F] focus:border-[#C3644B] resize-none font-sans"
                       />
                     </div>
 
-                    {/* Format Selector Pills & Tone */}
                     <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-sans">
                       <div className="space-y-1.5">
                         <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Target Format</label>
@@ -1512,8 +1510,8 @@ export default function PaperrrrrrApp() {
                               onClick={() => setFormat(fmtOption.key as any)}
                               className={`flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer border ${
                                 format === fmtOption.key
-                                  ? "bg-[#97422C]/30 border-[#C3644B] text-[#FAF9F5]"
-                                  : "bg-white/5 border-transparent text-[#A38B86] hover:bg-white/10"
+                                    ? "bg-[#97422C]/30 border-[#C3644B] text-[#FAF9F5]"
+                                    : "bg-white/5 border-transparent text-[#A38B86] hover:bg-white/10"
                               }`}
                             >
                               {fmtOption.icon}
@@ -1530,10 +1528,10 @@ export default function PaperrrrrrApp() {
                           onChange={(e) => setTone(e.target.value)}
                           className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none font-sans"
                         >
-                          <option value="Academic & Analytical">Academic &amp; Analytical</option>
-                          <option value="Executive & Strategic">Executive &amp; Strategic</option>
-                          <option value="Technical & Granular">Technical &amp; Granular</option>
-                          <option value="Authoritative & Published">Authoritative &amp; Published</option>
+                          <option value="Academic Paper">Academic Paper</option>
+                          <option value="Executive Brief">Executive Brief</option>
+                          <option value="Technical Spec">Technical Spec</option>
+                          <option value="Direct & Concise">Direct &amp; Concise</option>
                         </select>
                       </div>
                     </div>
@@ -1622,10 +1620,9 @@ export default function PaperrrrrrApp() {
             </div>
           </main>
 
-          {/* Minimal Bottom Footer */}
           <footer className="w-full flex items-center justify-between text-xs font-sans text-[#73726F] py-3 border-t border-white/5">
-            <span>Paperrrrrr Studio • Real-time Neural Synthesis</span>
-            <span>Gemini 3.6 Flash &amp; Tavily Neural Web</span>
+            <span>Paperrrrrr • Research &amp; Document Studio</span>
+            <span>Live Web Research &amp; Document Engine</span>
           </footer>
         </div>
       )}
@@ -1663,11 +1660,10 @@ export default function PaperrrrrrApp() {
                 </div>
               </div>
 
-              {/* Progress Context Bar */}
               <div className="font-sans text-xs text-[#A38B86] flex flex-col gap-2 bg-white/5 p-4 rounded-xl border border-white/5">
                 <div className="flex justify-between items-center font-medium">
-                  <span>Model Context Window</span>
-                  <span className="text-[#C3644B]">Allocated (Gemini 3.6 Flash)</span>
+                  <span>Generation Progress</span>
+                  <span className="text-[#C3644B]">Active</span>
                 </div>
                 <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-[#C3644B] w-[65%] transition-all duration-700 ease-out" />
@@ -2022,7 +2018,7 @@ export default function PaperrrrrrApp() {
                           </div>
                         ) : (
                           <div className="text-[11px] text-[#73726F] italic">
-                            {isCurrent ? "Synthesizing section tokens with empirical web citations..." : sec.brief}
+                            {isCurrent ? "Drafting section prose..." : sec.brief}
                           </div>
                         )}
                       </div>
@@ -2041,7 +2037,7 @@ export default function PaperrrrrrApp() {
                 /* Tab 2: Logs View */
                 <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-[#A38B86] space-y-2 bg-[#090A0D]">
                   <div className="text-[11px] text-[#55423E] pb-2 border-b border-white/5 font-sans">
-                    // Paperrrrrr Neural Streaming Log • Gemini 3.6 Flash
+                    // Live Activity Stream
                   </div>
                   {streamTimelineEvents.map((ev) => (
                     <div key={ev.id} className="flex items-start gap-2 text-[11px] leading-relaxed font-sans">
@@ -2111,9 +2107,8 @@ export default function PaperrrrrrApp() {
                     <div className="space-y-8 flex flex-col items-center">
                       {/* Document Cover / Header Page */}
                       <div className="ms-word-canvas w-full rounded-sm p-10 sm:p-14 bg-white text-gray-900 min-h-[720px] shadow-2xl relative flex flex-col justify-between">
-                        {/* Running Top Header */}
                         <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] font-serif text-gray-500 uppercase tracking-wider">
-                          <span>Paperrrrrr Autonomous Document Studio</span>
+                          <span>Paperrrrrr Document Studio</span>
                           <span>Empirical Research Series</span>
                         </div>
 
@@ -2126,11 +2121,11 @@ export default function PaperrrrrrApp() {
                             {outline.subtitle}
                           </p>
                           <div className="pt-6 flex justify-center items-center gap-6 text-xs text-gray-600 font-serif">
-                            <span>Author: Autonomous AI Studio</span>
+                            <span>Author: Document Studio</span>
                             <span>•</span>
-                            <span>Model: Gemini 3.6 Flash</span>
+                            <span>Format: {format.toUpperCase()}</span>
                             <span>•</span>
-                            <span>Citations: Tavily Neural Web</span>
+                            <span>Citations: Verified Sources</span>
                           </div>
                         </div>
 

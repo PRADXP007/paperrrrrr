@@ -2,11 +2,11 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Paperrrrrr — Autonomous Research & Document Studio",
-  description: "Research, write, and assemble real editable Word docs, PowerPoint presentations, and PDFs with Gemini 2.5 Flash.",
+  title: "Paperrrrrr — Academic & Research Document Studio",
+  description: "Research, structure, and assemble publication-grade IEEE papers, multi-chapter project reports, and executive presentation decks.",
   applicationName: "Paperrrrrr",
-  authors: [{ name: "Paperrrrrr Autonomous Studio" }],
-  keywords: ["AI document generator", "research reports", "academic thesis builder", "Word docx generator", "PowerPoint maker", "PDF builder", "Paperrrrrr"],
+  authors: [{ name: "Paperrrrrr Studio" }],
+  keywords: ["research papers", "IEEE formatting", "academic thesis builder", "Word docx generator", "PowerPoint presentation maker", "PDF builder", "Paperrrrrr"],
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
