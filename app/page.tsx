@@ -1207,9 +1207,9 @@ export default function PaperrrrrrApp() {
   // RENDER APP
   // --------------------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#E5E2E1] flex flex-col font-sans selection:bg-[#97422C] selection:text-white">
+    <div className="min-h-screen bg-[#FAF9F6] text-[#19191C] flex flex-col font-sans selection:bg-[#C3644B]/20 selection:text-[#97422C]">
       {/* Subtle radial ambient lighting */}
-      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(195,100,75,0.08)_0%,transparent_60%)]" />
+      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(195,100,75,0.06)_0%,transparent_60%)]" />
 
       {/* ==================================================================== */}
       {/* SCREEN 1: HOMEPAGE (CALM, MINIMAL SINGLE-PROMPT FOCUS)               */}
@@ -1220,7 +1220,7 @@ export default function PaperrrrrrApp() {
           <header className="w-full flex items-center justify-between py-2">
             <div className="flex items-center gap-3">
               <PaperrrrrrLogo size="md" />
-              <span className="text-[11px] font-sans uppercase tracking-widest text-[#88726D] px-2 py-0.5 rounded border border-white/10 font-semibold">
+              <span className="text-[11px] font-sans uppercase tracking-widest text-[#7A6B68] px-2 py-0.5 rounded border border-black/10 font-semibold bg-white/60">
                 Document Studio
               </span>
             </div>
@@ -1232,12 +1232,12 @@ export default function PaperrrrrrApp() {
                   fetchPastDocuments();
                   setShowHistoryModal(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans text-[#5C5A55] hover:text-[#19191C] hover:bg-black/5 border border-black/10 transition-colors cursor-pointer font-medium bg-white/70 shadow-xs"
               >
                 <Clock className="size-3.5 text-[#C3644B]" />
                 <span>History</span>
                 {pastDocuments.length > 0 && (
-                  <span className="bg-[#C3644B]/20 text-[#FAF9F5] text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                  <span className="bg-[#C3644B]/15 text-[#97422C] text-[10px] px-1.5 py-0.2 rounded-full font-bold">
                     {pastDocuments.length}
                   </span>
                 )}
@@ -1246,7 +1246,7 @@ export default function PaperrrrrrApp() {
               <button
                 type="button"
                 onClick={() => setShowSettingsModal(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-sans text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer font-medium"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-sans text-[#5C5A55] hover:text-[#19191C] hover:bg-black/5 border border-black/10 transition-colors cursor-pointer font-medium bg-white/70 shadow-xs"
               >
                 <Sparkles className="size-3.5 text-[#C3644B]" />
                 <span>
@@ -1259,14 +1259,14 @@ export default function PaperrrrrrApp() {
               </button>
 
               {user ? (
-                <div className="flex items-center gap-2 text-xs font-sans bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                <div className="flex items-center gap-2 text-xs font-sans bg-white border border-black/10 px-3 py-1 rounded-full shadow-xs">
                   <div className="size-5 rounded-full bg-[#C3644B] text-white flex items-center justify-center font-bold text-[10px]">
                     {(user.name || user.email || "U")[0].toUpperCase()}
                   </div>
-                  <span className="text-[#FAF9F5] max-w-[100px] truncate">{user.name || user.email}</span>
+                  <span className="text-[#19191C] max-w-[100px] truncate">{user.name || user.email}</span>
                   <button
                     onClick={handleSignOut}
-                    className="text-[#88726D] hover:text-[#FAF9F5] ml-1 transition-colors cursor-pointer text-xs"
+                    className="text-[#7A6B68] hover:text-[#19191C] ml-1 transition-colors cursor-pointer text-xs"
                     title="Sign Out"
                   >
                     Sign Out
@@ -1278,7 +1278,7 @@ export default function PaperrrrrrApp() {
                     setAuthMode("login");
                     setShowAuthModal(true);
                   }}
-                  className="text-xs font-sans text-[#FAF9F5] bg-white/5 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer font-medium"
+                  className="text-xs font-sans text-[#19191C] bg-white hover:bg-black/5 border border-black/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer font-medium shadow-xs"
                 >
                   Sign In
                 </button>
@@ -1291,10 +1291,10 @@ export default function PaperrrrrrApp() {
             <div className="w-full max-w-2xl flex flex-col items-center gap-8">
               {/* Editorial Headline */}
               <div className="text-center space-y-2">
-                <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-[#FAF9F5] drop-shadow-sm">
+                <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-[#19191C] drop-shadow-xs">
                   What can we build together today?
                 </h1>
-                <p className="text-sm text-[#A38B86] max-w-lg mx-auto font-light">
+                <p className="text-sm text-[#5C5A55] max-w-lg mx-auto font-light">
                   A calm studio for exhaustive research, manuscript structuring, and live multi-format document assembly.
                 </p>
               </div>
@@ -1302,7 +1302,7 @@ export default function PaperrrrrrApp() {
               {/* Centered Single Prompt Bar */}
               <div className="w-full relative">
                 <form onSubmit={handleInitiatePrompt} className="w-full">
-                  <div className="glass-input-wrapper rounded-full px-5 py-3.5 flex items-center gap-3 shadow-2xl relative">
+                  <div className="glass-input-wrapper rounded-full px-5 py-3.5 flex items-center gap-3 shadow-xl relative bg-white">
                     <Sparkles className="size-5 text-[#C3644B] shrink-0" />
 
                     <input
@@ -1311,7 +1311,7 @@ export default function PaperrrrrrApp() {
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       placeholder="Describe your research topic, thesis, or document vision..."
-                      className="w-full bg-transparent border-none outline-none text-base text-[#FAF9F5] placeholder-[#88726D] font-sans"
+                      className="w-full bg-transparent border-none outline-none text-base text-[#19191C] placeholder-[#8C8983] font-sans"
                       autoFocus
                     />
 
@@ -1320,7 +1320,7 @@ export default function PaperrrrrrApp() {
                       type="button"
                       onClick={() => setShowFileAttachPopover(!showFileAttachPopover)}
                       className={`p-2 rounded-full transition-colors cursor-pointer shrink-0 ${
-                        attachedFileName ? "text-[#C3644B] bg-[#C3644B]/10" : "text-[#88726D] hover:text-[#FAF9F5] hover:bg-white/5"
+                        attachedFileName ? "text-[#C3644B] bg-[#C3644B]/10" : "text-[#7A6B68] hover:text-[#19191C] hover:bg-black/5"
                       }`}
                       title={attachedFileName ? `Attached: ${attachedFileName}` : "Attach reference file"}
                     >
@@ -1332,7 +1332,7 @@ export default function PaperrrrrrApp() {
                       type="button"
                       onClick={() => setShowDocSettingsPanel(!showDocSettingsPanel)}
                       className={`p-2 rounded-full transition-colors cursor-pointer shrink-0 ${
-                        showDocSettingsPanel ? "text-[#C3644B] bg-[#C3644B]/15" : "text-[#88726D] hover:text-[#FAF9F5] hover:bg-white/5"
+                        showDocSettingsPanel ? "text-[#C3644B] bg-[#C3644B]/15" : "text-[#7A6B68] hover:text-[#19191C] hover:bg-black/5"
                       }`}
                       title="Toggle Document Settings Panel"
                     >
@@ -1361,7 +1361,7 @@ export default function PaperrrrrrApp() {
                         setAttachedFileName("");
                         setReferenceNotes("");
                       }}
-                      className="text-[#88726D] hover:text-white"
+                      className="text-[#7A6B68] hover:text-[#19191C]"
                     >
                       <X className="size-3" />
                     </button>
@@ -1370,20 +1370,20 @@ export default function PaperrrrrrApp() {
 
                 {/* File Upload Popover */}
                 {showFileAttachPopover && (
-                  <div className="absolute top-full left-0 mt-3 p-4 glass-panel rounded-2xl w-full max-w-sm z-30 shadow-2xl space-y-3 font-sans">
-                    <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                      <span className="text-xs font-sans uppercase text-[#A38B86] font-semibold tracking-wider">Attach Reference Material</span>
-                      <button onClick={() => setShowFileAttachPopover(false)} className="text-[#88726D] hover:text-white">
+                  <div className="absolute top-full left-0 mt-3 p-4 glass-panel rounded-2xl w-full max-w-sm z-30 shadow-2xl space-y-3 font-sans bg-white border border-gray-200">
+                    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                      <span className="text-xs font-sans uppercase text-[#5C5A55] font-semibold tracking-wider">Attach Reference Material</span>
+                      <button onClick={() => setShowFileAttachPopover(false)} className="text-[#7A6B68] hover:text-[#19191C]">
                         <X className="size-4" />
                       </button>
                     </div>
-                    <p className="text-xs text-[#A38B86]">Upload notes, PDFs, or raw data to synthesize into the document.</p>
+                    <p className="text-xs text-[#5C5A55]">Upload notes, PDFs, or raw data to synthesize into the document.</p>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept=".txt,.md,.pdf,.docx"
                       onChange={handleFileUpload}
-                      className="text-xs text-[#A38B86] file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-[#C3644B]/20 file:text-[#FFB4A2] file:cursor-pointer font-sans"
+                      className="text-xs text-[#5C5A55] file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-[#C3644B]/10 file:text-[#97422C] file:cursor-pointer font-sans"
                     />
                     {isUploadingFile && <p className="text-xs font-sans text-[#C3644B] animate-pulse">Extracting text...</p>}
                   </div>
@@ -1394,7 +1394,7 @@ export default function PaperrrrrrApp() {
                   <button
                     type="button"
                     onClick={() => setShowDocSettingsPanel(!showDocSettingsPanel)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-sans text-[#A38B86] hover:text-[#FAF9F5] transition-all cursor-pointer shadow-sm hover:border-white/20"
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-xs font-sans text-[#5C5A55] hover:text-[#19191C] transition-all cursor-pointer shadow-xs"
                   >
                     <SlidersHorizontal className="size-3.5 text-[#C3644B]" />
                     <span className="font-medium">Document Settings:</span>
@@ -1407,15 +1407,15 @@ export default function PaperrrrrrApp() {
 
                 {/* Document Settings Panel (Collapsed by Default, Expandable) */}
                 {showDocSettingsPanel && (
-                  <div className="w-full mt-3 p-5 glass-panel rounded-2xl border border-white/10 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-xs font-sans">
+                  <div className="w-full mt-3 p-5 glass-panel rounded-2xl border border-gray-200 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-xs font-sans bg-white">
                     {/* Live Word Budget Metric Banner */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-white/5 rounded-xl border border-white/10 text-xs font-sans">
-                      <div className="flex items-center gap-2 text-[#FAF9F5]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#F8F7F4] rounded-xl border border-gray-200 text-xs font-sans">
+                      <div className="flex items-center gap-2 text-[#19191C]">
                         <span className="size-2 rounded-full bg-[#C3644B] animate-pulse" />
                         <span className="font-semibold">Calculated Target:</span>
                         <span className="text-[#C3644B] font-bold">~{calculatedBudget.totalWords.toLocaleString()} Words</span>
                       </div>
-                      <div className="text-[#A38B86] text-xs flex items-center gap-3">
+                      <div className="text-[#5C5A55] text-xs flex items-center gap-3">
                         <span>• {pageCount} Pages (~{calculatedBudget.wordsPerPage} w/pg)</span>
                         <span>• {calculatedBudget.chapters} Chapters (~{calculatedBudget.wordsPerChapter} w/ch)</span>
                       </div>
@@ -1425,11 +1425,11 @@ export default function PaperrrrrrApp() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 font-sans">
                       {/* Field: Font */}
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Typography Font</label>
+                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Typography Font</label>
                         <select
                           value={selectedFont}
                           onChange={(e) => setSelectedFont(e.target.value)}
-                          className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
+                          className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
                         >
                           <option value="Times New Roman">Times New Roman</option>
                           <option value="Arial">Arial</option>
@@ -1441,26 +1441,26 @@ export default function PaperrrrrrApp() {
 
                       {/* Field: Page Count */}
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Page Target</label>
+                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Page Target</label>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
                             min={1}
                             value={pageCount}
                             onChange={(e) => setPageCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                            className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none focus:border-[#C3644B] font-sans"
+                            className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none focus:border-[#C3644B] font-sans"
                           />
-                          <span className="text-[#A38B86] text-xs shrink-0 font-medium">Pages</span>
+                          <span className="text-[#5C5A55] text-xs shrink-0 font-medium">Pages</span>
                         </div>
                       </div>
 
                       {/* Field: Heading Accent Color */}
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Heading Color</label>
+                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Heading Color</label>
                         <select
                           value={accentColor}
                           onChange={(e) => setAccentColor(e.target.value)}
-                          className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
+                          className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
                         >
                           <option value="000000">Black Only (Classic)</option>
                           <option value="1B365D">Navy Blue (#1B365D)</option>
@@ -1472,37 +1472,37 @@ export default function PaperrrrrrApp() {
 
                       {/* Field: Chapter Count */}
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Chapter Count</label>
+                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Chapter Count</label>
                         <input
                           type="number"
                           min={2}
                           placeholder={`Auto (${calculatedBudget.chapters} chapters)`}
                           value={customChapterCount}
                           onChange={(e) => setCustomChapterCount(e.target.value)}
-                          className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none placeholder-[#73726F] focus:border-[#C3644B] font-sans"
+                          className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none placeholder-[#8C8983] focus:border-[#C3644B] font-sans"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 pt-2 border-t border-white/10 font-sans">
-                      <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Additional Instructions</label>
+                    <div className="space-y-1.5 pt-2 border-t border-gray-100 font-sans">
+                      <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Additional Instructions</label>
                       <textarea
                         rows={2}
                         value={additionalRequirements}
                         onChange={(e) => setAdditionalRequirements(e.target.value)}
                         placeholder="e.g. Include IEEE citations, skip executive summary, focus on Section 4..."
-                        className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none placeholder-[#73726F] focus:border-[#C3644B] resize-none font-sans"
+                        className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none placeholder-[#8C8983] focus:border-[#C3644B] resize-none font-sans"
                       />
                     </div>
 
-                    <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-sans">
+                    <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-sans">
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Target Format</label>
+                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Target Format</label>
                         <div className="grid grid-cols-3 gap-1.5">
                           {[
-                            { key: "docx", label: "Word (.docx)", icon: <FileText className="size-3.5 text-blue-400" /> },
-                            { key: "pptx", label: "PowerPoint (.pptx)", icon: <Presentation className="size-3.5 text-amber-400" /> },
-                            { key: "pdf", label: "Printable PDF", icon: <FileCheck className="size-3.5 text-rose-400" /> },
+                            { key: "docx", label: "Word (.docx)", icon: <FileText className="size-3.5 text-blue-600" /> },
+                            { key: "pptx", label: "PowerPoint (.pptx)", icon: <Presentation className="size-3.5 text-amber-600" /> },
+                            { key: "pdf", label: "Printable PDF", icon: <FileCheck className="size-3.5 text-rose-600" /> },
                           ].map((fmtOption) => (
                             <button
                               key={fmtOption.key}
@@ -1510,8 +1510,8 @@ export default function PaperrrrrrApp() {
                               onClick={() => setFormat(fmtOption.key as any)}
                               className={`flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer border ${
                                 format === fmtOption.key
-                                    ? "bg-[#97422C]/30 border-[#C3644B] text-[#FAF9F5]"
-                                    : "bg-white/5 border-transparent text-[#A38B86] hover:bg-white/10"
+                                    ? "bg-[#C3644B]/15 border-[#C3644B] text-[#97422C] font-bold"
+                                    : "bg-gray-50 border-gray-200 text-[#5C5A55] hover:bg-gray-100"
                               }`}
                             >
                               {fmtOption.icon}
@@ -1522,11 +1522,11 @@ export default function PaperrrrrrApp() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[#A38B86] block text-xs uppercase tracking-wider font-semibold">Tone &amp; Style</label>
+                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Tone &amp; Style</label>
                         <select
                           value={tone}
                           onChange={(e) => setTone(e.target.value)}
-                          className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none font-sans"
+                          className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none font-sans"
                         >
                           <option value="Academic Paper">Academic Paper</option>
                           <option value="Executive Brief">Executive Brief</option>
@@ -1537,9 +1537,9 @@ export default function PaperrrrrrApp() {
                     </div>
 
                     {/* Formal Academic Report Toggle & Fields */}
-                    <div className="pt-2 border-t border-white/10 space-y-2.5 font-sans">
+                    <div className="pt-2 border-t border-gray-100 space-y-2.5 font-sans">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs text-[#FAF9F5] font-semibold flex items-center gap-1.5">
+                        <label className="text-xs text-[#19191C] font-semibold flex items-center gap-1.5">
                           <span>Formal Academic Front Matter</span>
                           <span className="text-[10px] text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded-full font-medium">College Certificate, Declaration &amp; TOC</span>
                         </label>
@@ -1552,55 +1552,55 @@ export default function PaperrrrrrApp() {
                       </div>
 
                       {isFormalAcademicReport && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-white/5 rounded-xl border border-white/5 text-xs font-sans animate-in fade-in duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs font-sans animate-in fade-in duration-200">
                           <div>
-                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Institution / University</label>
+                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Institution / University</label>
                             <input
                               type="text"
                               value={institutionName}
                               onChange={(e) => setInstitutionName(e.target.value)}
                               placeholder="e.g. Stanford University"
-                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Department</label>
+                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Department</label>
                             <input
                               type="text"
                               value={department}
                               onChange={(e) => setDepartment(e.target.value)}
                               placeholder="e.g. Dept. of Computer Science"
-                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Degree Program</label>
+                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Degree Program</label>
                             <input
                               type="text"
                               value={degree}
                               onChange={(e) => setDegree(e.target.value)}
                               placeholder="e.g. Bachelor of Technology"
-                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Submitted By (Names &amp; IDs)</label>
+                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Submitted By (Names &amp; IDs)</label>
                             <input
                               type="text"
                               value={submittedBy}
                               onChange={(e) => setSubmittedBy(e.target.value)}
                               placeholder="e.g. Alex Chen (2021104012)"
-                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
                             />
                           </div>
                           <div className="sm:col-span-2">
-                            <label className="text-[10px] text-[#A38B86] block mb-0.5">Faculty Supervisor / Guide</label>
+                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Faculty Supervisor / Guide</label>
                             <input
                               type="text"
                               value={guideName}
                               onChange={(e) => setGuideName(e.target.value)}
                               placeholder="e.g. Dr. Robert Smith, Professor"
-                              className="w-full bg-[#18191E] border border-white/10 rounded-lg p-1.5 text-xs text-[#FAF9F5] outline-none"
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
                             />
                           </div>
                         </div>
@@ -1612,7 +1612,7 @@ export default function PaperrrrrrApp() {
 
               {/* Natural Format Detection Pill if prompt typed */}
               {prompt.length > 5 && (
-                <div className="flex items-center gap-2 text-xs font-mono text-[#A38B86] animate-in fade-in duration-300">
+                <div className="flex items-center gap-2 text-xs font-mono text-[#5C5A55] animate-in fade-in duration-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#C3644B]" />
                   <span>Targeting {format.toUpperCase()} format based on your input</span>
                 </div>
@@ -1620,7 +1620,7 @@ export default function PaperrrrrrApp() {
             </div>
           </main>
 
-          <footer className="w-full flex items-center justify-between text-xs font-sans text-[#73726F] py-3 border-t border-white/5">
+          <footer className="w-full flex items-center justify-between text-xs font-sans text-[#8C8983] py-3 border-t border-gray-200">
             <span>Paperrrrrr • Research &amp; Document Studio</span>
             <span>Live Web Research &amp; Document Engine</span>
           </footer>
@@ -1633,15 +1633,15 @@ export default function PaperrrrrrApp() {
       {screen === "thinking" && (
         <div className="min-h-screen flex flex-col justify-between relative z-10 px-4 sm:px-8 py-6 max-w-4xl mx-auto w-full font-sans">
           {/* Header */}
-          <header className="w-full flex items-center justify-between py-2 border-b border-white/5">
+          <header className="w-full flex items-center justify-between py-2 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <PaperrrrrrLogo size="md" />
-              <span className="text-[11px] font-sans text-[#88726D] px-2 py-0.5 rounded border border-white/10 font-semibold uppercase tracking-wider">
+              <span className="text-[11px] font-sans text-[#7A6B68] px-2 py-0.5 rounded border border-black/10 font-semibold uppercase tracking-wider bg-white">
                 Reasoning &amp; Synthesis
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs font-sans text-[#A38B86]">
+            <div className="flex items-center gap-3 text-xs font-sans text-[#5C5A55]">
               <span className="flex items-center gap-1.5 font-medium">
                 <Clock className="size-3.5 text-[#C3644B]" />
                 {thinkingSeconds}s elapsed
@@ -1651,24 +1651,24 @@ export default function PaperrrrrrApp() {
 
           {/* Center Thinking Glass Canvas */}
           <main className="flex-1 flex flex-col items-center justify-center my-8">
-            <div className="glass-panel w-full max-w-2xl rounded-2xl p-8 sm:p-10 relative shadow-2xl flex flex-col gap-8">
+            <div className="glass-panel w-full max-w-2xl rounded-2xl p-8 sm:p-10 relative shadow-2xl flex flex-col gap-8 bg-white border border-gray-200">
               {/* Reasoning Pulse Header */}
               <div className="flex items-center gap-3.5">
                 <div className="w-3 h-3 rounded-full bg-[#C3644B] pulse-indicator shrink-0" />
-                <div className="font-sans text-lg font-medium text-[#FAF9F5]">
+                <div className="font-sans text-lg font-medium text-[#19191C]">
                   {streamStatusText}
                 </div>
               </div>
 
-              <div className="font-sans text-xs text-[#A38B86] flex flex-col gap-2 bg-white/5 p-4 rounded-xl border border-white/5">
+              <div className="font-sans text-xs text-[#5C5A55] flex flex-col gap-2 bg-[#F8F7F4] p-4 rounded-xl border border-gray-200">
                 <div className="flex justify-between items-center font-medium">
                   <span>Generation Progress</span>
-                  <span className="text-[#C3644B]">Active</span>
+                  <span className="text-[#C3644B] font-bold">Active</span>
                 </div>
-                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
                   <div className="h-full bg-[#C3644B] w-[65%] transition-all duration-700 ease-out" />
                 </div>
-                <div className="flex justify-between items-center pt-1 text-[11px] text-[#73726F]">
+                <div className="flex justify-between items-center pt-1 text-[11px] text-[#8C8983]">
                   <span>Topic: &quot;{prompt.slice(0, 48)}...&quot;</span>
                   <span>Target: {format.toUpperCase()}</span>
                 </div>
@@ -1677,7 +1677,7 @@ export default function PaperrrrrrApp() {
               {/* Active Tavily Research Sources Queue */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-sans uppercase tracking-wider text-[#A38B86] font-semibold">
+                  <h3 className="text-xs font-sans uppercase tracking-wider text-[#5C5A55] font-semibold">
                     Referenced Research Entities
                   </h3>
                   <span className="text-[11px] font-sans text-[#C3644B] font-semibold">
@@ -1685,24 +1685,24 @@ export default function PaperrrrrrApp() {
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-2.5 max-h-48 overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col gap-2.5 max-h-48 overflow-y-auto custom-scrollbar" data-lenis-prevent>
                   {researchBundle?.results && researchBundle.results.length > 0 ? (
                     researchBundle.results.map((source, sIdx) => (
                       <div
                         key={sIdx}
-                        className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 source-appear"
+                        className="flex items-start gap-3 p-3 rounded-xl bg-[#FAF9F6] border border-gray-200 source-appear shadow-xs"
                         style={{ animationDelay: `${sIdx * 0.15}s` }}
                       >
                         <Globe className="size-4 text-[#C3644B] shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-[#FAF9F5] truncate">
+                          <div className="text-xs font-medium text-[#19191C] truncate">
                             {source.title}
                           </div>
-                          <div className="text-[11px] font-sans text-[#88726D] truncate">
+                          <div className="text-[11px] font-sans text-[#7A6B68] truncate">
                             {source.url}
                           </div>
                           {source.snippet && (
-                            <div className="text-[11px] text-[#A38B86] mt-0.5 line-clamp-1">
+                            <div className="text-[11px] text-[#5C5A55] mt-0.5 line-clamp-1">
                               {source.snippet}
                             </div>
                           )}
@@ -1710,9 +1710,9 @@ export default function PaperrrrrrApp() {
                       </div>
                     ))
                   ) : (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
                       <Globe className="size-4 text-[#C3644B] animate-spin shrink-0" />
-                      <div className="text-xs font-sans text-[#A38B86]">
+                      <div className="text-xs font-sans text-[#5C5A55]">
                         Querying real-time empirical vectors for {prompt}...
                       </div>
                     </div>
@@ -1722,15 +1722,15 @@ export default function PaperrrrrrApp() {
 
               {/* Dynamic Outline Framing Preview with Expandable Chapters & Subsections */}
               {outline && (
-                <div className="space-y-3 pt-3 border-t border-white/10">
-                  <div className="flex justify-between items-center text-xs font-sans text-[#A38B86]">
-                    <span className="font-bold text-[#FAF9F5]">Outline Architecture</span>
+                <div className="space-y-3 pt-3 border-t border-gray-200">
+                  <div className="flex justify-between items-center text-xs font-sans text-[#5C5A55]">
+                    <span className="font-bold text-[#19191C]">Outline Architecture</span>
                     <span className="text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded font-semibold">
                       {outline.sections.length} Chapters Structured
                     </span>
                   </div>
 
-                  <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1">
+                  <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1" data-lenis-prevent>
                     {outline.sections.map((sec, i) => {
                       const isExpanded = !!expandedChapterIds[sec.id || `ch_${i}`];
                       const subCount = sec.subsections?.length || 0;
@@ -1738,7 +1738,7 @@ export default function PaperrrrrrApp() {
                       return (
                         <div
                           key={sec.id || i}
-                          className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-1.5 transition-colors"
+                          className="bg-[#FAF9F6] border border-gray-200 rounded-xl p-3 space-y-1.5 transition-colors shadow-xs"
                         >
                           <div
                             onClick={() =>
@@ -1749,41 +1749,41 @@ export default function PaperrrrrrApp() {
                             }
                             className="flex items-center justify-between cursor-pointer group"
                           >
-                            <span className="text-xs font-serif font-bold text-[#FAF9F5] group-hover:text-[#C3644B] transition-colors truncate">
+                            <span className="text-xs font-serif font-bold text-[#19191C] group-hover:text-[#C3644B] transition-colors truncate">
                               {sec.title}
                             </span>
                             <div className="flex items-center gap-2 shrink-0">
                               {subCount > 0 && (
-                                <span className="text-[10px] font-sans text-[#88726D] bg-white/5 px-2 py-0.5 rounded-full border border-white/5 font-medium">
+                                <span className="text-[10px] font-sans text-[#7A6B68] bg-white px-2 py-0.5 rounded-full border border-gray-200 font-medium">
                                   {subCount} Subsections
                                 </span>
                               )}
                               <ChevronDown
-                                className={`size-3.5 text-[#88726D] transition-transform duration-200 ${
+                                className={`size-3.5 text-[#7A6B68] transition-transform duration-200 ${
                                   isExpanded ? "rotate-180 text-[#C3644B]" : ""
                                 }`}
                               />
                             </div>
                           </div>
 
-                          <p className="text-[11px] text-[#A38B86] line-clamp-1">{sec.brief}</p>
+                          <p className="text-[11px] text-[#5C5A55] line-clamp-1">{sec.brief}</p>
 
                           {/* Nested Subsections */}
                           {isExpanded && sec.subsections && sec.subsections.length > 0 && (
-                            <div className="pl-3 pt-2 border-l border-white/10 space-y-1.5 animate-in fade-in duration-200">
+                            <div className="pl-3 pt-2 border-l border-[#C3644B]/30 space-y-1.5 animate-in fade-in duration-200">
                               {sec.subsections.map((sub, sIdx) => (
                                 <div
                                   key={sub.id || sIdx}
-                                  className="text-[11px] font-sans text-[#A38B86] flex items-start gap-2 bg-white/[0.02] p-1.5 rounded-lg border border-white/5"
+                                  className="text-[11px] font-sans text-[#5C5A55] flex items-start gap-2 bg-white p-1.5 rounded-lg border border-gray-200 shadow-2xs"
                                 >
                                   <span className="text-[#C3644B] font-bold shrink-0">
                                     {sub.title.split(" ")[0]}
                                   </span>
                                   <div className="min-w-0 flex-1">
-                                    <div className="text-[#FAF9F5] font-sans font-medium">
+                                    <div className="text-[#19191C] font-sans font-medium">
                                       {sub.title.replace(/^\d+\.\d+\s*/, "")}
                                     </div>
-                                    <div className="text-[10px] text-[#88726D] truncate">{sub.brief}</div>
+                                    <div className="text-[10px] text-[#8C8983] truncate">{sub.brief}</div>
                                   </div>
                                 </div>
                               ))}
@@ -1815,7 +1815,7 @@ export default function PaperrrrrrApp() {
           </main>
 
           {/* Minimal Footer */}
-          <footer className="w-full flex items-center justify-between text-xs font-sans text-[#73726F] py-2 border-t border-white/5">
+          <footer className="w-full flex items-center justify-between text-xs font-sans text-[#8C8983] py-2 border-t border-gray-200">
             <span>Research &amp; Outline Generation Active</span>
             <span>Auto-advancing to split workspace...</span>
           </footer>
@@ -1826,9 +1826,9 @@ export default function PaperrrrrrApp() {
       {/* SCREEN 3: THE SPLIT WORKSPACE (CODE & PREVIEW SIDE BY SIDE)          */}
       {/* ==================================================================== */}
       {screen === "workspace" && outline && (
-        <div className="min-h-screen flex flex-col justify-between bg-[#0A0A0A] text-[#E5E2E1] relative z-10 font-sans">
+        <div className="min-h-screen flex flex-col justify-between bg-[#FAF9F6] text-[#19191C] relative z-10 font-sans">
           {/* Top Minimal Workspace Navigation */}
-          <header className="w-full bg-[#121316]/90 backdrop-blur-xl border-b border-white/10 px-6 py-3 sticky top-0 z-50 flex items-center justify-between font-sans">
+          <header className="w-full bg-white/90 backdrop-blur-xl border-b border-gray-200 px-6 py-3 sticky top-0 z-50 flex items-center justify-between font-sans shadow-xs">
             <div className="flex items-center gap-6">
               <button
                 onClick={() => setScreen("home")}
@@ -1838,11 +1838,11 @@ export default function PaperrrrrrApp() {
               </button>
 
               {/* Minimal Breadcrumb */}
-              <div className="hidden md:flex items-center gap-2 text-xs font-sans text-[#88726D]">
+              <div className="hidden md:flex items-center gap-2 text-xs font-sans text-[#7A6B68]">
                 <span>Documents</span>
-                <ChevronRight className="size-3 text-[#55423E]" />
-                <span className="text-[#A38B86] truncate max-w-xs">{outline.title}</span>
-                <ChevronRight className="size-3 text-[#55423E]" />
+                <ChevronRight className="size-3 text-gray-400" />
+                <span className="text-[#5C5A55] truncate max-w-xs">{outline.title}</span>
+                <ChevronRight className="size-3 text-gray-400" />
                 <span className="text-[#C3644B] font-medium">Split Workspace</span>
               </div>
             </div>
@@ -1855,22 +1855,22 @@ export default function PaperrrrrrApp() {
                   fetchPastDocuments();
                   setShowHistoryModal(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans text-[#A38B86] hover:text-[#E5E2E1] hover:bg-white/5 border border-white/10 transition-colors cursor-pointer font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans text-[#5C5A55] hover:text-[#19191C] hover:bg-gray-100 border border-gray-200 transition-colors cursor-pointer font-medium bg-white shadow-xs"
                 title="View Document History"
               >
                 <Clock className="size-3.5 text-[#C3644B]" />
                 <span className="hidden md:inline">History</span>
                 {pastDocuments.length > 0 && (
-                  <span className="bg-[#C3644B]/20 text-[#FAF9F5] text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                  <span className="bg-[#C3644B]/15 text-[#97422C] text-[10px] px-1.5 py-0.2 rounded-full font-bold">
                     {pastDocuments.length}
                   </span>
                 )}
               </button>
 
               {/* Live Streaming State Badge */}
-              <div className="flex items-center gap-2 text-xs font-sans bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-2 text-xs font-sans bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-full">
                 <span className={`w-2 h-2 rounded-full ${isStreaming ? "bg-[#C3644B] animate-ping" : "bg-emerald-500"}`} />
-                <span className="text-[#FAF9F5] font-medium">
+                <span className="text-[#19191C] font-medium">
                   {isStreaming
                     ? `Drafting ${readySectionsCount + 1}/${outline.sections.length}`
                     : "Assembled & Ready"}
@@ -1878,12 +1878,12 @@ export default function PaperrrrrrApp() {
               </div>
 
               {/* Format Canvas Switcher */}
-              <div className="hidden sm:flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5 text-xs font-sans">
+              <div className="hidden sm:flex items-center bg-gray-100 border border-gray-200 rounded-xl p-0.5 text-xs font-sans">
                 <button
                   type="button"
                   onClick={() => setActiveViewerMode("word")}
                   className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                    activeViewerMode === "word" ? "bg-[#C3644B] text-white font-bold" : "text-[#88726D] hover:text-white"
+                    activeViewerMode === "word" ? "bg-white text-[#C3644B] font-bold shadow-xs" : "text-[#7A6B68] hover:text-[#19191C]"
                   }`}
                 >
                   Word
@@ -1892,7 +1892,7 @@ export default function PaperrrrrrApp() {
                   type="button"
                   onClick={() => setActiveViewerMode("ppt")}
                   className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                    activeViewerMode === "ppt" ? "bg-[#C3644B] text-white font-bold" : "text-[#88726D] hover:text-white"
+                    activeViewerMode === "ppt" ? "bg-white text-[#C3644B] font-bold shadow-xs" : "text-[#7A6B68] hover:text-[#19191C]"
                   }`}
                 >
                   Slides
@@ -1903,10 +1903,10 @@ export default function PaperrrrrrApp() {
               <button
                 type="button"
                 onClick={handleCopyMarkdown}
-                className="p-2 rounded-lg text-[#88726D] hover:text-white hover:bg-white/5 border border-white/10 transition-colors cursor-pointer"
+                className="p-2 rounded-lg text-[#5C5A55] hover:text-[#19191C] hover:bg-gray-100 border border-gray-200 transition-colors cursor-pointer bg-white"
                 title="Copy full Markdown"
               >
-                {copySuccess ? <Check className="size-4 text-emerald-400" /> : <Copy className="size-4" />}
+                {copySuccess ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
               </button>
 
               {assembledBlobUrl ? (
@@ -1921,7 +1921,7 @@ export default function PaperrrrrrApp() {
               ) : (
                 <button
                   disabled
-                  className="inline-flex items-center gap-2 bg-white/10 text-[#88726D] px-4 py-1.5 rounded-lg text-xs font-sans cursor-not-allowed"
+                  className="inline-flex items-center gap-2 bg-gray-200 text-gray-500 px-4 py-1.5 rounded-lg text-xs font-sans cursor-not-allowed"
                 >
                   <Download className="size-3.5" />
                   <span>{isStreaming ? "Compiling..." : "Export"}</span>
@@ -1935,14 +1935,14 @@ export default function PaperrrrrrApp() {
             {/* ------------------------------------------------------------ */}
             {/* LEFT SIDE: "CODE" / STRUCTURED CONTENT STREAM (45% Width)    */}
             {/* ------------------------------------------------------------ */}
-            <section className="w-full lg:w-[45%] h-full flex flex-col border-r border-white/10 bg-[#0E0F12]">
+            <section className="w-full lg:w-[45%] h-full flex flex-col border-r border-gray-200 bg-[#FAF9F6]">
               {/* Left Side Header Tabs */}
-              <div className="h-11 px-4 border-b border-white/10 bg-white/[0.02] flex items-center justify-between text-xs font-sans">
+              <div className="h-11 px-4 border-b border-gray-200 bg-white flex items-center justify-between text-xs font-sans">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setWorkspaceTab("code")}
                     className={`flex items-center gap-1.5 pb-0.5 cursor-pointer ${
-                      workspaceTab === "code" ? "text-[#C3644B] border-b-2 border-[#C3644B] font-bold" : "text-[#88726D] hover:text-white"
+                      workspaceTab === "code" ? "text-[#C3644B] border-b-2 border-[#C3644B] font-bold" : "text-[#7A6B68] hover:text-[#19191C]"
                     }`}
                   >
                     <FileCode2 className="size-3.5" />
@@ -1951,7 +1951,7 @@ export default function PaperrrrrrApp() {
                   <button
                     onClick={() => setWorkspaceTab("logs")}
                     className={`flex items-center gap-1.5 pb-0.5 cursor-pointer ${
-                      workspaceTab === "logs" ? "text-[#C3644B] border-b-2 border-[#C3644B] font-bold" : "text-[#88726D] hover:text-white"
+                      workspaceTab === "logs" ? "text-[#C3644B] border-b-2 border-[#C3644B] font-bold" : "text-[#7A6B68] hover:text-[#19191C]"
                     }`}
                   >
                     <Terminal className="size-3.5" />
@@ -1959,7 +1959,7 @@ export default function PaperrrrrrApp() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-3 text-[11px] text-[#73726F]">
+                <div className="flex items-center gap-3 text-[11px] text-[#8C8983]">
                   <span>Words: {totalWords}</span>
                   <span>Chars: {totalCharacters}</span>
                 </div>
@@ -1967,12 +1967,12 @@ export default function PaperrrrrrApp() {
 
               {/* Left Side Content Body */}
               {workspaceTab === "code" ? (
-                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-[#E5E2E1] leading-relaxed space-y-4">
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-[#19191C] leading-relaxed space-y-4" data-lenis-prevent>
                   {/* Document Title Header Block */}
-                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-1 font-sans">
-                    <div className="text-base font-serif font-bold text-[#FAF9F5]"># {outline.title}</div>
-                    <div className="text-xs text-[#A38B86] italic">*{outline.subtitle}*</div>
-                    <div className="text-[11px] text-[#73726F] pt-1">
+                  <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-2xs space-y-1 font-sans">
+                    <div className="text-base font-serif font-bold text-[#19191C]"># {outline.title}</div>
+                    <div className="text-xs text-[#5C5A55] italic">*{outline.subtitle}*</div>
+                    <div className="text-[11px] text-[#8C8983] pt-1">
                       Format: {format.toUpperCase()} • Tone: {tone}
                     </div>
                   </div>
@@ -1991,16 +1991,16 @@ export default function PaperrrrrrApp() {
                         key={sec.id || idx}
                         className={`p-4 rounded-xl border transition-all font-sans ${
                           isCurrent
-                            ? "bg-[#97422C]/10 border-[#C3644B]/60 shadow-lg"
+                            ? "bg-[#FFF6F3] border-[#C3644B] shadow-sm"
                             : content
-                            ? "bg-white/[0.01] border-white/5"
-                            : "bg-transparent border-white/5 opacity-50"
+                            ? "bg-white border-gray-200 shadow-2xs"
+                            : "bg-white/60 border-gray-200 opacity-60"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-[#FAF9F5]">## {sec.title}</span>
+                          <span className="font-bold text-[#19191C]">## {sec.title}</span>
                           {content ? (
-                            <span className="text-[10px] text-emerald-400 font-sans font-medium flex items-center gap-1">
+                            <span className="text-[10px] text-emerald-600 font-sans font-medium flex items-center gap-1">
                               <Check className="size-3" /> Drafted
                             </span>
                           ) : isCurrent ? (
@@ -2008,16 +2008,16 @@ export default function PaperrrrrrApp() {
                               Streaming...
                             </span>
                           ) : (
-                            <span className="text-[10px] text-[#73726F] font-sans font-medium">Queued</span>
+                            <span className="text-[10px] text-[#8C8983] font-sans font-medium">Queued</span>
                           )}
                         </div>
 
                         {content ? (
-                          <div className="whitespace-pre-wrap text-[11px] text-[#C6C6C6] leading-relaxed">
+                          <div className="whitespace-pre-wrap text-[11px] text-[#333336] leading-relaxed">
                             {content}
                           </div>
                         ) : (
-                          <div className="text-[11px] text-[#73726F] italic">
+                          <div className="text-[11px] text-[#8C8983] italic">
                             {isCurrent ? "Drafting section prose..." : sec.brief}
                           </div>
                         )}
@@ -2035,28 +2035,28 @@ export default function PaperrrrrrApp() {
                 </div>
               ) : (
                 /* Tab 2: Logs View */
-                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-[#A38B86] space-y-2 bg-[#090A0D]">
-                  <div className="text-[11px] text-[#55423E] pb-2 border-b border-white/5 font-sans">
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-[#5C5A55] space-y-2 bg-[#F8F7F4]" data-lenis-prevent>
+                  <div className="text-[11px] text-[#7A6B68] pb-2 border-b border-gray-200 font-sans">
                     // Live Activity Stream
                   </div>
                   {streamTimelineEvents.map((ev) => (
                     <div key={ev.id} className="flex items-start gap-2 text-[11px] leading-relaxed font-sans">
-                      <span className="text-[#55423E] shrink-0">[{ev.timestamp}]</span>
+                      <span className="text-[#8C8983] shrink-0">[{ev.timestamp}]</span>
                       <div className="flex-1">
                         <span
                           className={
                             ev.type === "complete"
-                              ? "text-emerald-400 font-bold"
+                              ? "text-emerald-700 font-bold"
                               : ev.type === "section"
                               ? "text-[#C3644B] font-bold"
                               : ev.type === "research"
-                              ? "text-blue-400"
-                              : "text-[#FAF9F5]"
+                              ? "text-blue-700"
+                              : "text-[#19191C]"
                           }
                         >
                           {ev.title}
                         </span>
-                        {ev.detail && <p className="text-[#73726F] text-[10px] mt-0.5">{ev.detail}</p>}
+                        {ev.detail && <p className="text-[#5C5A55] text-[10px] mt-0.5">{ev.detail}</p>}
                       </div>
                     </div>
                   ))}
@@ -2068,27 +2068,27 @@ export default function PaperrrrrrApp() {
             {/* ------------------------------------------------------------ */}
             {/* RIGHT SIDE: LIVE RENDERED INTERACTIVE CANVAS (55% Width)     */}
             {/* ------------------------------------------------------------ */}
-            <section className="w-full lg:w-[55%] h-full flex flex-col bg-[#141519] overflow-hidden relative font-sans">
+            <section className="w-full lg:w-[55%] h-full flex flex-col bg-[#ECEAE4] overflow-hidden relative font-sans">
               {/* Right Side Canvas Header / Mode Bar */}
-              <div className="h-11 px-6 border-b border-white/10 bg-white/[0.02] flex items-center justify-between text-xs font-sans text-[#88726D]">
+              <div className="h-11 px-6 border-b border-gray-300 bg-white/70 backdrop-blur-md flex items-center justify-between text-xs font-sans text-[#5C5A55]">
                 <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span>Live Rendered Canvas</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="font-medium text-[#19191C]">Live Rendered Canvas</span>
                 </span>
 
                 {/* Zoom Controls */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setZoomLevel((z) => Math.max(70, z - 10))}
-                    className="p-1 hover:text-white cursor-pointer"
+                    className="p-1 hover:text-black cursor-pointer"
                     title="Zoom Out"
                   >
                     <ZoomOut className="size-3.5" />
                   </button>
-                  <span className="text-[11px] font-sans text-[#A38B86] w-10 text-center font-medium">{zoomLevel}%</span>
+                  <span className="text-[11px] font-sans text-[#19191C] w-10 text-center font-semibold">{zoomLevel}%</span>
                   <button
                     onClick={() => setZoomLevel((z) => Math.min(130, z + 10))}
-                    className="p-1 hover:text-white cursor-pointer"
+                    className="p-1 hover:text-black cursor-pointer"
                     title="Zoom In"
                   >
                     <ZoomIn className="size-3.5" />
@@ -2097,7 +2097,7 @@ export default function PaperrrrrrApp() {
               </div>
 
               {/* Right Side Canvas Body (Scrollable Container) */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 flex justify-center items-start bg-[#141519]">
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 flex justify-center items-start bg-[#ECEAE4]" data-lenis-prevent>
                 <div
                   className="w-full max-w-3xl transition-transform duration-200"
                   style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
@@ -2251,7 +2251,7 @@ export default function PaperrrrrrApp() {
                   alert("Google Sign-In Error: " + e.message);
                 }
               }}
-              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-sans text-[#FAF9F5] transition-all cursor-pointer shadow-sm hover:border-[#C3644B]/40 font-semibold"
+              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-sans text-[#19191C] transition-all cursor-pointer shadow-2xs font-semibold"
             >
               <svg className="size-4" viewBox="0 0 24 24">
                 <path
@@ -2275,44 +2275,44 @@ export default function PaperrrrrrApp() {
             </button>
 
             <div className="flex items-center gap-3 my-2">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-[11px] uppercase tracking-wider text-[#73726F] font-semibold">or with email</span>
-              <div className="flex-1 h-px bg-white/10" />
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-[11px] uppercase tracking-wider text-[#8C8983] font-semibold">or with email</span>
+              <div className="flex-1 h-px bg-gray-200" />
             </div>
 
             <form onSubmit={handleAuthSubmit} className="space-y-3.5 font-sans">
               {authMode === "signup" && (
                 <div>
-                  <label className="text-xs text-[#A38B86] font-medium">Full Name</label>
+                  <label className="text-xs text-[#5C5A55] font-medium">Full Name</label>
                   <input
                     type="text"
                     required
                     value={authName}
                     onChange={(e) => setAuthName(e.target.value)}
-                    className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1 focus:border-[#C3644B]"
+                    className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none mt-1 focus:border-[#C3644B]"
                     placeholder="e.g. Dr. Jane Vance"
                   />
                 </div>
               )}
               <div>
-                <label className="text-xs text-[#A38B86] font-medium">Email Address</label>
+                <label className="text-xs text-[#5C5A55] font-medium">Email Address</label>
                 <input
                   type="email"
                   required
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
-                  className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1 focus:border-[#C3644B]"
+                  className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none mt-1 focus:border-[#C3644B]"
                   placeholder="name@university.edu"
                 />
               </div>
               <div>
-                <label className="text-xs text-[#A38B86] font-medium">Password</label>
+                <label className="text-xs text-[#5C5A55] font-medium">Password</label>
                 <input
                   type="password"
                   required
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-xs text-[#FAF9F5] outline-none mt-1 focus:border-[#C3644B]"
+                  className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none mt-1 focus:border-[#C3644B]"
                   placeholder="••••••••"
                 />
               </div>
@@ -2344,25 +2344,25 @@ export default function PaperrrrrrApp() {
         >
           <div className="space-y-4 text-xs font-sans">
             <div>
-              <label className="text-[#A38B86] block mb-1 font-medium">Google Gemini API Key (BYOK)</label>
+              <label className="text-[#5C5A55] block mb-1 font-medium">Google Gemini API Key (BYOK)</label>
               <input
                 type="password"
                 placeholder={hasCustomGeminiKey ? `Active Key: ${geminiKeyMasked}` : "AIzaSy..."}
                 value={customGeminiKeyInput}
                 onChange={(e) => setCustomGeminiKeyInput(e.target.value)}
-                className="w-full bg-[#18191E] border border-white/10 rounded-xl p-2.5 text-[#FAF9F5] outline-none font-sans focus:border-[#C3644B]"
+                className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-[#19191C] outline-none font-sans focus:border-[#C3644B]"
               />
-              <p className="text-[11px] text-[#73726F] mt-1">
+              <p className="text-[11px] text-[#8C8983] mt-1">
                 Keys are encrypted with AES-256 GCM in your session.
               </p>
             </div>
 
-            <div className="flex justify-between items-center pt-4 border-t border-white/10">
+            <div className="flex justify-between items-center pt-4 border-t border-gray-100">
               {hasCustomGeminiKey && (
                 <button
                   type="button"
                   onClick={handleClearKeys}
-                  className="text-rose-400 hover:underline cursor-pointer font-medium"
+                  className="text-rose-600 hover:underline cursor-pointer font-medium"
                 >
                   Clear Stored Key
                 </button>
@@ -2390,43 +2390,43 @@ export default function PaperrrrrrApp() {
           title="Document History & Archive"
         >
           <div className="space-y-4 font-sans text-xs">
-            <div className="flex justify-between items-center text-xs font-sans text-[#A38B86]">
+            <div className="flex justify-between items-center text-xs font-sans text-[#5C5A55]">
               <span className="font-semibold">Saved Manuscripts ({pastDocuments.length})</span>
               <button
                 type="button"
                 onClick={fetchPastDocuments}
-                className="hover:text-white flex items-center gap-1 cursor-pointer font-medium"
+                className="hover:text-[#19191C] flex items-center gap-1 cursor-pointer font-medium"
               >
                 <RotateCw className="size-3" /> Refresh
               </button>
             </div>
 
             {pastDocuments.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 font-sans text-xs space-y-2 border border-white/5 rounded-xl bg-white/[0.02]">
+              <div className="p-8 text-center text-gray-500 font-sans text-xs space-y-2 border border-gray-200 rounded-xl bg-gray-50">
                 <Clock className="size-6 text-[#C3644B] mx-auto opacity-60" />
-                <p className="font-medium text-[#FAF9F5]">No documents generated yet.</p>
-                <p className="text-[11px] text-[#73726F]">Generate a document to build your persistent research archive.</p>
+                <p className="font-medium text-[#19191C]">No documents generated yet.</p>
+                <p className="text-[11px] text-[#8C8983]">Generate a document to build your persistent research archive.</p>
               </div>
             ) : (
-              <div className="space-y-2.5 max-h-96 overflow-y-auto custom-scrollbar pr-1 font-sans">
+              <div className="space-y-2.5 max-h-96 overflow-y-auto custom-scrollbar pr-1 font-sans" data-lenis-prevent>
                 {pastDocuments.map((doc, dIdx) => (
                   <div
                     key={doc._id || doc.id || dIdx}
-                    className="p-3.5 rounded-xl bg-white/5 hover:bg-white/[0.08] border border-white/10 transition-all flex flex-col gap-2 group"
+                    className="p-3.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 transition-all flex flex-col gap-2 group shadow-2xs"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-xs font-serif font-bold text-[#FAF9F5] truncate group-hover:text-[#C3644B] transition-colors">
+                        <h4 className="text-xs font-serif font-bold text-[#19191C] truncate group-hover:text-[#C3644B] transition-colors">
                           {doc.title}
                         </h4>
-                        <p className="text-[11px] text-[#A38B86] truncate mt-0.5">{doc.subtitle || doc.prompt}</p>
+                        <p className="text-[11px] text-[#5C5A55] truncate mt-0.5">{doc.subtitle || doc.prompt}</p>
                       </div>
-                      <span className="text-[10px] font-sans uppercase bg-[#C3644B]/20 text-[#FFB4A2] border border-[#C3644B]/30 px-2 py-0.5 rounded-full shrink-0 font-bold">
+                      <span className="text-[10px] font-sans uppercase bg-[#C3644B]/10 text-[#97422C] border border-[#C3644B]/20 px-2 py-0.5 rounded-full shrink-0 font-bold">
                         {(doc.format || "docx").toUpperCase()}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] font-sans text-[#73726F]">
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-[11px] font-sans text-[#8C8983]">
                       <span>
                         {doc.updatedAt
                           ? new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
@@ -2435,7 +2435,7 @@ export default function PaperrrrrrApp() {
                       <button
                         type="button"
                         onClick={() => loadHistoryDocument(doc)}
-                        className="text-[#FAF9F5] hover:text-[#C3644B] font-bold flex items-center gap-1 cursor-pointer"
+                        className="text-[#19191C] hover:text-[#C3644B] font-bold flex items-center gap-1 cursor-pointer"
                       >
                         <span>Open in Workspace</span>
                         <ArrowRight className="size-3" />

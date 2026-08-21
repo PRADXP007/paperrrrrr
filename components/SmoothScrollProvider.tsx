@@ -6,11 +6,13 @@ import Lenis from "lenis";
 interface SmoothScrollContextType {
   getLenis: () => Lenis | null;
   scrollTo: (target: string | number | HTMLElement, options?: any) => void;
+  resize: () => void;
 }
 
 const SmoothScrollContext = createContext<SmoothScrollContextType>({
   getLenis: () => null,
   scrollTo: () => {},
+  resize: () => {},
 });
 
 export const useSmoothScroll = () => useContext(SmoothScrollContext);
@@ -23,20 +25,20 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
-    // Respect user's motion preference
+    // Respect user's motion preferences
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) {
       return;
     }
 
     const lenis = new Lenis({
-      lerp: 0.1,
-      duration: 1.2,
+      duration: 1.1,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
       wheelMultiplier: 1.0,
-      touchMultiplier: 1.0,
+      touchMultiplier: 1.5,
       infinite: false,
       autoResize: true,
     });
@@ -48,8 +50,16 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
       lenis.raf(time);
       rafId = requestAnimationFrame(raf);
     }
-
     rafId = requestAnimationFrame(raf);
+
+    // Watch for DOM height mutations / accordion expansions to trigger instant Lenis recalculation
+    const resizeObserver = new ResizeObserver(() => {
+      lenis.resize();
+    });
+
+    if (document.body) {
+      resizeObserver.observe(document.body);
+    }
 
     // Smooth anchor navigation
     const handleAnchorClick = (e: MouseEvent) => {
@@ -70,8 +80,16 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
 
     document.addEventListener("click", handleAnchorClick);
 
+    // Global scroll trigger resize
+    const handleWindowResize = () => {
+      lenis.resize();
+    };
+    window.addEventListener("resize", handleWindowResize);
+
     return () => {
       document.removeEventListener("click", handleAnchorClick);
+      window.removeEventListener("resize", handleWindowResize);
+      resizeObserver.disconnect();
       cancelAnimationFrame(rafId);
       lenis.destroy();
       lenisRef.current = null;
@@ -84,8 +102,14 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
     }
   };
 
+  const resize = () => {
+    if (lenisRef.current) {
+      lenisRef.current.resize();
+    }
+  };
+
   return (
-    <SmoothScrollContext.Provider value={{ getLenis: () => lenisRef.current, scrollTo }}>
+    <SmoothScrollContext.Provider value={{ getLenis: () => lenisRef.current, scrollTo, resize }}>
       {children}
     </SmoothScrollContext.Provider>
   );
