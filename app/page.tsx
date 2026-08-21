@@ -210,31 +210,49 @@ export default function PaperrrrrrApp() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const promptInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Autonomous Natural Language Format Detection
-  const detectedFormat = useMemo<"docx" | "pptx" | "pdf">(() => {
-    const p = prompt.toLowerCase();
-    if (
-      p.includes("slide") ||
-      p.includes("deck") ||
-      p.includes("presentation") ||
-      p.includes("powerpoint") ||
-      p.includes("ppt") ||
-      p.includes("pitch")
-    ) {
-      return "pptx";
-    }
-    if (p.includes("pdf")) {
-      return "pdf";
-    }
-    return "docx";
-  }, [prompt]);
+  // Explicit Document Architecture Mode: 'paper' | 'report' | 'deck'
+  const [documentMode, setDocumentMode] = useState<"paper" | "report" | "deck">("report");
 
-  // Keep format synced with detected format if user hasn't explicitly locked it
+  // Autonomous Natural Language Format & Mode Detection
   useEffect(() => {
-    if (prompt.length > 5) {
-      setFormat(detectedFormat);
+    const p = prompt.toLowerCase().trim();
+    if (p.length > 3) {
+      if (
+        p.includes("slide") ||
+        p.includes("deck") ||
+        p.includes("presentation") ||
+        p.includes("powerpoint") ||
+        p.includes("ppt") ||
+        p.includes("pitch")
+      ) {
+        setDocumentMode("deck");
+        setFormat("pptx");
+        setDocType("Presentation Deck");
+      } else if (
+        p.includes("research paper") ||
+        p.includes("ieee") ||
+        p.includes("conference paper") ||
+        p.includes("journal paper") ||
+        p.includes("manuscript") ||
+        (p.includes("paper") && !p.includes("report"))
+      ) {
+        setDocumentMode("paper");
+        setFormat("docx");
+        setDocType("IEEE Research Paper");
+        setTone("Academic Paper");
+      } else if (
+        p.includes("report") ||
+        p.includes("project") ||
+        p.includes("thesis") ||
+        p.includes("case study")
+      ) {
+        setDocumentMode("report");
+        setFormat("docx");
+        setDocType("Research Report");
+        setTone("Academic Paper");
+      }
     }
-  }, [detectedFormat]);
+  }, [prompt]);
 
   // Enforce dark mode permanently, restore user session, and restore active workspace on page refresh
   useEffect(() => {
@@ -1395,6 +1413,63 @@ export default function PaperrrrrrApp() {
                 </p>
               </div>
 
+              {/* Prominent Document Architecture Mode Switcher */}
+              <div className="flex flex-wrap items-center justify-center p-1 bg-gray-100/90 border border-gray-300/80 rounded-full shadow-xs gap-1 font-sans">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDocumentMode("report");
+                    setDocType("Research Report");
+                    setFormat("docx");
+                    setTone("Academic Paper");
+                  }}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    documentMode === "report"
+                      ? "bg-white text-gray-950 shadow-xs border border-gray-200"
+                      : "text-gray-600 hover:text-gray-950"
+                  }`}
+                >
+                  <FileCheck className={`size-3.5 ${documentMode === "report" ? "text-[#C3644B]" : "text-gray-400"}`} />
+                  <span>📑 Academic / Project Report</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDocumentMode("paper");
+                    setDocType("IEEE Research Paper");
+                    setFormat("docx");
+                    setTone("Academic Paper");
+                  }}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    documentMode === "paper"
+                      ? "bg-white text-gray-950 shadow-xs border border-gray-200"
+                      : "text-gray-600 hover:text-gray-950"
+                  }`}
+                >
+                  <FileText className={`size-3.5 ${documentMode === "paper" ? "text-[#C3644B]" : "text-gray-400"}`} />
+                  <span>📄 IEEE Research Paper</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDocumentMode("deck");
+                    setDocType("Presentation Deck");
+                    setFormat("pptx");
+                    setTone("Executive & Direct");
+                  }}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    documentMode === "deck"
+                      ? "bg-white text-gray-950 shadow-xs border border-gray-200"
+                      : "text-gray-600 hover:text-gray-950"
+                  }`}
+                >
+                  <Presentation className={`size-3.5 ${documentMode === "deck" ? "text-amber-600" : "text-gray-400"}`} />
+                  <span>📊 Slide Deck (16:9)</span>
+                </button>
+              </div>
+
               {/* Centered Single Prompt Bar */}
               <div className="w-full relative">
                 <form onSubmit={handleInitiatePrompt} className="w-full">
@@ -1406,7 +1481,13 @@ export default function PaperrrrrrApp() {
                       type="text"
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="e.g. Comparative analysis of Quantum Key Distribution vs Post-Quantum Cryptography..."
+                      placeholder={
+                        documentMode === "paper"
+                          ? "e.g. Algorithmic Dynamics & Behavioral Impacts: An IEEE 2-Column Study..."
+                          : documentMode === "deck"
+                          ? "e.g. Executive Strategic Briefing & Metric Presentation Deck..."
+                          : "e.g. Daily Instagram Usage: Patterns, Architecture & Case Analysis (Project Report)..."
+                      }
                       className="w-full bg-transparent border-none outline-none text-base text-gray-950 placeholder-gray-400 font-sans"
                       autoFocus
                     />
@@ -2212,63 +2293,111 @@ export default function PaperrrrrrApp() {
                   {activeViewerMode === "word" && (
                     <div className="space-y-10 flex flex-col items-center w-full">
                       {/* ------------------------------------------------------------ */}
-                      {/* A4 SHEET 1: FORMAL COVER PAGE                               */}
+                      {/* A4 SHEET 1: IEEE TITLE BLOCK OR FORMAL REPORT COVER PAGE    */}
                       {/* ------------------------------------------------------------ */}
                       <div className="w-full max-w-[794px] min-h-[1123px] bg-white text-gray-950 p-12 sm:p-16 rounded-xs shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-300 relative flex flex-col justify-between select-text font-serif">
                         {/* Running Top Header */}
                         <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] uppercase tracking-widest text-gray-500 font-sans">
-                          <span>{institutionName || "Paperrrrrr Document Studio"}</span>
-                          <span>{isFormalAcademicReport ? "Academic Project Report" : "Empirical Research Series"}</span>
+                          <span>{docType === "IEEE Research Paper" ? "IEEE TRANSACTIONS & APPLIED RESEARCH" : institutionName || "Paperrrrrr Document Studio"}</span>
+                          <span>{docType === "IEEE Research Paper" ? "IEEE Standard Manuscript" : isFormalAcademicReport ? "Academic Project Report" : "Empirical Research Series"}</span>
                         </div>
 
-                        {/* Cover Body */}
-                        <div className="my-auto py-8 text-center space-y-6">
-                          {isFormalAcademicReport && (
-                            <div className="space-y-1 text-xs uppercase tracking-wider text-gray-600 font-sans font-semibold">
-                              <p>{institutionName || "Department of Computer Science & Engineering"}</p>
-                              <p className="text-[11px] text-gray-500">{department || "Faculty of Engineering & Technology"}</p>
-                            </div>
-                          )}
+                        {/* IEEE 2-Column Standard Title & Author Header Block */}
+                        {docType === "IEEE Research Paper" ? (
+                          <div className="space-y-6 my-auto py-4">
+                            <div className="text-center space-y-3 pb-6 border-b border-gray-200">
+                              <h1 className="text-2xl sm:text-3xl font-bold text-gray-950 font-serif leading-tight">
+                                {outline.title}
+                              </h1>
+                              <p className="text-xs text-gray-600 font-sans italic">
+                                {outline.subtitle || "A Rigorous IEEE Conference & Journal Standard Evaluation"}
+                              </p>
 
-                          <div className="space-y-3 py-6">
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-950 leading-tight border-y-2 border-gray-950 py-4 font-serif">
-                              {outline.title}
-                            </h1>
-                            <p className="text-sm sm:text-base italic text-gray-700 max-w-xl mx-auto font-serif">
-                              {outline.subtitle}
-                            </p>
+                              {/* 3-Column IEEE Author Affiliations Table */}
+                              <div className="pt-4 grid grid-cols-3 gap-4 text-xs font-sans text-gray-800">
+                                <div className="space-y-0.5">
+                                  <p className="font-bold text-gray-950">Author 1: {submittedBy || "Lead Investigator"}</p>
+                                  <p className="text-[11px] text-gray-600">Dept. of Computer Science</p>
+                                  <p className="text-[10px] text-gray-500">{institutionName || "Institute of Technology"}</p>
+                                  <p className="text-[10px] text-[#C3644B]">author1@research.org</p>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <p className="font-bold text-gray-950">Author 2: {guideName || "Senior Faculty Guide"}</p>
+                                  <p className="text-[11px] text-gray-600">IEEE Senior Member</p>
+                                  <p className="text-[10px] text-gray-500">{institutionName || "Faculty of Computing"}</p>
+                                  <p className="text-[10px] text-[#C3644B]">guide@research.org</p>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <p className="font-bold text-gray-950">Collaborator Group</p>
+                                  <p className="text-[11px] text-gray-600">Applied Computing Lab</p>
+                                  <p className="text-[10px] text-gray-500">Center for Empirical Research</p>
+                                  <p className="text-[10px] text-[#C3644B]">lab@research.org</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* IEEE Abstract & Index Terms Block */}
+                            <div className="p-4 bg-gray-50/80 border border-gray-200 rounded-sm text-xs leading-relaxed font-serif text-justify space-y-2">
+                              <p>
+                                <strong className="font-sans font-bold uppercase tracking-wider text-[11px]">Abstract—</strong>
+                                {outline.sections[0]?.content || outline.sections[0]?.brief || "This paper presents a comprehensive empirical and theoretical investigation into algorithmic dynamics, system architectures, and performance metrics. Through quantitative analysis and benchmark comparisons, we demonstrate significant efficiency improvements across baseline methodologies."}
+                              </p>
+                              <p className="text-[11px] font-sans text-gray-700">
+                                <strong className="font-bold uppercase tracking-wider text-[10px] text-[#C3644B]">Index Terms—</strong>
+                                Empirical Evaluation, System Architecture, Performance Benchmarks, Computational Modeling, Distributed Infrastructure, IEEE Standards.
+                              </p>
+                            </div>
                           </div>
+                        ) : (
+                          /* Academic Project Report Cover Block */
+                          <div className="my-auto py-8 text-center space-y-6">
+                            {isFormalAcademicReport && (
+                              <div className="space-y-1 text-xs uppercase tracking-wider text-gray-600 font-sans font-semibold">
+                                <p>{institutionName || "Department of Computer Science & Engineering"}</p>
+                                <p className="text-[11px] text-gray-500">{department || "Faculty of Engineering & Technology"}</p>
+                              </div>
+                            )}
 
-                          {isFormalAcademicReport ? (
-                            <div className="pt-8 grid grid-cols-2 gap-8 text-xs text-left font-sans border-t border-gray-200">
-                              <div className="space-y-1">
-                                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block">Submitted By:</span>
-                                <p className="font-bold text-gray-900">{submittedBy || "Alex Chen & Research Group"}</p>
-                                <p className="text-gray-600">{degree || "Bachelor of Technology"}</p>
-                              </div>
-                              <div className="space-y-1 text-right">
-                                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block">Faculty Supervisor:</span>
-                                <p className="font-bold text-gray-900">{guideName || "Dr. Robert Smith, Professor"}</p>
-                                <p className="text-gray-600">{department || "Dept. of Computer Science"}</p>
-                              </div>
+                            <div className="space-y-3 py-6">
+                              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-950 leading-tight border-y-2 border-gray-950 py-4 font-serif">
+                                {outline.title}
+                              </h1>
+                              <p className="text-sm sm:text-base italic text-gray-700 max-w-xl mx-auto font-serif">
+                                {outline.subtitle}
+                              </p>
                             </div>
-                          ) : (
-                            <div className="pt-4 flex flex-wrap justify-center items-center gap-6 text-xs text-gray-600 font-sans">
-                              <span>Author: Document Studio</span>
-                              <span>•</span>
-                              <span>Format: {format.toUpperCase()}</span>
-                              <span>•</span>
-                              <span>Typography: {selectedFont}</span>
-                              <span>•</span>
-                              <span>Live Citations: {researchBundle?.results?.length || 2} Sources</span>
-                            </div>
-                          )}
-                        </div>
+
+                            {isFormalAcademicReport ? (
+                              <div className="pt-8 grid grid-cols-2 gap-8 text-xs text-left font-sans border-t border-gray-200">
+                                <div className="space-y-1">
+                                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block">Submitted By:</span>
+                                  <p className="font-bold text-gray-900">{submittedBy || "Alex Chen & Research Group"}</p>
+                                  <p className="text-gray-600">{degree || "Bachelor of Technology"}</p>
+                                </div>
+                                <div className="space-y-1 text-right">
+                                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block">Faculty Supervisor:</span>
+                                  <p className="font-bold text-gray-900">{guideName || "Dr. Robert Smith, Professor"}</p>
+                                  <p className="text-gray-600">{department || "Dept. of Computer Science"}</p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="pt-4 flex flex-wrap justify-center items-center gap-6 text-xs text-gray-600 font-sans">
+                                <span>Author: Document Studio</span>
+                                <span>•</span>
+                                <span>Format: {format.toUpperCase()}</span>
+                                <span>•</span>
+                                <span>Typography: {selectedFont}</span>
+                                <span>•</span>
+                                <span>Live Citations: {researchBundle?.results?.length || 2} Sources</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Running Bottom Footer */}
                         <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-[10px] text-gray-500 font-sans">
-                          <span>Verified Manuscript Edition • Standard A4</span>
-                          <span>Cover Page</span>
+                          <span>{docType === "IEEE Research Paper" ? "IEEE Conference & Journal Specification" : "Verified Manuscript Edition • Standard A4"}</span>
+                          <span>Page 1</span>
                         </div>
                       </div>
 
