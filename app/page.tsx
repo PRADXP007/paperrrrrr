@@ -198,6 +198,7 @@ export default function PaperrrrrrApp() {
   const [isAssembledReady, setIsAssembledReady] = useState(false);
   const [assembledBlobUrl, setAssembledBlobUrl] = useState<string | null>(null);
   const [assembledFilename, setAssembledFilename] = useState<string>("");
+  const [isExporting, setIsExporting] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [workspaceTab, setWorkspaceTab] = useState<"code" | "logs">("code");
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -526,6 +527,86 @@ export default function PaperrrrrrApp() {
       setShowSettingsModal(false);
     } catch (err: any) {
       alert("Error clearing keys: " + err.message);
+    }
+  };
+
+  const handleExportDocument = async () => {
+    if (!outline) return;
+
+    // If assembled blob URL already exists in memory, trigger instant download
+    if (assembledBlobUrl) {
+      const link = document.createElement("a");
+      link.href = assembledBlobUrl;
+      link.download = assembledFilename || `Paperrrrrr_${(projectTitleOverride || outline.title || "Document").replace(/[^a-zA-Z0-9_\-]/g, "_")}.${outline.format || format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    // Otherwise compile on demand immediately
+    setIsExporting(true);
+    try {
+      const compiledSections = outline.sections.map((s, idx) => ({
+        id: s.id || `sec_${idx + 1}`,
+        title: s.title,
+        brief: s.brief,
+        content: generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[s.title] || s.brief,
+        subsections: s.subsections,
+      }));
+
+      const resAssemble = await fetch("/api/assemble", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          docId: docId || `doc_${Date.now()}`,
+          title: projectTitleOverride || outline.title,
+          subtitle: outline.subtitle,
+          format: outline.format || format,
+          docType: outline.docType || docType,
+          isIEEEPaper: docType === "IEEE Research Paper" || docType === "Research Paper" || (outline.title || "").toLowerCase().includes("ieee"),
+          sections: compiledSections,
+          chapters: compiledSections,
+          selectedFont,
+          accentColor,
+          academicMeta: {
+            isFormalAcademicReport: isFormalAcademicReport || docType === "Research Report",
+            institutionName,
+            department,
+            degree,
+            submittedBy,
+            guideName,
+            academicYear,
+            projectTitleOverride: projectTitleOverride || outline.title,
+            selectedFont,
+            accentColor,
+          },
+        }),
+      });
+
+      if (resAssemble.ok) {
+        const blob = await resAssemble.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const filename = `Paperrrrrr_${(projectTitleOverride || outline.title).replace(/[^a-zA-Z0-9_\-]/g, "_")}.${outline.format || format}`;
+
+        setAssembledBlobUrl(downloadUrl);
+        setAssembledFilename(filename);
+        setIsAssembledReady(true);
+
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert("Failed to compile document: " + (await resAssemble.text()));
+      }
+    } catch (err: any) {
+      console.error("Export on demand error:", err);
+      alert("Export error: " + err.message);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -2098,24 +2179,26 @@ export default function PaperrrrrrApp() {
                 {copySuccess ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
               </button>
 
-              {assembledBlobUrl ? (
-                <a
-                  href={assembledBlobUrl}
-                  download={assembledFilename || `Paperrrrrr_${outline.title}.${format}`}
-                  className="inline-flex items-center gap-2 bg-[#C3644B] hover:bg-[#97422C] text-white px-4 py-1.5 rounded-lg text-xs font-sans font-bold transition-all shadow-md"
-                >
-                  <Download className="size-3.5" />
-                  <span>Download {format.toUpperCase()}</span>
-                </a>
-              ) : (
-                <button
-                  disabled
-                  className="inline-flex items-center gap-2 bg-gray-200 text-gray-500 px-4 py-1.5 rounded-lg text-xs font-sans cursor-not-allowed"
-                >
-                  <Download className="size-3.5" />
-                  <span>{isStreaming ? "Compiling..." : "Export"}</span>
-                </button>
-              )}
+              {/* Interactive Reliable Export Button */}
+              <button
+                type="button"
+                onClick={handleExportDocument}
+                disabled={isExporting}
+                className="inline-flex items-center gap-2 bg-[#C3644B] hover:bg-[#97422C] text-white px-4 py-1.5 rounded-lg text-xs font-sans font-bold transition-all shadow-md cursor-pointer disabled:opacity-70 disabled:cursor-wait"
+                title={`Export and Download ${format.toUpperCase()} Document`}
+              >
+                {isExporting ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Compiling {format.toUpperCase()}...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="size-3.5" />
+                    <span>Download {format.toUpperCase()}</span>
+                  </>
+                )}
+              </button>
             </div>
           </header>
 
