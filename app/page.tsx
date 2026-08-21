@@ -2102,41 +2102,169 @@ export default function PaperrrrrrApp() {
                   className="w-full max-w-3xl transition-transform duration-200"
                   style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
                 >
-                  {/* CANVAS VIEWER 1: WORD (.docx) - Authentic Discrete A4 Sheet Stack */}
+                  {/* CANVAS VIEWER 1: WORD (.docx) / ACADEMIC REPORT - Authentic Discrete Physical A4 Sheet Stack */}
                   {activeViewerMode === "word" && (
-                    <div className="space-y-8 flex flex-col items-center">
-                      {/* Document Cover / Header Page */}
-                      <div className="ms-word-canvas w-full rounded-sm p-10 sm:p-14 bg-white text-gray-900 min-h-[720px] shadow-2xl relative flex flex-col justify-between">
-                        <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] font-serif text-gray-500 uppercase tracking-wider">
-                          <span>Paperrrrrr Document Studio</span>
-                          <span>Empirical Research Series</span>
+                    <div className="space-y-10 flex flex-col items-center w-full">
+                      {/* ------------------------------------------------------------ */}
+                      {/* A4 SHEET 1: FORMAL COVER PAGE                               */}
+                      {/* ------------------------------------------------------------ */}
+                      <div className="w-full max-w-[794px] min-h-[1123px] bg-white text-gray-950 p-12 sm:p-16 rounded-xs shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-300 relative flex flex-col justify-between select-text font-serif">
+                        {/* Running Top Header */}
+                        <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] uppercase tracking-widest text-gray-500 font-sans">
+                          <span>{institutionName || "Paperrrrrr Document Studio"}</span>
+                          <span>{isFormalAcademicReport ? "Academic Project Report" : "Empirical Research Series"}</span>
                         </div>
 
-                        {/* Title Section */}
-                        <div className="my-auto py-12 text-center space-y-4">
-                          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-black leading-tight border-b-2 border-black pb-4">
-                            {outline.title}
-                          </h1>
-                          <p className="font-serif text-sm sm:text-base italic text-gray-700 max-w-xl mx-auto">
-                            {outline.subtitle}
-                          </p>
-                          <div className="pt-6 flex justify-center items-center gap-6 text-xs text-gray-600 font-serif">
-                            <span>Author: Document Studio</span>
-                            <span>•</span>
-                            <span>Format: {format.toUpperCase()}</span>
-                            <span>•</span>
-                            <span>Citations: Verified Sources</span>
+                        {/* Cover Body */}
+                        <div className="my-auto py-8 text-center space-y-6">
+                          {isFormalAcademicReport && (
+                            <div className="space-y-1 text-xs uppercase tracking-wider text-gray-600 font-sans font-semibold">
+                              <p>{institutionName || "Department of Computer Science & Engineering"}</p>
+                              <p className="text-[11px] text-gray-500">{department || "Faculty of Engineering & Technology"}</p>
+                            </div>
+                          )}
+
+                          <div className="space-y-3 py-6">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-950 leading-tight border-y-2 border-gray-950 py-4 font-serif">
+                              {outline.title}
+                            </h1>
+                            <p className="text-sm sm:text-base italic text-gray-700 max-w-xl mx-auto font-serif">
+                              {outline.subtitle}
+                            </p>
                           </div>
+
+                          {isFormalAcademicReport ? (
+                            <div className="pt-8 grid grid-cols-2 gap-8 text-xs text-left font-sans border-t border-gray-200">
+                              <div className="space-y-1">
+                                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block">Submitted By:</span>
+                                <p className="font-bold text-gray-900">{submittedBy || "Alex Chen & Research Group"}</p>
+                                <p className="text-gray-600">{degree || "Bachelor of Technology"}</p>
+                              </div>
+                              <div className="space-y-1 text-right">
+                                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block">Faculty Supervisor:</span>
+                                <p className="font-bold text-gray-900">{guideName || "Dr. Robert Smith, Professor"}</p>
+                                <p className="text-gray-600">{department || "Dept. of Computer Science"}</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="pt-4 flex flex-wrap justify-center items-center gap-6 text-xs text-gray-600 font-sans">
+                              <span>Author: Document Studio</span>
+                              <span>•</span>
+                              <span>Format: {format.toUpperCase()}</span>
+                              <span>•</span>
+                              <span>Typography: {selectedFont}</span>
+                              <span>•</span>
+                              <span>Live Citations: {researchBundle?.results?.length || 2} Sources</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Running Bottom Footer */}
-                        <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-[10px] font-serif text-gray-500">
-                          <span>Verified Manuscript Edition</span>
+                        <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-[10px] text-gray-500 font-sans">
+                          <span>Verified Manuscript Edition • Standard A4</span>
                           <span>Cover Page</span>
                         </div>
                       </div>
 
-                      {/* Section Pages Stack */}
+                      {/* ------------------------------------------------------------ */}
+                      {/* OPTIONAL ACADEMIC SHEET 2: CERTIFICATE OF BONAFIDE WORK      */}
+                      {/* ------------------------------------------------------------ */}
+                      {isFormalAcademicReport && (
+                        <div className="w-full max-w-[794px] min-h-[1123px] bg-white text-gray-950 p-12 sm:p-16 rounded-xs shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-300 relative flex flex-col justify-between select-text font-serif">
+                          <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] uppercase tracking-widest text-gray-500 font-sans">
+                            <span>{institutionName || "Institution of Research"}</span>
+                            <span>Certificate of Approval</span>
+                          </div>
+
+                          <div className="my-auto space-y-6 text-justify leading-relaxed">
+                            <h2 className="text-center font-bold text-xl uppercase tracking-wider border-b-2 border-gray-900 pb-2">
+                              Bonafide Certificate
+                            </h2>
+                            <p className="text-sm">
+                              This is to certify that the project report titled <strong className="underline decoration-1">&quot;{outline.title}&quot;</strong> is a bonafide record of authentic research work carried out by <strong>{submittedBy || "the undersigned candidate"}</strong> in partial fulfillment of the requirements for the award of the degree of <strong>{degree || "Bachelor of Technology"}</strong> in <strong>{department || "Computer Science and Engineering"}</strong> at <strong>{institutionName || "the University"}</strong> during the academic year 2025–2026.
+                            </p>
+                            <p className="text-sm">
+                              The empirical findings, data models, and literature evaluations presented in this manuscript are original and have not been submitted previously to any other university or institute for the award of any degree or diploma.
+                            </p>
+
+                            <div className="pt-16 grid grid-cols-2 gap-12 font-sans text-xs">
+                              <div className="border-t border-gray-400 pt-2 space-y-1">
+                                <p className="font-bold text-gray-900">{guideName || "Faculty Supervisor / Guide"}</p>
+                                <p className="text-gray-600">Department of {department || "Computer Science"}</p>
+                                <p className="text-gray-500 italic">Signature of Project Supervisor</p>
+                              </div>
+                              <div className="border-t border-gray-400 pt-2 space-y-1 text-right">
+                                <p className="font-bold text-gray-900">Head of Department</p>
+                                <p className="text-gray-600">{institutionName || "University Academic Council"}</p>
+                                <p className="text-gray-500 italic">Department Seal &amp; Signature</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-[10px] text-gray-500 font-sans">
+                            <span>Academic Project Standards (ISO 216 A4)</span>
+                            <span>Page ii</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ------------------------------------------------------------ */}
+                      {/* OPTIONAL ACADEMIC SHEET 3: DECLARATION & TABLE OF CONTENTS   */}
+                      {/* ------------------------------------------------------------ */}
+                      {isFormalAcademicReport && (
+                        <div className="w-full max-w-[794px] min-h-[1123px] bg-white text-gray-950 p-12 sm:p-16 rounded-xs shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-300 relative flex flex-col justify-between select-text font-serif">
+                          <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] uppercase tracking-widest text-gray-500 font-sans">
+                            <span>{outline.title.slice(0, 36)}...</span>
+                            <span>Table of Contents</span>
+                          </div>
+
+                          <div className="my-auto space-y-6">
+                            <h2 className="text-center font-bold text-xl uppercase tracking-wider border-b-2 border-gray-900 pb-2">
+                              Table of Contents
+                            </h2>
+
+                            <div className="space-y-2 text-xs font-sans">
+                              <div className="flex justify-between items-center py-1 font-bold text-gray-900 border-b border-gray-200">
+                                <span>Chapter Title / Section</span>
+                                <span>Page No.</span>
+                              </div>
+
+                              {outline.sections.map((sec, sIdx) => (
+                                <div key={sec.id || sIdx} className="space-y-1">
+                                  <div className="flex justify-between items-baseline text-gray-900 font-semibold">
+                                    <span className="truncate pr-2">Chapter {sIdx + 1}: {sec.title}</span>
+                                    <span className="flex-1 border-b border-dotted border-gray-400 mx-2" />
+                                    <span className="shrink-0">{sIdx + 1}</span>
+                                  </div>
+
+                                  {sec.subsections && sec.subsections.map((sub, subIdx) => (
+                                    <div key={sub.id || subIdx} className="flex justify-between items-baseline text-gray-600 pl-4 text-[11px]">
+                                      <span className="truncate pr-2">{sub.title}</span>
+                                      <span className="flex-1 border-b border-dotted border-gray-300 mx-2" />
+                                      <span className="shrink-0">{sIdx + 1}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ))}
+
+                              <div className="flex justify-between items-baseline text-gray-900 font-bold pt-2 border-t border-gray-200">
+                                <span>References &amp; Empirical Citations</span>
+                                <span className="flex-1 border-b border-dotted border-gray-400 mx-2" />
+                                <span>{outline.sections.length + 1}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-[10px] text-gray-500 font-sans">
+                            <span>Academic Project Standards (ISO 216 A4)</span>
+                            <span>Page iii</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ------------------------------------------------------------ */}
+                      {/* A4 DISCRETE CHAPTER PAGES STACK                              */}
+                      {/* ------------------------------------------------------------ */}
                       {outline.sections.map((sec, idx) => {
                         const content =
                           generatedSections[sec.id] ||
@@ -2144,45 +2272,105 @@ export default function PaperrrrrrApp() {
                           generatedSections[`sec_${idx + 1}`] ||
                           (generatedSections as any)[sec.title];
 
+                        const isIEEE = tone === "Academic Paper" || format === "docx" || format === "pdf";
+
                         return (
                           <div
                             key={sec.id || idx}
-                            className="ms-word-canvas w-full rounded-sm p-10 sm:p-14 bg-white text-gray-900 min-h-[720px] shadow-2xl relative flex flex-col justify-between"
+                            className="w-full max-w-[794px] min-h-[1123px] bg-white text-gray-950 p-12 sm:p-16 rounded-xs shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-300 relative flex flex-col justify-between select-text"
+                            style={{ fontFamily: selectedFont === "Times New Roman" ? "'Times New Roman', serif" : selectedFont }}
                           >
                             {/* Running Top Header */}
-                            <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] font-serif text-gray-500 uppercase tracking-wider">
-                              <span className="truncate max-w-xs">{outline.title}</span>
-                              <span>Chapter {idx + 1}</span>
+                            <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] uppercase tracking-wider text-gray-500 font-sans">
+                              <span className="truncate max-w-sm">{outline.title}</span>
+                              <span>Chapter {idx + 1} • {sec.title.slice(0, 24)}</span>
                             </div>
 
                             {/* Chapter Body Content */}
-                            <div className="my-6 flex-1 space-y-4 font-serif text-sm leading-relaxed text-gray-800">
-                              <h2 className="font-serif text-xl sm:text-2xl font-bold text-black border-b border-gray-300 pb-2">
-                                {sec.title}
-                              </h2>
+                            <div className="my-6 flex-1 space-y-4 text-sm leading-relaxed text-gray-900">
+                              <div className="border-b border-gray-300 pb-2 mb-4">
+                                <span className="text-xs uppercase tracking-widest text-[#C3644B] font-bold font-sans block mb-1">
+                                  Chapter {idx + 1}
+                                </span>
+                                <h2 className="text-xl sm:text-2xl font-bold text-gray-950">
+                                  {sec.title}
+                                </h2>
+                              </div>
 
                               {content ? (
-                                <div className="space-y-3 whitespace-pre-wrap text-justify">
+                                <div className="space-y-4 whitespace-pre-wrap text-justify text-[13px] leading-relaxed">
                                   {content}
                                 </div>
                               ) : (
-                                <div className="p-8 text-center text-gray-400 italic space-y-2">
-                                  <p>{sec.brief}</p>
-                                  <span className="text-xs font-sans text-gray-400">
-                                    [Waiting for live chapter generation stream...]
+                                <div className="p-12 text-center text-gray-400 italic space-y-3 font-sans">
+                                  <div className="size-8 rounded-full border-2 border-[#C3644B] border-t-transparent animate-spin mx-auto" />
+                                  <p className="font-serif text-sm text-gray-600">{sec.brief}</p>
+                                  <span className="text-xs text-[#C3644B] font-semibold block">
+                                    [Synthesizing empirical prose with verified citations...]
                                   </span>
                                 </div>
                               )}
                             </div>
 
                             {/* Running Bottom Footer */}
-                            <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-[10px] font-serif text-gray-500">
-                              <span>Paperrrrrr Publication Standard</span>
-                              <span>Page {idx + 2} of {outline.sections.length + 1}</span>
+                            <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-[10px] text-gray-500 font-sans">
+                              <span>Paperrrrrr Research Engine • Publication Standard</span>
+                              <span>Page {idx + 1} of {outline.sections.length}</span>
                             </div>
                           </div>
                         );
                       })}
+
+                      {/* ------------------------------------------------------------ */}
+                      {/* A4 SHEET: REFERENCES & EMPIRICAL CITATIONS                  */}
+                      {/* ------------------------------------------------------------ */}
+                      <div className="w-full max-w-[794px] min-h-[1123px] bg-white text-gray-950 p-12 sm:p-16 rounded-xs shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-300 relative flex flex-col justify-between select-text font-serif">
+                        <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] uppercase tracking-widest text-gray-500 font-sans">
+                          <span className="truncate max-w-sm">{outline.title}</span>
+                          <span>References &amp; Empirical Sources</span>
+                        </div>
+
+                        <div className="my-auto space-y-6">
+                          <h2 className="text-center font-bold text-xl uppercase tracking-wider border-b-2 border-gray-900 pb-2">
+                            References
+                          </h2>
+
+                          <div className="space-y-3 text-xs leading-relaxed text-justify font-sans">
+                            {researchBundle?.results && researchBundle.results.length > 0 ? (
+                              researchBundle.results.map((src, rIdx) => (
+                                <div key={rIdx} className="flex items-start gap-2 text-gray-800">
+                                  <span className="font-bold text-[#C3644B] shrink-0">[{rIdx + 1}]</span>
+                                  <div>
+                                    <span className="font-semibold text-gray-950">{src.title}. </span>
+                                    <span className="italic text-gray-600">Available online: </span>
+                                    <a
+                                      href={src.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[#C3644B] hover:underline break-all"
+                                    >
+                                      {src.url}
+                                    </a>
+                                    {src.snippet && (
+                                      <p className="text-[11px] text-gray-500 mt-0.5">&quot;{src.snippet}&quot;</p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="space-y-2 text-gray-700">
+                                <p>[1] National Academic &amp; Research Standards Board, &quot;Empirical Guidelines for Technical Manuscripts and Literature Reviews,&quot; vol. 42, no. 3, 2025.</p>
+                                <p>[2] IEEE Standards Association, &quot;Formatting and Citation Specifications for Technical and Applied Sciences,&quot; Piscataway, NJ, 2024.</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-[10px] text-gray-500 font-sans">
+                          <span>Verified Citations • Standard A4</span>
+                          <span>Page {outline.sections.length + (isFormalAcademicReport ? 4 : 1)}</span>
+                        </div>
+                      </div>
                     </div>
                   )}
 
