@@ -1,13 +1,15 @@
 {
   "name": "paperrrrrr",
   "version": "1.0.0",
-  "description": "",
+  "description": "Academic & Research Document Studio for IEEE papers, multi-chapter project reports, and presentation decks",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/test-all-formats.cjs",
+    "test:ieee": "npx tsx scripts/test-ieee.cjs",
+    "test:ppt": "node scripts/test-ppt.cjs"
   },
   "keywords": [],
   "author": "",
