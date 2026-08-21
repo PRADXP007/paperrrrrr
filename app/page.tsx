@@ -1422,6 +1422,7 @@ export default function PaperrrrrrApp() {
                     setDocType("Research Report");
                     setFormat("docx");
                     setTone("Academic Paper");
+                    setIsFormalAcademicReport(true);
                   }}
                   className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                     documentMode === "report"
@@ -1440,6 +1441,7 @@ export default function PaperrrrrrApp() {
                     setDocType("IEEE Research Paper");
                     setFormat("docx");
                     setTone("Academic Paper");
+                    setIsFormalAcademicReport(false);
                   }}
                   className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                     documentMode === "paper"
@@ -2402,9 +2404,9 @@ export default function PaperrrrrrApp() {
                       </div>
 
                       {/* ------------------------------------------------------------ */}
-                      {/* OPTIONAL ACADEMIC SHEET 2: CERTIFICATE OF BONAFIDE WORK      */}
+                      {/* ACADEMIC SHEET 2: CERTIFICATE OF BONAFIDE WORK               */}
                       {/* ------------------------------------------------------------ */}
-                      {isFormalAcademicReport && (
+                      {(isFormalAcademicReport || docType === "Research Report" || docType === "Project Report") && (
                         <div className="w-full max-w-[794px] min-h-[1123px] bg-white text-gray-950 p-12 sm:p-16 rounded-xs shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-300 relative flex flex-col justify-between select-text font-serif">
                           <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] uppercase tracking-widest text-gray-500 font-sans">
                             <span>{institutionName || "Institution of Research"}</span>
@@ -2444,9 +2446,9 @@ export default function PaperrrrrrApp() {
                       )}
 
                       {/* ------------------------------------------------------------ */}
-                      {/* OPTIONAL ACADEMIC SHEET 3: DECLARATION & TABLE OF CONTENTS   */}
+                      {/* ACADEMIC SHEET 3: DECLARATION & TABLE OF CONTENTS            */}
                       {/* ------------------------------------------------------------ */}
-                      {isFormalAcademicReport && (
+                      {(isFormalAcademicReport || docType === "Research Report" || docType === "Project Report") && (
                         <div className="w-full max-w-[794px] min-h-[1123px] bg-white text-gray-950 p-12 sm:p-16 rounded-xs shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-300 relative flex flex-col justify-between select-text font-serif">
                           <div className="border-b border-gray-200 pb-3 flex justify-between items-center text-[10px] uppercase tracking-widest text-gray-500 font-sans">
                             <span>{outline.title.slice(0, 36)}...</span>
