@@ -131,10 +131,10 @@ export function PaperrrrrrLogo({
         <span
           className={`font-serif ${textDimensions} font-bold tracking-tight transition-colors ${
             theme === "dark"
-              ? "text-[#FAF9F5]"
+              ? "text-white"
               : theme === "light"
-              ? "text-[#18191E]"
-              : "text-[#FAF9F5] dark:text-[#FAF9F5] light:text-[#18191E]"
+              ? "text-gray-950"
+              : "text-gray-950 dark:text-white"
           }`}
         >
           Paperrrrrr

@@ -1220,7 +1220,7 @@ export default function PaperrrrrrApp() {
           <header className="w-full flex items-center justify-between py-2">
             <div className="flex items-center gap-3">
               <PaperrrrrrLogo size="md" />
-              <span className="text-[11px] font-sans uppercase tracking-widest text-[#7A6B68] px-2 py-0.5 rounded border border-black/10 font-semibold bg-white/60">
+              <span className="text-[11px] font-sans uppercase tracking-widest text-gray-700 px-2.5 py-1 rounded-md border border-gray-300 font-semibold bg-gray-100 shadow-2xs">
                 Document Studio
               </span>
             </div>
@@ -1232,12 +1232,12 @@ export default function PaperrrrrrApp() {
                   fetchPastDocuments();
                   setShowHistoryModal(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans text-[#5C5A55] hover:text-[#19191C] hover:bg-black/5 border border-black/10 transition-colors cursor-pointer font-medium bg-white/70 shadow-xs"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-sans text-gray-800 hover:text-black hover:bg-gray-100 border border-gray-300 transition-colors cursor-pointer font-semibold bg-white shadow-xs"
               >
                 <Clock className="size-3.5 text-[#C3644B]" />
                 <span>History</span>
                 {pastDocuments.length > 0 && (
-                  <span className="bg-[#C3644B]/15 text-[#97422C] text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                  <span className="bg-[#C3644B] text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
                     {pastDocuments.length}
                   </span>
                 )}
@@ -1246,7 +1246,7 @@ export default function PaperrrrrrApp() {
               <button
                 type="button"
                 onClick={() => setShowSettingsModal(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-sans text-[#5C5A55] hover:text-[#19191C] hover:bg-black/5 border border-black/10 transition-colors cursor-pointer font-medium bg-white/70 shadow-xs"
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-sans text-gray-800 hover:text-black hover:bg-gray-100 border border-gray-300 transition-colors cursor-pointer font-semibold bg-white shadow-xs"
               >
                 <Sparkles className="size-3.5 text-[#C3644B]" />
                 <span>
@@ -1259,14 +1259,14 @@ export default function PaperrrrrrApp() {
               </button>
 
               {user ? (
-                <div className="flex items-center gap-2 text-xs font-sans bg-white border border-black/10 px-3 py-1 rounded-full shadow-xs">
+                <div className="flex items-center gap-2 text-xs font-sans bg-white border border-gray-300 px-3.5 py-1 rounded-full shadow-xs">
                   <div className="size-5 rounded-full bg-[#C3644B] text-white flex items-center justify-center font-bold text-[10px]">
                     {(user.name || user.email || "U")[0].toUpperCase()}
                   </div>
-                  <span className="text-[#19191C] max-w-[100px] truncate">{user.name || user.email}</span>
+                  <span className="text-gray-900 font-semibold max-w-[100px] truncate">{user.name || user.email}</span>
                   <button
                     onClick={handleSignOut}
-                    className="text-[#7A6B68] hover:text-[#19191C] ml-1 transition-colors cursor-pointer text-xs"
+                    className="text-gray-500 hover:text-black ml-1 transition-colors cursor-pointer text-xs font-semibold"
                     title="Sign Out"
                   >
                     Sign Out
@@ -1278,7 +1278,7 @@ export default function PaperrrrrrApp() {
                     setAuthMode("login");
                     setShowAuthModal(true);
                   }}
-                  className="text-xs font-sans text-[#19191C] bg-white hover:bg-black/5 border border-black/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer font-medium shadow-xs"
+                  className="text-xs font-sans text-white bg-gray-900 hover:bg-black border border-gray-900 px-4 py-1.5 rounded-full transition-colors cursor-pointer font-semibold shadow-xs"
                 >
                   Sign In
                 </button>
@@ -1290,19 +1290,19 @@ export default function PaperrrrrrApp() {
           <main className="flex-1 flex flex-col items-center justify-center my-auto -mt-8">
             <div className="w-full max-w-2xl flex flex-col items-center gap-8">
               {/* Editorial Headline */}
-              <div className="text-center space-y-2">
-                <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-[#19191C] drop-shadow-xs">
-                  What can we build together today?
+              <div className="text-center space-y-3">
+                <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-gray-950 leading-tight">
+                  Turn research into publication-ready documents.
                 </h1>
-                <p className="text-sm text-[#5C5A55] max-w-lg mx-auto font-light">
-                  A calm studio for exhaustive research, manuscript structuring, and live multi-format document assembly.
+                <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto font-normal leading-relaxed">
+                  Generate IEEE research papers, comprehensive multi-chapter project reports, and presentation decks with grounded web citations.
                 </p>
               </div>
 
               {/* Centered Single Prompt Bar */}
               <div className="w-full relative">
                 <form onSubmit={handleInitiatePrompt} className="w-full">
-                  <div className="glass-input-wrapper rounded-full px-5 py-3.5 flex items-center gap-3 shadow-xl relative bg-white">
+                  <div className="rounded-full px-5 py-3.5 flex items-center gap-3 shadow-lg relative bg-white border border-gray-300 focus-within:border-[#C3644B] focus-within:ring-2 focus-within:ring-[#C3644B]/20 transition-all">
                     <Sparkles className="size-5 text-[#C3644B] shrink-0" />
 
                     <input
@@ -1310,8 +1310,8 @@ export default function PaperrrrrrApp() {
                       type="text"
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="Describe your research topic, thesis, or document vision..."
-                      className="w-full bg-transparent border-none outline-none text-base text-[#19191C] placeholder-[#8C8983] font-sans"
+                      placeholder="e.g. Comparative analysis of Quantum Key Distribution vs Post-Quantum Cryptography..."
+                      className="w-full bg-transparent border-none outline-none text-base text-gray-950 placeholder-gray-400 font-sans"
                       autoFocus
                     />
 
@@ -1320,7 +1320,7 @@ export default function PaperrrrrrApp() {
                       type="button"
                       onClick={() => setShowFileAttachPopover(!showFileAttachPopover)}
                       className={`p-2 rounded-full transition-colors cursor-pointer shrink-0 ${
-                        attachedFileName ? "text-[#C3644B] bg-[#C3644B]/10" : "text-[#7A6B68] hover:text-[#19191C] hover:bg-black/5"
+                        attachedFileName ? "text-[#C3644B] bg-[#C3644B]/10" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                       }`}
                       title={attachedFileName ? `Attached: ${attachedFileName}` : "Attach reference file"}
                     >
@@ -1332,7 +1332,7 @@ export default function PaperrrrrrApp() {
                       type="button"
                       onClick={() => setShowDocSettingsPanel(!showDocSettingsPanel)}
                       className={`p-2 rounded-full transition-colors cursor-pointer shrink-0 ${
-                        showDocSettingsPanel ? "text-[#C3644B] bg-[#C3644B]/15" : "text-[#7A6B68] hover:text-[#19191C] hover:bg-black/5"
+                        showDocSettingsPanel ? "text-[#C3644B] bg-[#C3644B]/15" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                       }`}
                       title="Toggle Document Settings Panel"
                     >
@@ -1343,7 +1343,7 @@ export default function PaperrrrrrApp() {
                     <button
                       type="submit"
                       disabled={!prompt.trim()}
-                      className="size-9 rounded-full bg-[#C3644B] hover:bg-[#97422C] text-white flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:opacity-30 disabled:pointer-events-none cursor-pointer shrink-0 shadow-md"
+                      className="size-9 rounded-full bg-[#C3644B] hover:bg-[#97422C] text-white flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0 shadow-md"
                     >
                       <Send className="size-4" />
                     </button>
@@ -1352,7 +1352,7 @@ export default function PaperrrrrrApp() {
 
                 {/* Attached File Chip if present */}
                 {attachedFileName && (
-                  <div className="flex items-center gap-2 mt-2 ml-4 text-xs font-sans text-[#C3644B]">
+                  <div className="flex items-center gap-2 mt-2 ml-4 text-xs font-sans text-[#C3644B] font-semibold">
                     <Paperclip className="size-3" />
                     <span>Attached: {attachedFileName}</span>
                     <button
@@ -1361,7 +1361,7 @@ export default function PaperrrrrrApp() {
                         setAttachedFileName("");
                         setReferenceNotes("");
                       }}
-                      className="text-[#7A6B68] hover:text-[#19191C]"
+                      className="text-gray-500 hover:text-gray-900"
                     >
                       <X className="size-3" />
                     </button>
@@ -1370,52 +1370,52 @@ export default function PaperrrrrrApp() {
 
                 {/* File Upload Popover */}
                 {showFileAttachPopover && (
-                  <div className="absolute top-full left-0 mt-3 p-4 glass-panel rounded-2xl w-full max-w-sm z-30 shadow-2xl space-y-3 font-sans bg-white border border-gray-200">
+                  <div className="absolute top-full left-0 mt-3 p-4 glass-panel rounded-2xl w-full max-w-sm z-30 shadow-2xl space-y-3 font-sans bg-white border border-gray-300">
                     <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                      <span className="text-xs font-sans uppercase text-[#5C5A55] font-semibold tracking-wider">Attach Reference Material</span>
-                      <button onClick={() => setShowFileAttachPopover(false)} className="text-[#7A6B68] hover:text-[#19191C]">
+                      <span className="text-xs font-sans uppercase text-gray-700 font-semibold tracking-wider">Attach Reference Material</span>
+                      <button onClick={() => setShowFileAttachPopover(false)} className="text-gray-500 hover:text-gray-900">
                         <X className="size-4" />
                       </button>
                     </div>
-                    <p className="text-xs text-[#5C5A55]">Upload notes, PDFs, or raw data to synthesize into the document.</p>
+                    <p className="text-xs text-gray-600">Upload notes, PDFs, or raw text to include as primary context.</p>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept=".txt,.md,.pdf,.docx"
                       onChange={handleFileUpload}
-                      className="text-xs text-[#5C5A55] file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-[#C3644B]/10 file:text-[#97422C] file:cursor-pointer font-sans"
+                      className="text-xs text-gray-700 file:mr-2 file:py-1.5 file:px-3.5 file:rounded-full file:border-0 file:text-xs file:bg-[#C3644B]/10 file:text-[#97422C] file:font-semibold file:cursor-pointer font-sans"
                     />
-                    {isUploadingFile && <p className="text-xs font-sans text-[#C3644B] animate-pulse">Extracting text...</p>}
+                    {isUploadingFile && <p className="text-xs font-sans text-[#C3644B] font-semibold animate-pulse">Extracting text...</p>}
                   </div>
                 )}
 
                 {/* Collapsible Document Settings Toggle Pill */}
-                <div className="w-full mt-3 flex justify-center">
+                <div className="w-full mt-3.5 flex justify-center">
                   <button
                     type="button"
                     onClick={() => setShowDocSettingsPanel(!showDocSettingsPanel)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-xs font-sans text-[#5C5A55] hover:text-[#19191C] transition-all cursor-pointer shadow-xs"
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-gray-50 border border-gray-300 text-xs font-sans text-gray-700 hover:text-gray-950 transition-all cursor-pointer shadow-xs font-medium"
                   >
                     <SlidersHorizontal className="size-3.5 text-[#C3644B]" />
-                    <span className="font-medium">Document Settings:</span>
-                    <span className="text-xs text-[#C3644B] font-semibold">
+                    <span>Document Settings:</span>
+                    <span className="text-xs text-gray-900 font-bold">
                       {selectedFont} • {pageCount} Pages (~{calculatedBudget.totalWords.toLocaleString()} w) • {accentColor === "000000" ? "Black" : `#${accentColor}`}
                     </span>
-                    <ChevronDown className={`size-3.5 transition-transform duration-200 ${showDocSettingsPanel ? "rotate-180 text-[#C3644B]" : ""}`} />
+                    <ChevronDown className={`size-3.5 transition-transform duration-200 ${showDocSettingsPanel ? "rotate-180 text-[#C3644B]" : "text-gray-500"}`} />
                   </button>
                 </div>
 
                 {/* Document Settings Panel (Collapsed by Default, Expandable) */}
                 {showDocSettingsPanel && (
-                  <div className="w-full mt-3 p-5 glass-panel rounded-2xl border border-gray-200 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-xs font-sans bg-white">
+                  <div className="w-full mt-3 p-5 rounded-2xl border border-gray-300 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-xs font-sans bg-white">
                     {/* Live Word Budget Metric Banner */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#F8F7F4] rounded-xl border border-gray-200 text-xs font-sans">
-                      <div className="flex items-center gap-2 text-[#19191C]">
-                        <span className="size-2 rounded-full bg-[#C3644B] animate-pulse" />
-                        <span className="font-semibold">Calculated Target:</span>
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs font-sans">
+                      <div className="flex items-center gap-2 text-gray-900">
+                        <span className="size-2.5 rounded-full bg-[#C3644B] animate-pulse" />
+                        <span className="font-semibold">Target Output:</span>
                         <span className="text-[#C3644B] font-bold">~{calculatedBudget.totalWords.toLocaleString()} Words</span>
                       </div>
-                      <div className="text-[#5C5A55] text-xs flex items-center gap-3">
+                      <div className="text-gray-600 text-xs flex items-center gap-3 font-medium">
                         <span>• {pageCount} Pages (~{calculatedBudget.wordsPerPage} w/pg)</span>
                         <span>• {calculatedBudget.chapters} Chapters (~{calculatedBudget.wordsPerChapter} w/ch)</span>
                       </div>
@@ -1425,11 +1425,11 @@ export default function PaperrrrrrApp() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 font-sans">
                       {/* Field: Font */}
                       <div className="space-y-1.5">
-                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Typography Font</label>
+                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Typography Font</label>
                         <select
                           value={selectedFont}
                           onChange={(e) => setSelectedFont(e.target.value)}
-                          className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
+                          className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-medium outline-none cursor-pointer focus:border-[#C3644B] shadow-2xs font-sans"
                         >
                           <option value="Times New Roman">Times New Roman</option>
                           <option value="Arial">Arial</option>
@@ -1441,26 +1441,26 @@ export default function PaperrrrrrApp() {
 
                       {/* Field: Page Count */}
                       <div className="space-y-1.5">
-                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Page Target</label>
+                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Page Target</label>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
                             min={1}
                             value={pageCount}
                             onChange={(e) => setPageCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                            className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none focus:border-[#C3644B] font-sans"
+                            className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-medium outline-none focus:border-[#C3644B] shadow-2xs font-sans"
                           />
-                          <span className="text-[#5C5A55] text-xs shrink-0 font-medium">Pages</span>
+                          <span className="text-gray-600 text-xs shrink-0 font-semibold">Pages</span>
                         </div>
                       </div>
 
                       {/* Field: Heading Accent Color */}
                       <div className="space-y-1.5">
-                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Heading Color</label>
+                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Heading Color</label>
                         <select
                           value={accentColor}
                           onChange={(e) => setAccentColor(e.target.value)}
-                          className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none cursor-pointer focus:border-[#C3644B] font-sans"
+                          className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-medium outline-none cursor-pointer focus:border-[#C3644B] shadow-2xs font-sans"
                         >
                           <option value="000000">Black Only (Classic)</option>
                           <option value="1B365D">Navy Blue (#1B365D)</option>
@@ -1472,32 +1472,32 @@ export default function PaperrrrrrApp() {
 
                       {/* Field: Chapter Count */}
                       <div className="space-y-1.5">
-                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Chapter Count</label>
+                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Chapter Count</label>
                         <input
                           type="number"
                           min={2}
                           placeholder={`Auto (${calculatedBudget.chapters} chapters)`}
                           value={customChapterCount}
                           onChange={(e) => setCustomChapterCount(e.target.value)}
-                          className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none placeholder-[#8C8983] focus:border-[#C3644B] font-sans"
+                          className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-medium outline-none placeholder-gray-400 focus:border-[#C3644B] shadow-2xs font-sans"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 pt-2 border-t border-gray-100 font-sans">
-                      <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Additional Instructions</label>
+                    <div className="space-y-1.5 pt-2 border-t border-gray-200 font-sans">
+                      <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Additional Instructions</label>
                       <textarea
                         rows={2}
                         value={additionalRequirements}
                         onChange={(e) => setAdditionalRequirements(e.target.value)}
                         placeholder="e.g. Include IEEE citations, skip executive summary, focus on Section 4..."
-                        className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none placeholder-[#8C8983] focus:border-[#C3644B] resize-none font-sans"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-normal outline-none placeholder-gray-400 focus:border-[#C3644B] shadow-2xs resize-none font-sans"
                       />
                     </div>
 
-                    <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-sans">
+                    <div className="pt-2 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-sans">
                       <div className="space-y-1.5">
-                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Target Format</label>
+                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Target Format</label>
                         <div className="grid grid-cols-3 gap-1.5">
                           {[
                             { key: "docx", label: "Word (.docx)", icon: <FileText className="size-3.5 text-blue-600" /> },
@@ -1508,10 +1508,10 @@ export default function PaperrrrrrApp() {
                               key={fmtOption.key}
                               type="button"
                               onClick={() => setFormat(fmtOption.key as any)}
-                              className={`flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer border ${
+                              className={`flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-sans font-semibold transition-all cursor-pointer border ${
                                 format === fmtOption.key
-                                    ? "bg-[#C3644B]/15 border-[#C3644B] text-[#97422C] font-bold"
-                                    : "bg-gray-50 border-gray-200 text-[#5C5A55] hover:bg-gray-100"
+                                    ? "bg-[#C3644B]/15 border-[#C3644B] text-[#97422C] shadow-2xs"
+                                    : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
                               }`}
                             >
                               {fmtOption.icon}
@@ -1522,11 +1522,11 @@ export default function PaperrrrrrApp() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[#5C5A55] block text-xs uppercase tracking-wider font-semibold">Tone &amp; Style</label>
+                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Tone &amp; Style</label>
                         <select
                           value={tone}
                           onChange={(e) => setTone(e.target.value)}
-                          className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none font-sans"
+                          className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-semibold outline-none focus:border-[#C3644B] shadow-2xs font-sans"
                         >
                           <option value="Academic Paper">Academic Paper</option>
                           <option value="Executive Brief">Executive Brief</option>
@@ -1537,11 +1537,11 @@ export default function PaperrrrrrApp() {
                     </div>
 
                     {/* Formal Academic Report Toggle & Fields */}
-                    <div className="pt-2 border-t border-gray-100 space-y-2.5 font-sans">
+                    <div className="pt-2 border-t border-gray-200 space-y-2.5 font-sans">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs text-[#19191C] font-semibold flex items-center gap-1.5">
+                        <label className="text-xs text-gray-900 font-bold flex items-center gap-1.5">
                           <span>Formal Academic Front Matter</span>
-                          <span className="text-[10px] text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded-full font-medium">College Certificate, Declaration &amp; TOC</span>
+                          <span className="text-[10px] text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded-full font-bold">College Certificate, Declaration &amp; TOC</span>
                         </label>
                         <input
                           type="checkbox"
@@ -1552,55 +1552,55 @@ export default function PaperrrrrrApp() {
                       </div>
 
                       {isFormalAcademicReport && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs font-sans animate-in fade-in duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs font-sans animate-in fade-in duration-200">
                           <div>
-                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Institution / University</label>
+                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Institution / University</label>
                             <input
                               type="text"
                               value={institutionName}
                               onChange={(e) => setInstitutionName(e.target.value)}
                               placeholder="e.g. Stanford University"
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
+                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Department</label>
+                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Department</label>
                             <input
                               type="text"
                               value={department}
                               onChange={(e) => setDepartment(e.target.value)}
                               placeholder="e.g. Dept. of Computer Science"
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
+                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Degree Program</label>
+                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Degree Program</label>
                             <input
                               type="text"
                               value={degree}
                               onChange={(e) => setDegree(e.target.value)}
                               placeholder="e.g. Bachelor of Technology"
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
+                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Submitted By (Names &amp; IDs)</label>
+                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Submitted By (Names &amp; IDs)</label>
                             <input
                               type="text"
                               value={submittedBy}
                               onChange={(e) => setSubmittedBy(e.target.value)}
                               placeholder="e.g. Alex Chen (2021104012)"
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
+                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
                             />
                           </div>
                           <div className="sm:col-span-2">
-                            <label className="text-[10px] text-[#5C5A55] block mb-0.5">Faculty Supervisor / Guide</label>
+                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Faculty Supervisor / Guide</label>
                             <input
                               type="text"
                               value={guideName}
                               onChange={(e) => setGuideName(e.target.value)}
                               placeholder="e.g. Dr. Robert Smith, Professor"
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-[#19191C] outline-none"
+                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
                             />
                           </div>
                         </div>
@@ -1612,7 +1612,7 @@ export default function PaperrrrrrApp() {
 
               {/* Natural Format Detection Pill if prompt typed */}
               {prompt.length > 5 && (
-                <div className="flex items-center gap-2 text-xs font-mono text-[#5C5A55] animate-in fade-in duration-300">
+                <div className="flex items-center gap-2 text-xs font-mono text-gray-600 animate-in fade-in duration-300 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#C3644B]" />
                   <span>Targeting {format.toUpperCase()} format based on your input</span>
                 </div>
@@ -1620,7 +1620,7 @@ export default function PaperrrrrrApp() {
             </div>
           </main>
 
-          <footer className="w-full flex items-center justify-between text-xs font-sans text-[#8C8983] py-3 border-t border-gray-200">
+          <footer className="w-full flex items-center justify-between text-xs font-sans text-gray-500 py-3 border-t border-gray-200 font-medium">
             <span>Paperrrrrr • Research &amp; Document Studio</span>
             <span>Live Web Research &amp; Document Engine</span>
           </footer>
