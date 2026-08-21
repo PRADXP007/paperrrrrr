@@ -236,9 +236,44 @@ export default function PaperrrrrrApp() {
     }
   }, [detectedFormat]);
 
-  // Enforce dark mode permanently and restore user session
+  // Enforce dark mode permanently, restore user session, and restore active workspace on page refresh
   useEffect(() => {
     document.documentElement.classList.add("dark");
+
+    // Restore active workspace session if page was reloaded / refreshed
+    try {
+      const rawSession = sessionStorage.getItem("paperrrrrr_active_session") || localStorage.getItem("paperrrrrr_active_session");
+      if (rawSession) {
+        const session = JSON.parse(rawSession);
+        if (session && session.outline && (session.screen === "workspace" || session.screen === "thinking")) {
+          setScreen("workspace");
+          if (session.docId) setDocId(session.docId);
+          if (session.prompt) setPrompt(session.prompt);
+          if (session.format) setFormat(session.format);
+          if (session.docType) setDocType(session.docType);
+          if (session.tone) setTone(session.tone);
+          if (session.audience) setAudience(session.audience);
+          if (session.targetLength) setTargetLength(session.targetLength);
+          if (session.selectedFont) setSelectedFont(session.selectedFont);
+          if (session.pageCount) setPageCount(session.pageCount);
+          if (session.accentColor) setAccentColor(session.accentColor);
+          if (session.isFormalAcademicReport !== undefined) setIsFormalAcademicReport(session.isFormalAcademicReport);
+          if (session.institutionName) setInstitutionName(session.institutionName);
+          if (session.department) setDepartment(session.department);
+          if (session.degree) setDegree(session.degree);
+          if (session.submittedBy) setSubmittedBy(session.submittedBy);
+          if (session.guideName) setGuideName(session.guideName);
+          if (session.outline) setOutline(session.outline);
+          if (session.generatedSections) setGeneratedSections(session.generatedSections);
+          if (session.researchBundle) setResearchBundle(session.researchBundle);
+          if (session.activeViewerMode) setActiveViewerMode(session.activeViewerMode);
+          if (session.isAssembledReady !== undefined) setIsAssembledReady(session.isAssembledReady);
+          if (session.assembledFilename) setAssembledFilename(session.assembledFilename);
+        }
+      }
+    } catch (e) {
+      console.warn("Active session restore:", e);
+    }
 
     try {
       const savedUserStr = localStorage.getItem("paperloop_user") || localStorage.getItem("paperrrrrr_user");
@@ -263,6 +298,67 @@ export default function PaperrrrrrApp() {
 
     fetchPastDocuments();
   }, []);
+
+  // Continuously sync active workspace session to prevent loss on page reload
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (screen === "workspace" && outline) {
+      try {
+        const activeSession = {
+          screen: "workspace",
+          docId,
+          prompt,
+          format,
+          docType,
+          tone,
+          audience,
+          targetLength,
+          selectedFont,
+          pageCount,
+          accentColor,
+          isFormalAcademicReport,
+          institutionName,
+          department,
+          degree,
+          submittedBy,
+          guideName,
+          outline,
+          generatedSections,
+          researchBundle,
+          activeViewerMode,
+          isAssembledReady,
+          assembledFilename,
+          updatedAt: Date.now()
+        };
+        sessionStorage.setItem("paperrrrrr_active_session", JSON.stringify(activeSession));
+        localStorage.setItem("paperrrrrr_active_session", JSON.stringify(activeSession));
+      } catch (e) {}
+    }
+  }, [
+    screen,
+    docId,
+    prompt,
+    format,
+    docType,
+    tone,
+    audience,
+    targetLength,
+    selectedFont,
+    pageCount,
+    accentColor,
+    isFormalAcademicReport,
+    institutionName,
+    department,
+    degree,
+    submittedBy,
+    guideName,
+    outline,
+    generatedSections,
+    researchBundle,
+    activeViewerMode,
+    isAssembledReady,
+    assembledFilename
+  ]);
 
   // Fetch document history & user key settings when user changes
   useEffect(() => {
@@ -1831,8 +1927,18 @@ export default function PaperrrrrrApp() {
           <header className="w-full bg-white/90 backdrop-blur-xl border-b border-gray-200 px-6 py-3 sticky top-0 z-50 flex items-center justify-between font-sans shadow-xs">
             <div className="flex items-center gap-6">
               <button
-                onClick={() => setScreen("home")}
+                onClick={() => {
+                  try {
+                    sessionStorage.removeItem("paperrrrrr_active_session");
+                    localStorage.removeItem("paperrrrrr_active_session");
+                  } catch (e) {}
+                  setScreen("home");
+                  setOutline(null);
+                  setGeneratedSections({});
+                  setDocId(null);
+                }}
                 className="flex items-center gap-2 cursor-pointer group focus:outline-none"
+                title="Return to New Document Studio"
               >
                 <PaperrrrrrLogo size="sm" />
               </button>
