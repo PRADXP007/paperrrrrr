@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { SmoothScrollProvider } from "@/components/SmoothScrollProvider";
 
 export const metadata: Metadata = {
   title: "Paperrrrrr — Academic & Research Document Studio",
@@ -42,7 +43,9 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#0C111D] text-[#F8FAFC] antialiased min-h-screen flex flex-col font-sans">
-        {children}
+        <SmoothScrollProvider>
+          {children}
+        </SmoothScrollProvider>
       </body>
     </html>
   );
