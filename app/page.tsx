@@ -45,8 +45,17 @@ import {
   ZoomOut,
   Send,
   Sliders,
+  ShieldCheck,
+  AlertTriangle,
+  Wand2,
+  RefreshCw,
+  CheckCircle2,
+  Info,
+  CheckCheck,
 } from "lucide-react";
 import { PaperrrrrrLogo } from "@/components/PaperrrrrrLogo";
+import { runHallmarkAudit, HallmarkAuditResult, HallmarkFlag } from "@/lib/hallmark";
+import { runMechanicalLint, autoFixMechanicalIssues, LintReport } from "@/lib/linter";
 
 interface ResearchSource {
   index: number;
@@ -200,7 +209,10 @@ export default function PaperrrrrrApp() {
   const [assembledFilename, setAssembledFilename] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
-  const [workspaceTab, setWorkspaceTab] = useState<"code" | "logs">("code");
+  const [workspaceTab, setWorkspaceTab] = useState<"code" | "logs" | "hallmark" | "lint">("code");
+  const [revisingSectionId, setRevisingSectionId] = useState<string | null>(null);
+  const [isAutoFixingLint, setIsAutoFixingLint] = useState<boolean>(false);
+  const [lintFixSuccessMessage, setLintFixSuccessMessage] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
 
   // Elapsed timing for Screen 2 thinking tracker
@@ -607,6 +619,89 @@ export default function PaperrrrrrApp() {
       alert("Export error: " + err.message);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // Reactive Hallmark Quality Pass & Mechanical Lint computations
+  const hallmarkAudit: HallmarkAuditResult | null = useMemo(() => {
+    if (!outline) return null;
+    const sectionsList = outline.sections.map((s, idx) => ({
+      id: s.id || `sec_${idx + 1}`,
+      title: s.title,
+      content: generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[s.title] || ""
+    }));
+    return runHallmarkAudit(sectionsList, researchBundle?.results || []);
+  }, [outline, generatedSections, researchBundle]);
+
+  const mechanicalLintReport: LintReport | null = useMemo(() => {
+    if (!outline) return null;
+    const sectionsList = outline.sections.map((s, idx) => ({
+      id: s.id || `sec_${idx + 1}`,
+      title: s.title,
+      content: generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[s.title] || ""
+    }));
+    return runMechanicalLint(sectionsList);
+  }, [outline, generatedSections]);
+
+  const handleReviseHallmarkPassage = async (sectionId: string, customInstruction?: string) => {
+    if (!outline) return;
+    const targetSection = outline.sections.find((s, idx) => s.id === sectionId || `sec_${idx + 1}` === sectionId);
+    if (!targetSection) return;
+
+    setRevisingSectionId(sectionId);
+    try {
+      const res = await fetch("/api/generate-section", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          docId: docId || `doc_${Date.now()}`,
+          docTitle: projectTitleOverride || outline.title,
+          section: targetSection,
+          filteredSources: researchBundle?.results || [],
+          userInstruction: customInstruction || "De-AI this passage: Remove formulaic transitional filler ('furthermore', 'moreover', 'in conclusion'), eliminate hedging, and ground every claim in verifiable empirical evidence.",
+          customGeminiKey: hasCustomGeminiKey ? customGeminiKeyInput : undefined,
+          geminiModel,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.content) {
+          setGeneratedSections((prev) => ({
+            ...prev,
+            [sectionId]: data.content,
+            [targetSection.id]: data.content,
+          }));
+        }
+      }
+    } catch (err: any) {
+      console.error("Hallmark revision error:", err);
+      alert("Revision error: " + err.message);
+    } finally {
+      setRevisingSectionId(null);
+    }
+  };
+
+  const handleAutoFixAllMechanical = () => {
+    if (!outline) return;
+    setIsAutoFixingLint(true);
+    try {
+      const sectionsList = outline.sections.map((s, idx) => ({
+        id: s.id || `sec_${idx + 1}`,
+        title: s.title,
+        content: generatedSections[s.id] || generatedSections[idx] || generatedSections[`sec_${idx + 1}`] || (generatedSections as any)[s.title] || ""
+      }));
+
+      const { fixedSections, fixesAppliedCount } = autoFixMechanicalIssues(sectionsList);
+      const updatedMap: Record<string, string> = { ...generatedSections };
+      fixedSections.forEach((fs) => {
+        updatedMap[fs.id] = fs.content;
+      });
+      setGeneratedSections(updatedMap);
+      setLintFixSuccessMessage(`Applied ${fixesAppliedCount} mechanical formatting and punctuation repairs!`);
+      setTimeout(() => setLintFixSuccessMessage(null), 4000);
+    } finally {
+      setIsAutoFixingLint(false);
     }
   };
 
@@ -1494,8 +1589,8 @@ export default function PaperrrrrrApp() {
                 </p>
               </div>
 
-              {/* Prominent Document Architecture Mode Switcher */}
-              <div className="flex flex-wrap items-center justify-center p-1 bg-gray-100/90 border border-gray-300/80 rounded-full shadow-xs gap-1 font-sans">
+              {/* Warm Floating Document Architecture Mode Switcher */}
+              <div className="flex flex-wrap items-center justify-center p-1.5 bg-stone-200/60 backdrop-blur-md border border-stone-300/80 rounded-full shadow-xs gap-1.5 font-sans">
                 <button
                   type="button"
                   onClick={() => {
@@ -1505,13 +1600,13 @@ export default function PaperrrrrrApp() {
                     setTone("Academic Paper");
                     setIsFormalAcademicReport(true);
                   }}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     documentMode === "report"
-                      ? "bg-white text-gray-950 shadow-xs border border-gray-200"
-                      : "text-gray-600 hover:text-gray-950"
+                      ? "bg-white text-stone-950 shadow-sm border border-stone-300/80 font-bold"
+                      : "text-stone-600 hover:text-stone-950 hover:bg-white/40"
                   }`}
                 >
-                  <FileCheck className={`size-3.5 ${documentMode === "report" ? "text-[#C3644B]" : "text-gray-400"}`} />
+                  <FileCheck className={`size-3.5 ${documentMode === "report" ? "text-[#C3644B]" : "text-stone-400"}`} />
                   <span>📑 Academic / Project Report</span>
                 </button>
 
@@ -1524,13 +1619,13 @@ export default function PaperrrrrrApp() {
                     setTone("Academic Paper");
                     setIsFormalAcademicReport(false);
                   }}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     documentMode === "paper"
-                      ? "bg-white text-gray-950 shadow-xs border border-gray-200"
-                      : "text-gray-600 hover:text-gray-950"
+                      ? "bg-white text-stone-950 shadow-sm border border-stone-300/80 font-bold"
+                      : "text-stone-600 hover:text-stone-950 hover:bg-white/40"
                   }`}
                 >
-                  <FileText className={`size-3.5 ${documentMode === "paper" ? "text-[#C3644B]" : "text-gray-400"}`} />
+                  <FileText className={`size-3.5 ${documentMode === "paper" ? "text-[#C3644B]" : "text-stone-400"}`} />
                   <span>📄 IEEE Research Paper</span>
                 </button>
 
@@ -1542,13 +1637,13 @@ export default function PaperrrrrrApp() {
                     setFormat("pptx");
                     setTone("Executive & Direct");
                   }}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     documentMode === "deck"
-                      ? "bg-white text-gray-950 shadow-xs border border-gray-200"
-                      : "text-gray-600 hover:text-gray-950"
+                      ? "bg-white text-stone-950 shadow-sm border border-stone-300/80 font-bold"
+                      : "text-stone-600 hover:text-stone-950 hover:bg-white/40"
                   }`}
                 >
-                  <Presentation className={`size-3.5 ${documentMode === "deck" ? "text-amber-600" : "text-gray-400"}`} />
+                  <Presentation className={`size-3.5 ${documentMode === "deck" ? "text-amber-600" : "text-stone-400"}`} />
                   <span>📊 Slide Deck (16:9)</span>
                 </button>
               </div>
@@ -1556,7 +1651,7 @@ export default function PaperrrrrrApp() {
               {/* Centered Single Prompt Bar */}
               <div className="w-full relative">
                 <form onSubmit={handleInitiatePrompt} className="w-full">
-                  <div className="rounded-full px-5 py-3.5 flex items-center gap-3 shadow-lg relative bg-white border border-gray-300 focus-within:border-[#C3644B] focus-within:ring-2 focus-within:ring-[#C3644B]/20 transition-all">
+                  <div className="rounded-full px-5 py-3.5 flex items-center gap-3 shadow-md relative bg-white border border-stone-300/90 focus-within:border-[#C3644B] focus-within:ring-3 focus-within:ring-[#C3644B]/15 transition-all">
                     <Sparkles className="size-5 text-[#C3644B] shrink-0" />
 
                     <input
@@ -1571,7 +1666,7 @@ export default function PaperrrrrrApp() {
                           ? "e.g. Executive Strategic Briefing & Metric Presentation Deck..."
                           : "e.g. Daily Instagram Usage: Patterns, Architecture & Case Analysis (Project Report)..."
                       }
-                      className="w-full bg-transparent border-none outline-none text-base text-gray-950 placeholder-gray-400 font-sans"
+                      className="w-full bg-transparent border-none outline-none text-base text-stone-950 placeholder-stone-400 font-sans"
                       autoFocus
                     />
 
@@ -1580,7 +1675,7 @@ export default function PaperrrrrrApp() {
                       type="button"
                       onClick={() => setShowFileAttachPopover(!showFileAttachPopover)}
                       className={`p-2 rounded-full transition-colors cursor-pointer shrink-0 ${
-                        attachedFileName ? "text-[#C3644B] bg-[#C3644B]/10" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                        attachedFileName ? "text-[#C3644B] bg-[#C3644B]/10" : "text-stone-400 hover:text-stone-900 hover:bg-stone-100"
                       }`}
                       title={attachedFileName ? `Attached: ${attachedFileName}` : "Attach reference file"}
                     >
@@ -1592,7 +1687,7 @@ export default function PaperrrrrrApp() {
                       type="button"
                       onClick={() => setShowDocSettingsPanel(!showDocSettingsPanel)}
                       className={`p-2 rounded-full transition-colors cursor-pointer shrink-0 ${
-                        showDocSettingsPanel ? "text-[#C3644B] bg-[#C3644B]/15" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                        showDocSettingsPanel ? "text-[#C3644B] bg-[#C3644B]/15" : "text-stone-400 hover:text-stone-900 hover:bg-stone-100"
                       }`}
                       title="Toggle Document Settings Panel"
                     >
@@ -1621,7 +1716,7 @@ export default function PaperrrrrrApp() {
                         setAttachedFileName("");
                         setReferenceNotes("");
                       }}
-                      className="text-gray-500 hover:text-gray-900"
+                      className="text-stone-400 hover:text-stone-900 cursor-pointer"
                     >
                       <X className="size-3" />
                     </button>
@@ -1630,237 +1725,256 @@ export default function PaperrrrrrApp() {
 
                 {/* File Upload Popover */}
                 {showFileAttachPopover && (
-                  <div className="absolute top-full left-0 mt-3 p-4 glass-panel rounded-2xl w-full max-w-sm z-30 shadow-2xl space-y-3 font-sans bg-white border border-gray-300">
-                    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                      <span className="text-xs font-sans uppercase text-gray-700 font-semibold tracking-wider">Attach Reference Material</span>
-                      <button onClick={() => setShowFileAttachPopover(false)} className="text-gray-500 hover:text-gray-900">
+                  <div className="absolute top-full left-0 mt-3 p-4 rounded-2xl w-full max-w-sm z-30 shadow-2xl space-y-3 font-sans bg-white border border-stone-300">
+                    <div className="flex justify-between items-center pb-2 border-b border-stone-200">
+                      <span className="text-xs font-sans uppercase text-stone-700 font-semibold tracking-wider">Attach Reference Material</span>
+                      <button onClick={() => setShowFileAttachPopover(false)} className="text-stone-400 hover:text-stone-900 cursor-pointer">
                         <X className="size-4" />
                       </button>
                     </div>
-                    <p className="text-xs text-gray-600">Upload notes, PDFs, or raw text to include as primary context.</p>
+                    <p className="text-xs text-stone-600">Upload notes, PDFs, or raw text to include as primary context.</p>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept=".txt,.md,.pdf,.docx"
                       onChange={handleFileUpload}
-                      className="text-xs text-gray-700 file:mr-2 file:py-1.5 file:px-3.5 file:rounded-full file:border-0 file:text-xs file:bg-[#C3644B]/10 file:text-[#97422C] file:font-semibold file:cursor-pointer font-sans"
+                      className="text-xs text-stone-700 file:mr-2 file:py-1.5 file:px-3.5 file:rounded-full file:border-0 file:text-xs file:bg-[#C3644B]/10 file:text-[#97422C] file:font-semibold file:cursor-pointer font-sans"
                     />
                     {isUploadingFile && <p className="text-xs font-sans text-[#C3644B] font-semibold animate-pulse">Extracting text...</p>}
                   </div>
                 )}
 
-                {/* Collapsible Document Settings Toggle Pill */}
-                <div className="w-full mt-3.5 flex justify-center">
+                {/* Collapsible Document Settings Summary Toggle Bar */}
+                <div className="w-full mt-3 flex justify-center">
                   <button
                     type="button"
                     onClick={() => setShowDocSettingsPanel(!showDocSettingsPanel)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-gray-50 border border-gray-300 text-xs font-sans text-gray-700 hover:text-gray-950 transition-all cursor-pointer shadow-xs font-medium"
+                    className="flex items-center gap-2.5 px-5 py-2 rounded-full bg-white/90 backdrop-blur-md hover:bg-white border border-stone-300/90 text-xs font-sans text-stone-700 hover:text-stone-950 transition-all cursor-pointer shadow-xs font-medium hover:border-[#C3644B]/40"
                   >
                     <SlidersHorizontal className="size-3.5 text-[#C3644B]" />
-                    <span>Document Settings:</span>
-                    <span className="text-xs text-gray-900 font-bold">
-                      {selectedFont} • {pageCount} Pages (~{calculatedBudget.totalWords.toLocaleString()} w) • {accentColor === "000000" ? "Black" : `#${accentColor}`}
-                    </span>
-                    <ChevronDown className={`size-3.5 transition-transform duration-200 ${showDocSettingsPanel ? "rotate-180 text-[#C3644B]" : "text-gray-500"}`} />
+                    <span className="text-stone-500 font-normal">Settings:</span>
+                    <span className="text-xs text-stone-900 font-semibold">{selectedFont}</span>
+                    <span className="text-stone-300">•</span>
+                    <span className="text-stone-800 font-semibold">{pageCount} Pages (~{calculatedBudget.totalWords.toLocaleString()} w)</span>
+                    <span className="text-stone-300">•</span>
+                    <span className="text-[#C3644B] font-semibold">{accentColor === "000000" ? "Classic Black" : `#${accentColor}`}</span>
+                    <ChevronDown className={`size-3.5 transition-transform duration-200 ${showDocSettingsPanel ? "rotate-180 text-[#C3644B]" : "text-stone-400"}`} />
                   </button>
                 </div>
 
-                {/* Document Settings Panel (Collapsed by Default, Expandable) */}
+                {/* Redesigned Document Settings Panel (Visual Rhythm & Metric Card) */}
                 {showDocSettingsPanel && (
-                  <div className="w-full mt-3 p-5 rounded-2xl border border-gray-300 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-xs font-sans bg-white">
-                    {/* Live Word Budget Metric Banner */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs font-sans">
-                      <div className="flex items-center gap-2 text-gray-900">
-                        <span className="size-2.5 rounded-full bg-[#C3644B] animate-pulse" />
-                        <span className="font-semibold">Target Output:</span>
-                        <span className="text-[#C3644B] font-bold">~{calculatedBudget.totalWords.toLocaleString()} Words</span>
-                      </div>
-                      <div className="text-gray-600 text-xs flex items-center gap-3 font-medium">
-                        <span>• {pageCount} Pages (~{calculatedBudget.wordsPerPage} w/pg)</span>
-                        <span>• {calculatedBudget.chapters} Chapters (~{calculatedBudget.wordsPerChapter} w/ch)</span>
-                      </div>
-                    </div>
-
-                    {/* Core Settings Fields Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 font-sans">
-                      {/* Field: Font */}
-                      <div className="space-y-1.5">
-                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Typography Font</label>
-                        <select
-                          value={selectedFont}
-                          onChange={(e) => setSelectedFont(e.target.value)}
-                          className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-medium outline-none cursor-pointer focus:border-[#C3644B] shadow-2xs font-sans"
-                        >
-                          <option value="Times New Roman">Times New Roman</option>
-                          <option value="Arial">Arial</option>
-                          <option value="Calibri">Calibri</option>
-                          <option value="Cambria">Cambria</option>
-                          <option value="Georgia">Georgia</option>
-                        </select>
+                  <div className="w-full mt-3 p-6 rounded-2xl border border-stone-300 shadow-xl space-y-5 animate-in fade-in zoom-in-95 duration-200 text-xs font-sans bg-[#FAF9F6]">
+                    {/* Highlighted Target Output Glanceable Readout Card */}
+                    <div className="p-4 bg-white rounded-2xl border border-stone-200/80 shadow-xs space-y-3 font-sans">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-xs font-semibold text-stone-900">
+                          <span className="size-2 rounded-full bg-[#C3644B] animate-ping" />
+                          <span>Target Document Budget</span>
+                        </span>
+                        <span className="text-[11px] font-sans text-[#C3644B] font-semibold bg-[#C3644B]/10 px-2.5 py-0.5 rounded-full">
+                          {docType} Specification
+                        </span>
                       </div>
 
-                      {/* Field: Page Count */}
-                      <div className="space-y-1.5">
-                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Page Target</label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min={1}
-                            value={pageCount}
-                            onChange={(e) => setPageCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                            className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-medium outline-none focus:border-[#C3644B] shadow-2xs font-sans"
-                          />
-                          <span className="text-gray-600 text-xs shrink-0 font-semibold">Pages</span>
+                      <div className="grid grid-cols-3 gap-3 pt-1 border-t border-stone-100">
+                        <div className="p-2.5 rounded-xl bg-stone-50/80 border border-stone-200/60">
+                          <span className="text-[10px] text-stone-500 uppercase tracking-wider font-medium block">Total Words</span>
+                          <span className="text-base font-bold text-stone-950 font-serif">~{calculatedBudget.totalWords.toLocaleString()}</span>
+                          <span className="text-[10px] text-stone-500 block">words target</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-stone-50/80 border border-stone-200/60">
+                          <span className="text-[10px] text-stone-500 uppercase tracking-wider font-medium block">Printed Volume</span>
+                          <span className="text-base font-bold text-stone-950 font-serif">{pageCount}</span>
+                          <span className="text-[10px] text-stone-500 block">pages (~{calculatedBudget.wordsPerPage} w/pg)</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-stone-50/80 border border-stone-200/60">
+                          <span className="text-[10px] text-stone-500 uppercase tracking-wider font-medium block">Architecture</span>
+                          <span className="text-base font-bold text-stone-950 font-serif">{calculatedBudget.chapters}</span>
+                          <span className="text-[10px] text-stone-500 block">chapters (~{calculatedBudget.wordsPerChapter} w/ch)</span>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Field: Heading Accent Color */}
-                      <div className="space-y-1.5">
-                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Heading Color</label>
-                        <select
-                          value={accentColor}
-                          onChange={(e) => setAccentColor(e.target.value)}
-                          className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-medium outline-none cursor-pointer focus:border-[#C3644B] shadow-2xs font-sans"
-                        >
-                          <option value="000000">Black Only (Classic)</option>
-                          <option value="1B365D">Navy Blue (#1B365D)</option>
-                          <option value="800020">Burgundy (#800020)</option>
-                          <option value="1E4620">Forest Emerald (#1E4620)</option>
-                          <option value="2C3539">Slate Charcoal (#2C3539)</option>
-                        </select>
+                    {/* Section 1: Typography & Visual Rhythm */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-stone-800">
+                        <span className="size-1.5 rounded-full bg-[#C3644B]" />
+                        <span>Typography &amp; Visual Tone</span>
                       </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-sans">
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-stone-600 font-medium">Font Family</label>
+                          <select
+                            value={selectedFont}
+                            onChange={(e) => setSelectedFont(e.target.value)}
+                            className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-medium outline-none cursor-pointer focus:border-[#C3644B] shadow-2xs font-sans transition-colors"
+                          >
+                            <option value="Times New Roman">Times New Roman (Academic)</option>
+                            <option value="Arial">Arial (Clean Sans)</option>
+                            <option value="Calibri">Calibri (Modern)</option>
+                            <option value="Cambria">Cambria (Scholarly)</option>
+                            <option value="Georgia">Georgia (Editorial)</option>
+                          </select>
+                        </div>
 
-                      {/* Field: Chapter Count */}
-                      <div className="space-y-1.5">
-                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Chapter Count</label>
-                        <input
-                          type="number"
-                          min={2}
-                          placeholder={`Auto (${calculatedBudget.chapters} chapters)`}
-                          value={customChapterCount}
-                          onChange={(e) => setCustomChapterCount(e.target.value)}
-                          className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-medium outline-none placeholder-gray-400 focus:border-[#C3644B] shadow-2xs font-sans"
-                        />
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-stone-600 font-medium">Heading Accent</label>
+                          <select
+                            value={accentColor}
+                            onChange={(e) => setAccentColor(e.target.value)}
+                            className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-medium outline-none cursor-pointer focus:border-[#C3644B] shadow-2xs font-sans transition-colors"
+                          >
+                            <option value="000000">Classic Black (Standard)</option>
+                            <option value="1B365D">Navy Blue (#1B365D)</option>
+                            <option value="800020">Deep Burgundy (#800020)</option>
+                            <option value="1E4620">Forest Emerald (#1E4620)</option>
+                            <option value="2C3539">Slate Charcoal (#2C3539)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-stone-600 font-medium">Editorial Tone</label>
+                          <select
+                            value={tone}
+                            onChange={(e) => setTone(e.target.value)}
+                            className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-semibold outline-none focus:border-[#C3644B] shadow-2xs font-sans transition-colors"
+                          >
+                            <option value="Academic Paper">Scholarly Academic</option>
+                            <option value="Executive Brief">Executive Direct</option>
+                            <option value="Technical Spec">Technical Specification</option>
+                            <option value="Direct & Concise">Concise &amp; Factual</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 pt-2 border-t border-gray-200 font-sans">
-                      <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Additional Instructions</label>
+                    {/* Section 2: Volume & Chapter Architecture */}
+                    <div className="space-y-2.5 pt-3 border-t border-stone-200">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-stone-800">
+                        <span className="size-1.5 rounded-full bg-[#C3644B]" />
+                        <span>Volume &amp; Chapter Structure</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-sans">
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-stone-600 font-medium">Target Page Count</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={1}
+                              value={pageCount}
+                              onChange={(e) => setPageCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                              className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-medium outline-none focus:border-[#C3644B] shadow-2xs font-sans"
+                            />
+                            <span className="text-stone-500 text-xs shrink-0 font-medium">Pages</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-stone-600 font-medium">Custom Chapter Count Override</label>
+                          <input
+                            type="number"
+                            min={2}
+                            placeholder={`Auto (${calculatedBudget.chapters} chapters suggested)`}
+                            value={customChapterCount}
+                            onChange={(e) => setCustomChapterCount(e.target.value)}
+                            className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-medium outline-none placeholder-stone-400 focus:border-[#C3644B] shadow-2xs font-sans"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 3: Custom Guidance Instructions */}
+                    <div className="space-y-1.5 pt-3 border-t border-stone-200 font-sans">
+                      <label className="text-[11px] text-stone-600 font-medium block">Custom Instructions &amp; Focus Areas</label>
                       <textarea
                         rows={2}
                         value={additionalRequirements}
                         onChange={(e) => setAdditionalRequirements(e.target.value)}
-                        placeholder="e.g. Include IEEE citations, skip executive summary, focus on Section 4..."
-                        className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-normal outline-none placeholder-gray-400 focus:border-[#C3644B] shadow-2xs resize-none font-sans"
+                        placeholder="e.g. Emphasize experimental benchmark tables, include IEEE citations, focus on architectural trade-offs..."
+                        className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-normal outline-none placeholder-stone-400 focus:border-[#C3644B] shadow-2xs resize-none font-sans"
                       />
                     </div>
 
-                    <div className="pt-2 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-sans">
-                      <div className="space-y-1.5">
-                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Target Format</label>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          {[
-                            { key: "docx", label: "Word (.docx)", icon: <FileText className="size-3.5 text-blue-600" /> },
-                            { key: "pptx", label: "PowerPoint (.pptx)", icon: <Presentation className="size-3.5 text-amber-600" /> },
-                            { key: "pdf", label: "Printable PDF", icon: <FileCheck className="size-3.5 text-rose-600" /> },
-                          ].map((fmtOption) => (
-                            <button
-                              key={fmtOption.key}
-                              type="button"
-                              onClick={() => setFormat(fmtOption.key as any)}
-                              className={`flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-sans font-semibold transition-all cursor-pointer border ${
-                                format === fmtOption.key
-                                    ? "bg-[#C3644B]/15 border-[#C3644B] text-[#97422C] shadow-2xs"
-                                    : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
-                              }`}
-                            >
-                              {fmtOption.icon}
-                              <span>{fmtOption.label}</span>
-                            </button>
-                          ))}
+                    {/* Section 4: Formal Academic Front Matter Toggle (Custom Tactile Switch) */}
+                    <div className="pt-3 border-t border-stone-200 space-y-3 font-sans">
+                      <div className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-stone-200/90 shadow-2xs">
+                        <div className="space-y-0.5 pr-4">
+                          <span className="text-xs text-stone-950 font-bold block">Formal Academic Front Matter</span>
+                          <p className="text-[11px] text-stone-500">
+                            Injects College Cover, Bonafide Certificate of Approval, Candidate Declaration, and Table of Contents.
+                          </p>
                         </div>
-                      </div>
 
-                      <div className="space-y-1.5">
-                        <label className="text-gray-700 block text-xs uppercase tracking-wider font-semibold">Tone &amp; Style</label>
-                        <select
-                          value={tone}
-                          onChange={(e) => setTone(e.target.value)}
-                          className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-semibold outline-none focus:border-[#C3644B] shadow-2xs font-sans"
+                        {/* Custom Animated Pill Switch */}
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isFormalAcademicReport}
+                          onClick={() => setIsFormalAcademicReport(!isFormalAcademicReport)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            isFormalAcademicReport ? "bg-[#C3644B]" : "bg-stone-300"
+                          }`}
                         >
-                          <option value="Academic Paper">Academic Paper</option>
-                          <option value="Executive Brief">Executive Brief</option>
-                          <option value="Technical Spec">Technical Spec</option>
-                          <option value="Direct & Concise">Direct &amp; Concise</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Formal Academic Report Toggle & Fields */}
-                    <div className="pt-2 border-t border-gray-200 space-y-2.5 font-sans">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs text-gray-900 font-bold flex items-center gap-1.5">
-                          <span>Formal Academic Front Matter</span>
-                          <span className="text-[10px] text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded-full font-bold">College Certificate, Declaration &amp; TOC</span>
-                        </label>
-                        <input
-                          type="checkbox"
-                          checked={isFormalAcademicReport}
-                          onChange={(e) => setIsFormalAcademicReport(e.target.checked)}
-                          className="size-4 accent-[#C3644B] cursor-pointer"
-                        />
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                              isFormalAcademicReport ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
                       </div>
 
+                      {/* Expanded Academic Metadata Input Fields */}
                       {isFormalAcademicReport && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs font-sans animate-in fade-in duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-white rounded-2xl border border-stone-200 shadow-xs text-xs font-sans animate-in fade-in duration-200">
                           <div>
-                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Institution / University</label>
+                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Institution / University Name</label>
                             <input
                               type="text"
                               value={institutionName}
                               onChange={(e) => setInstitutionName(e.target.value)}
-                              placeholder="e.g. Stanford University"
-                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
+                              placeholder="e.g. Institute of Technology & Applied Science"
+                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Department</label>
+                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Department</label>
                             <input
                               type="text"
                               value={department}
                               onChange={(e) => setDepartment(e.target.value)}
-                              placeholder="e.g. Dept. of Computer Science"
-                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
+                              placeholder="e.g. Dept. of Computer Science & Engineering"
+                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Degree Program</label>
+                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Degree Program</label>
                             <input
                               type="text"
                               value={degree}
                               onChange={(e) => setDegree(e.target.value)}
                               placeholder="e.g. Bachelor of Technology"
-                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
+                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Submitted By (Names &amp; IDs)</label>
+                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Submitted By (Author Names)</label>
                             <input
                               type="text"
                               value={submittedBy}
                               onChange={(e) => setSubmittedBy(e.target.value)}
-                              placeholder="e.g. Alex Chen (2021104012)"
-                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
+                              placeholder="e.g. Alex Chen (ID: 2021104012)"
+                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
                             />
                           </div>
                           <div className="sm:col-span-2">
-                            <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Faculty Supervisor / Guide</label>
+                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Faculty Supervisor / Project Guide</label>
                             <input
                               type="text"
                               value={guideName}
                               onChange={(e) => setGuideName(e.target.value)}
-                              placeholder="e.g. Dr. Robert Smith, Professor"
-                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 outline-none focus:border-[#C3644B]"
+                              placeholder="e.g. Dr. Robert Smith, Professor & Head of Research"
+                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
                             />
                           </div>
                         </div>
@@ -1888,21 +2002,21 @@ export default function PaperrrrrrApp() {
       )}
 
       {/* ==================================================================== */}
-      {/* SCREEN 2: DEDICATED THINKING & INFORMATION GATHERING SCREEN          */}
+      {/* SCREEN 2: DEDICATED REASONING, RESEARCH & SYNTHESIS SCREEN           */}
       {/* ==================================================================== */}
       {screen === "thinking" && (
         <div className="min-h-screen flex flex-col justify-between relative z-10 px-4 sm:px-8 py-6 max-w-4xl mx-auto w-full font-sans">
           {/* Header */}
-          <header className="w-full flex items-center justify-between py-2 border-b border-gray-200">
+          <header className="w-full flex items-center justify-between py-2 border-b border-stone-200">
             <div className="flex items-center gap-3">
               <PaperrrrrrLogo size="md" />
-              <span className="text-[11px] font-sans text-[#7A6B68] px-2 py-0.5 rounded border border-black/10 font-semibold uppercase tracking-wider bg-white">
+              <span className="text-[11px] font-sans text-stone-600 px-2.5 py-0.5 rounded-full border border-stone-300 font-semibold uppercase tracking-wider bg-white shadow-2xs">
                 Reasoning &amp; Synthesis
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs font-sans text-[#5C5A55]">
-              <span className="flex items-center gap-1.5 font-medium">
+            <div className="flex items-center gap-3 text-xs font-sans text-stone-600">
+              <span className="flex items-center gap-1.5 font-medium bg-white px-3 py-1 rounded-full border border-stone-200 shadow-2xs">
                 <Clock className="size-3.5 text-[#C3644B]" />
                 {thinkingSeconds}s elapsed
               </span>
@@ -1911,69 +2025,102 @@ export default function PaperrrrrrApp() {
 
           {/* Center Thinking Glass Canvas */}
           <main className="flex-1 flex flex-col items-center justify-center my-8">
-            <div className="glass-panel w-full max-w-2xl rounded-2xl p-8 sm:p-10 relative shadow-2xl flex flex-col gap-8 bg-white border border-gray-200">
+            <div className="w-full max-w-2xl rounded-2xl p-8 sm:p-10 relative shadow-2xl flex flex-col gap-7 bg-white border border-stone-300/80">
               {/* Reasoning Pulse Header */}
-              <div className="flex items-center gap-3.5">
+              <div className="flex items-center gap-3.5 pb-2 border-b border-stone-100">
                 <div className="w-3 h-3 rounded-full bg-[#C3644B] pulse-indicator shrink-0" />
-                <div className="font-sans text-lg font-medium text-[#19191C]">
+                <div className="font-serif text-lg sm:text-xl font-bold text-stone-950">
                   {streamStatusText}
                 </div>
               </div>
 
-              <div className="font-sans text-xs text-[#5C5A55] flex flex-col gap-2 bg-[#F8F7F4] p-4 rounded-xl border border-gray-200">
+              {/* Progressive Synthesis Stream Telemetry Box */}
+              <div className="font-sans text-xs text-stone-600 flex flex-col gap-2.5 bg-stone-50/80 p-4 rounded-xl border border-stone-200/90 shadow-2xs">
                 <div className="flex justify-between items-center font-medium">
-                  <span>Generation Progress</span>
-                  <span className="text-[#C3644B] font-bold">Active</span>
+                  <span className="text-stone-700 font-semibold flex items-center gap-1.5">
+                    <Sparkles className="size-3.5 text-[#C3644B]" />
+                    <span>Real-Time Synthesis Engine</span>
+                  </span>
+                  <span className="text-[#C3644B] font-bold bg-[#C3644B]/10 px-2 py-0.5 rounded-full text-[10px]">
+                    Indexing Vectors
+                  </span>
                 </div>
-                <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#C3644B] w-[65%] transition-all duration-700 ease-out" />
+                <div className="w-full h-1.5 bg-stone-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-[#C3644B] to-[#97422C] w-[75%] transition-all duration-700 ease-out animate-pulse" />
                 </div>
-                <div className="flex justify-between items-center pt-1 text-[11px] text-[#8C8983]">
-                  <span>Topic: &quot;{prompt.slice(0, 48)}...&quot;</span>
-                  <span>Target: {format.toUpperCase()}</span>
+                <div className="flex justify-between items-center pt-1 text-[11px] text-stone-500">
+                  <span className="truncate max-w-xs">Topic: &quot;{prompt}&quot;</span>
+                  <span className="font-semibold text-stone-700 shrink-0">Format: {format.toUpperCase()}</span>
                 </div>
               </div>
 
-              {/* Active Tavily Research Sources Queue */}
+              {/* Active Tavily Research Sources Queue with Domain Favicons */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-sans uppercase tracking-wider text-[#5C5A55] font-semibold">
-                    Referenced Research Entities
+                  <h3 className="text-xs font-sans uppercase tracking-wider text-stone-600 font-bold flex items-center gap-1.5">
+                    <Globe className="size-3.5 text-[#C3644B]" />
+                    <span>Retrieved Verified Research Sources</span>
                   </h3>
-                  <span className="text-[11px] font-sans text-[#C3644B] font-semibold">
-                    {researchBundle?.results?.length || 2} live sources
+                  <span className="text-[11px] font-sans text-[#C3644B] font-semibold bg-[#C3644B]/10 px-2.5 py-0.5 rounded-full">
+                    {researchBundle?.results?.length || 2} Grounded Entities
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-2.5 max-h-48 overflow-y-auto custom-scrollbar" data-lenis-prevent>
+                <div className="flex flex-col gap-2.5 max-h-52 overflow-y-auto custom-scrollbar pr-1" data-lenis-prevent>
                   {researchBundle?.results && researchBundle.results.length > 0 ? (
-                    researchBundle.results.map((source, sIdx) => (
-                      <div
-                        key={sIdx}
-                        className="flex items-start gap-3 p-3 rounded-xl bg-[#FAF9F6] border border-gray-200 source-appear shadow-xs"
-                        style={{ animationDelay: `${sIdx * 0.15}s` }}
-                      >
-                        <Globe className="size-4 text-[#C3644B] shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-[#19191C] truncate">
-                            {source.title}
+                    researchBundle.results.map((source, sIdx) => {
+                      let domain = "academic-source.org";
+                      try {
+                        domain = new URL(source.url).hostname.replace(/^www\./, "");
+                      } catch (e) {
+                        domain = source.sourceDomain || "academic-source.org";
+                      }
+                      const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+
+                      return (
+                        <div
+                          key={sIdx}
+                          className="flex items-start gap-3.5 p-3.5 rounded-xl bg-stone-50/60 border border-stone-200/90 source-appear shadow-2xs hover:border-[#C3644B]/40 transition-colors"
+                          style={{ animationDelay: `${sIdx * 0.12}s` }}
+                        >
+                          {/* Domain Favicon with fallback */}
+                          <div className="size-6 rounded-md bg-white border border-stone-200 p-0.5 shrink-0 mt-0.5 flex items-center justify-center overflow-hidden shadow-2xs">
+                            <img
+                              src={faviconUrl}
+                              alt={domain}
+                              className="size-4 object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
                           </div>
-                          <div className="text-[11px] font-sans text-[#7A6B68] truncate">
-                            {source.url}
-                          </div>
-                          {source.snippet && (
-                            <div className="text-[11px] text-[#5C5A55] mt-0.5 line-clamp-1">
-                              {source.snippet}
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                              <span className="text-xs font-semibold text-stone-900 truncate">
+                                {source.title}
+                              </span>
+                              <span className="text-[10px] font-mono text-stone-500 shrink-0 bg-white px-1.5 py-0.5 rounded border border-stone-200">
+                                {domain}
+                              </span>
                             </div>
-                          )}
+                            <div className="text-[11px] font-sans text-stone-500 truncate">
+                              {source.url}
+                            </div>
+                            {source.snippet && (
+                              <p className="text-[11px] text-stone-600 mt-1 line-clamp-2 leading-relaxed bg-white/70 p-2 rounded-lg border border-stone-200/50">
+                                &ldquo;{source.snippet}&rdquo;
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-stone-50 border border-stone-200">
                       <Globe className="size-4 text-[#C3644B] animate-spin shrink-0" />
-                      <div className="text-xs font-sans text-[#5C5A55]">
-                        Querying real-time empirical vectors for {prompt}...
+                      <div className="text-xs font-sans text-stone-600">
+                        Querying real-time empirical vectors and cross-referencing DOIs for {prompt}...
                       </div>
                     </div>
                   )}
@@ -1982,15 +2129,15 @@ export default function PaperrrrrrApp() {
 
               {/* Dynamic Outline Framing Preview with Expandable Chapters & Subsections */}
               {outline && (
-                <div className="space-y-3 pt-3 border-t border-gray-200">
-                  <div className="flex justify-between items-center text-xs font-sans text-[#5C5A55]">
-                    <span className="font-bold text-[#19191C]">Outline Architecture</span>
-                    <span className="text-[#C3644B] bg-[#C3644B]/10 px-2 py-0.5 rounded font-semibold">
-                      {outline.sections.length} Chapters Structured
+                <div className="space-y-3 pt-3 border-t border-stone-200">
+                  <div className="flex justify-between items-center text-xs font-sans text-stone-600">
+                    <span className="font-bold text-stone-950">Structured Document Architecture</span>
+                    <span className="text-[#C3644B] bg-[#C3644B]/10 px-2.5 py-0.5 rounded-full font-semibold">
+                      {outline.sections.length} Chapters Formatted
                     </span>
                   </div>
 
-                  <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1" data-lenis-prevent>
+                  <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1" data-lenis-prevent>
                     {outline.sections.map((sec, i) => {
                       const isExpanded = !!expandedChapterIds[sec.id || `ch_${i}`];
                       const subCount = sec.subsections?.length || 0;
@@ -1998,7 +2145,7 @@ export default function PaperrrrrrApp() {
                       return (
                         <div
                           key={sec.id || i}
-                          className="bg-[#FAF9F6] border border-gray-200 rounded-xl p-3 space-y-1.5 transition-colors shadow-xs"
+                          className="bg-white border border-stone-200/90 rounded-xl p-3 space-y-1.5 transition-colors shadow-2xs"
                         >
                           <div
                             onClick={() =>
@@ -2009,41 +2156,41 @@ export default function PaperrrrrrApp() {
                             }
                             className="flex items-center justify-between cursor-pointer group"
                           >
-                            <span className="text-xs font-serif font-bold text-[#19191C] group-hover:text-[#C3644B] transition-colors truncate">
+                            <span className="text-xs font-serif font-bold text-stone-900 group-hover:text-[#C3644B] transition-colors truncate">
                               {sec.title}
                             </span>
                             <div className="flex items-center gap-2 shrink-0">
                               {subCount > 0 && (
-                                <span className="text-[10px] font-sans text-[#7A6B68] bg-white px-2 py-0.5 rounded-full border border-gray-200 font-medium">
+                                <span className="text-[10px] font-sans text-stone-600 bg-stone-50 px-2 py-0.5 rounded-full border border-stone-200 font-medium">
                                   {subCount} Subsections
                                 </span>
                               )}
                               <ChevronDown
-                                className={`size-3.5 text-[#7A6B68] transition-transform duration-200 ${
+                                className={`size-3.5 text-stone-400 transition-transform duration-200 ${
                                   isExpanded ? "rotate-180 text-[#C3644B]" : ""
                                 }`}
                               />
                             </div>
                           </div>
 
-                          <p className="text-[11px] text-[#5C5A55] line-clamp-1">{sec.brief}</p>
+                          <p className="text-[11px] text-stone-500 line-clamp-1">{sec.brief}</p>
 
                           {/* Nested Subsections */}
                           {isExpanded && sec.subsections && sec.subsections.length > 0 && (
-                            <div className="pl-3 pt-2 border-l border-[#C3644B]/30 space-y-1.5 animate-in fade-in duration-200">
+                            <div className="pl-3 pt-2 border-l-2 border-[#C3644B]/30 space-y-1.5 animate-in fade-in duration-200">
                               {sec.subsections.map((sub, sIdx) => (
                                 <div
                                   key={sub.id || sIdx}
-                                  className="text-[11px] font-sans text-[#5C5A55] flex items-start gap-2 bg-white p-1.5 rounded-lg border border-gray-200 shadow-2xs"
+                                  className="text-[11px] font-sans text-stone-600 flex items-start gap-2 bg-stone-50/70 p-2 rounded-lg border border-stone-200/80 shadow-2xs"
                                 >
                                   <span className="text-[#C3644B] font-bold shrink-0">
                                     {sub.title.split(" ")[0]}
                                   </span>
                                   <div className="min-w-0 flex-1">
-                                    <div className="text-[#19191C] font-sans font-medium">
+                                    <div className="text-stone-900 font-sans font-semibold">
                                       {sub.title.replace(/^\d+\.\d+\s*/, "")}
                                     </div>
-                                    <div className="text-[10px] text-[#8C8983] truncate">{sub.brief}</div>
+                                    <div className="text-[10px] text-stone-500 truncate">{sub.brief}</div>
                                   </div>
                                 </div>
                               ))}
@@ -2057,7 +2204,7 @@ export default function PaperrrrrrApp() {
               )}
 
               {/* Instant Advance Action */}
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end pt-2 border-t border-stone-100">
                 <Button
                   variant="primary"
                   size="sm"
@@ -2075,7 +2222,7 @@ export default function PaperrrrrrApp() {
           </main>
 
           {/* Minimal Footer */}
-          <footer className="w-full flex items-center justify-between text-xs font-sans text-[#8C8983] py-2 border-t border-gray-200">
+          <footer className="w-full flex items-center justify-between text-xs font-sans text-stone-500 py-2 border-t border-stone-200">
             <span>Research &amp; Outline Generation Active</span>
             <span>Auto-advancing to split workspace...</span>
           </footer>
@@ -2207,23 +2354,80 @@ export default function PaperrrrrrApp() {
             {/* ------------------------------------------------------------ */}
             {/* LEFT SIDE: "CODE" / STRUCTURED CONTENT STREAM (45% Width)    */}
             {/* ------------------------------------------------------------ */}
-            <section className="w-full lg:w-[45%] h-full flex flex-col border-r border-gray-200 bg-[#FAF9F6]">
+            <section className="w-full lg:w-[45%] h-full flex flex-col border-r border-stone-200 bg-[#FAF9F6]">
               {/* Left Side Header Tabs */}
-              <div className="h-11 px-4 border-b border-gray-200 bg-white flex items-center justify-between text-xs font-sans">
-                <div className="flex items-center gap-3">
+              <div className="h-11 px-3 border-b border-stone-200 bg-white flex items-center justify-between text-xs font-sans">
+                <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1">
+                  {/* Tab 1: source.md */}
                   <button
                     onClick={() => setWorkspaceTab("code")}
-                    className={`flex items-center gap-1.5 pb-0.5 cursor-pointer ${
-                      workspaceTab === "code" ? "text-[#C3644B] border-b-2 border-[#C3644B] font-bold" : "text-[#7A6B68] hover:text-[#19191C]"
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer font-medium text-xs shrink-0 ${
+                      workspaceTab === "code"
+                        ? "bg-[#C3644B]/10 text-[#C3644B] font-bold"
+                        : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
                     }`}
                   >
                     <FileCode2 className="size-3.5" />
                     <span>source.md</span>
                   </button>
+
+                  {/* Tab 2: hallmark.audit */}
+                  <button
+                    onClick={() => setWorkspaceTab("hallmark")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer font-medium text-xs shrink-0 ${
+                      workspaceTab === "hallmark"
+                        ? "bg-[#C3644B]/10 text-[#C3644B] font-bold"
+                        : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+                    }`}
+                  >
+                    <ShieldCheck className="size-3.5 text-[#C3644B]" />
+                    <span>hallmark.audit</span>
+                    {hallmarkAudit && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                          hallmarkAudit.score >= 95
+                            ? "bg-emerald-100 text-emerald-800"
+                            : hallmarkAudit.score >= 85
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-rose-100 text-rose-800"
+                        }`}
+                      >
+                        {hallmarkAudit.score}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Tab 3: mechanical.lint */}
+                  <button
+                    onClick={() => setWorkspaceTab("lint")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer font-medium text-xs shrink-0 ${
+                      workspaceTab === "lint"
+                        ? "bg-[#C3644B]/10 text-[#C3644B] font-bold"
+                        : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+                    }`}
+                  >
+                    <Wand2 className="size-3.5 text-[#C3644B]" />
+                    <span>mechanical.lint</span>
+                    {mechanicalLintReport && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                          mechanicalLintReport.isClean
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {mechanicalLintReport.isClean ? "0" : mechanicalLintReport.issueCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Tab 4: stream.log */}
                   <button
                     onClick={() => setWorkspaceTab("logs")}
-                    className={`flex items-center gap-1.5 pb-0.5 cursor-pointer ${
-                      workspaceTab === "logs" ? "text-[#C3644B] border-b-2 border-[#C3644B] font-bold" : "text-[#7A6B68] hover:text-[#19191C]"
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer font-medium text-xs shrink-0 ${
+                      workspaceTab === "logs"
+                        ? "bg-[#C3644B]/10 text-[#C3644B] font-bold"
+                        : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
                     }`}
                   >
                     <Terminal className="size-3.5" />
@@ -2231,25 +2435,28 @@ export default function PaperrrrrrApp() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-3 text-[11px] text-[#8C8983]">
-                  <span>Words: {totalWords}</span>
-                  <span>Chars: {totalCharacters}</span>
+                <div className="hidden sm:flex items-center gap-2 text-[11px] text-stone-500 font-mono shrink-0 pl-2">
+                  <span>{totalWords} w</span>
                 </div>
               </div>
 
-              {/* Left Side Content Body */}
-              {workspaceTab === "code" ? (
-                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-[#19191C] leading-relaxed space-y-4" data-lenis-prevent>
+              {/* VIEW 1: source.md (Distinct Queued / Drafting / Completed States) */}
+              {workspaceTab === "code" && (
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-stone-900 leading-relaxed space-y-4" data-lenis-prevent>
                   {/* Document Title Header Block */}
-                  <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-2xs space-y-1 font-sans">
-                    <div className="text-base font-serif font-bold text-[#19191C]"># {outline.title}</div>
-                    <div className="text-xs text-[#5C5A55] italic">*{outline.subtitle}*</div>
-                    <div className="text-[11px] text-[#8C8983] pt-1">
-                      Format: {format.toUpperCase()} • Tone: {tone}
+                  <div className="p-4 rounded-xl bg-white border border-stone-200/90 shadow-2xs space-y-1 font-sans">
+                    <div className="text-base font-serif font-bold text-stone-950"># {outline.title}</div>
+                    <div className="text-xs text-stone-600 italic">*{outline.subtitle}*</div>
+                    <div className="text-[11px] text-stone-500 pt-1 flex items-center gap-2">
+                      <span className="font-semibold">{format.toUpperCase()}</span>
+                      <span>•</span>
+                      <span>{tone}</span>
+                      <span>•</span>
+                      <span>{selectedFont}</span>
                     </div>
                   </div>
 
-                  {/* Sections List Stream */}
+                  {/* Sections List Stream with Distinct Visual State Architecture */}
                   {outline.sections.map((sec, idx) => {
                     const content =
                       generatedSections[sec.id] ||
@@ -2257,40 +2464,61 @@ export default function PaperrrrrrApp() {
                       generatedSections[`sec_${idx + 1}`] ||
                       (generatedSections as any)[sec.title];
                     const isCurrent = activeGeneratingSectionIndex === idx;
+                    const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
 
                     return (
                       <div
                         key={sec.id || idx}
-                        className={`p-4 rounded-xl border transition-all font-sans ${
+                        className={`p-4 rounded-xl transition-all font-sans ${
                           isCurrent
-                            ? "bg-[#FFF6F3] border-[#C3644B] shadow-sm"
+                            ? "bg-[#FFF9F6] border-l-4 border-l-[#C3644B] border-amber-200/90 shadow-md ring-1 ring-[#C3644B]/20"
                             : content
-                            ? "bg-white border-gray-200 shadow-2xs"
-                            : "bg-white/60 border-gray-200 opacity-60"
+                            ? "bg-white border border-stone-200/90 shadow-2xs hover:shadow-xs"
+                            : "bg-stone-50/70 border border-dashed border-stone-300/80 opacity-75"
                         }`}
                       >
+                        {/* Section Card Header with Clear State Badges */}
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-[#19191C]">## {sec.title}</span>
+                          <span className="font-serif font-bold text-stone-950 text-xs sm:text-sm">
+                            {sec.title}
+                          </span>
+
                           {content ? (
-                            <span className="text-[10px] text-emerald-600 font-sans font-medium flex items-center gap-1">
-                              <Check className="size-3" /> Drafted
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-stone-500 font-mono">
+                                {wordCount} words
+                              </span>
+                              <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-200">
+                                <CheckCircle2 className="size-3 text-emerald-600" /> Complete
+                              </span>
+                            </div>
                           ) : isCurrent ? (
-                            <span className="text-[10px] text-[#C3644B] font-sans font-medium animate-pulse">
-                              Streaming...
+                            <span className="text-[10px] text-[#C3644B] bg-[#C3644B]/10 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 border border-[#C3644B]/30 animate-pulse">
+                              <span className="size-1.5 rounded-full bg-[#C3644B] animate-ping" />
+                              Actively Drafting...
                             </span>
                           ) : (
-                            <span className="text-[10px] text-[#8C8983] font-sans font-medium">Queued</span>
+                            <span className="text-[10px] text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full font-medium border border-stone-200">
+                              Queued
+                            </span>
                           )}
                         </div>
 
+                        {/* Section Card Body */}
                         {content ? (
-                          <div className="whitespace-pre-wrap text-[11px] text-[#333336] leading-relaxed">
+                          <div className="whitespace-pre-wrap text-[11px] text-stone-700 leading-relaxed font-sans bg-stone-50/40 p-3 rounded-lg border border-stone-100">
                             {content}
                           </div>
                         ) : (
-                          <div className="text-[11px] text-[#8C8983] italic">
-                            {isCurrent ? "Drafting section prose..." : sec.brief}
+                          <div className="text-[11px] text-stone-500 italic py-1">
+                            {isCurrent ? (
+                              <span className="text-[#C3644B] font-medium flex items-center gap-2">
+                                <span className="size-2 rounded-full bg-[#C3644B] animate-ping" />
+                                Synthesizing empirical arguments and ground truths...
+                              </span>
+                            ) : (
+                              sec.brief
+                            )}
                           </div>
                         )}
                       </div>
@@ -2298,22 +2526,255 @@ export default function PaperrrrrrApp() {
                   })}
 
                   {isStreaming && (
-                    <div className="flex items-center gap-2 text-xs text-[#C3644B] pt-2 font-sans font-medium">
+                    <div className="flex items-center gap-2 text-xs text-[#C3644B] pt-2 font-sans font-semibold bg-[#FFF9F6] p-3 rounded-xl border border-[#C3644B]/20">
                       <span className="w-2 h-2 rounded-full bg-[#C3644B] animate-ping" />
-                      <span>Streaming tokens in real time...</span>
-                      <span className="inline-block w-2 h-4 bg-[#C3644B] cursor-blink" />
+                      <span>Drafting chapters with verified web citations...</span>
                     </div>
                   )}
                 </div>
-              ) : (
-                /* Tab 2: Logs View */
-                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-[#5C5A55] space-y-2 bg-[#F8F7F4]" data-lenis-prevent>
-                  <div className="text-[11px] text-[#7A6B68] pb-2 border-b border-gray-200 font-sans">
-                    // Live Activity Stream
+              )}
+
+              {/* VIEW 2: hallmark.audit (AI-Smell & Grounding Auditor) */}
+              {workspaceTab === "hallmark" && (
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-stone-900 leading-relaxed space-y-4" data-lenis-prevent>
+                  {/* Hallmark Score Gauge Banner */}
+                  {hallmarkAudit && (
+                    <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="size-5 text-[#C3644B]" />
+                          <div>
+                            <span className="text-sm font-bold text-stone-950 block">Hallmark Quality Pass</span>
+                            <span className="text-[11px] text-stone-500">AI-Smell, Buzzword &amp; Grounding Scanner</span>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span
+                            className={`text-xl font-serif font-extrabold ${
+                              hallmarkAudit.score >= 95
+                                ? "text-emerald-700"
+                                : hallmarkAudit.score >= 85
+                                ? "text-amber-700"
+                                : "text-rose-700"
+                            }`}
+                          >
+                            {hallmarkAudit.score}/100
+                          </span>
+                          <span className="text-[10px] text-stone-500 block uppercase tracking-wider font-semibold">
+                            Human Tone
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-stone-700 bg-stone-50 p-2.5 rounded-xl border border-stone-200/80">
+                        {hallmarkAudit.summary}
+                      </p>
+
+                      <div className="grid grid-cols-3 gap-2 text-center text-[10px] pt-1">
+                        <div className="p-2 rounded-lg bg-stone-50 border border-stone-200/60">
+                          <span className="text-stone-500 block">Words Scanned</span>
+                          <span className="font-bold text-stone-900 text-xs">{hallmarkAudit.stats.totalWordsScanned}</span>
+                        </div>
+                        <div className="p-2 rounded-lg bg-stone-50 border border-stone-200/60">
+                          <span className="text-stone-500 block">AI Clichés</span>
+                          <span className="font-bold text-[#C3644B] text-xs">{hallmarkAudit.stats.buzzwordsDetected}</span>
+                        </div>
+                        <div className="p-2 rounded-lg bg-stone-50 border border-stone-200/60">
+                          <span className="text-stone-500 block">Hedging Phrases</span>
+                          <span className="font-bold text-amber-700 text-xs">{hallmarkAudit.stats.hedgingPhrasesDetected}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Flagged Passages List with 1-Click Revise */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">
+                        Flagged Passages &amp; Suggestions ({hallmarkAudit?.flags.length || 0})
+                      </span>
+                    </div>
+
+                    {hallmarkAudit && hallmarkAudit.flags.length > 0 ? (
+                      hallmarkAudit.flags.map((flag) => {
+                        const isRevising = revisingSectionId === flag.sectionId;
+
+                        return (
+                          <div
+                            key={flag.id}
+                            className="p-4 rounded-xl bg-white border border-stone-200/90 shadow-2xs space-y-2.5"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <span className="font-bold text-stone-950 text-xs block">
+                                  {flag.sectionTitle}
+                                </span>
+                                <span className="text-[10px] text-stone-500">
+                                  Trigger: <strong className="text-[#C3644B]">&quot;{flag.matchedText}&quot;</strong>
+                                </span>
+                              </div>
+
+                              <span
+                                className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                                  flag.severity === "high"
+                                    ? "bg-rose-100 text-rose-800 border border-rose-200"
+                                    : "bg-amber-100 text-amber-800 border border-amber-200"
+                                }`}
+                              >
+                                {flag.severity}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] text-stone-600 bg-stone-50 p-2.5 rounded-lg border border-stone-200/60 font-mono leading-relaxed">
+                              {flag.contextSnippet}
+                            </p>
+
+                            <p className="text-[11px] text-stone-600">
+                              <strong>Why flagged:</strong> {flag.explanation}
+                            </p>
+
+                            {/* 1-Click Targeted Revision Button */}
+                            <div className="pt-1 flex justify-end">
+                              <button
+                                type="button"
+                                disabled={isRevising}
+                                onClick={() => handleReviseHallmarkPassage(flag.sectionId, `De-AI and humanize passage: Replace '${flag.matchedText}' with direct analytical wording.`)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#C3644B] hover:bg-[#97422C] text-white transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                              >
+                                {isRevising ? (
+                                  <>
+                                    <span className="size-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <span>Revising...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="size-3" />
+                                    <span>Revise This Passage</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-6 rounded-2xl bg-white border border-stone-200 text-center space-y-2">
+                        <CheckCircle2 className="size-8 text-emerald-600 mx-auto" />
+                        <h4 className="font-bold text-stone-900 text-xs">Pristine Quality Standard</h4>
+                        <p className="text-[11px] text-stone-500">
+                          No robotic AI transitional phrases or ungrounded claims detected in the drafted manuscript.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 3: mechanical.lint (Grammar, Punctuation & Formatting Checker) */}
+              {workspaceTab === "lint" && (
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-stone-900 leading-relaxed space-y-4" data-lenis-prevent>
+                  {/* Linting Overview Banner & Auto-Fix Button */}
+                  {mechanicalLintReport && (
+                    <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Wand2 className="size-5 text-[#C3644B]" />
+                          <div>
+                            <span className="text-sm font-bold text-stone-950 block">Mechanical Linting Pass</span>
+                            <span className="text-[11px] text-stone-500">Grammar, Spacing, Punctuation &amp; Syntax</span>
+                          </div>
+                        </div>
+
+                        {/* 1-Click Auto-Fix All Button */}
+                        {!mechanicalLintReport.isClean && (
+                          <button
+                            type="button"
+                            disabled={isAutoFixingLint}
+                            onClick={handleAutoFixAllMechanical}
+                            className="inline-flex items-center gap-1.5 bg-[#C3644B] hover:bg-[#97422C] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                          >
+                            {isAutoFixingLint ? (
+                              <>
+                                <span className="size-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <span>Fixing...</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCheck className="size-3.5" />
+                                <span>Auto-Fix All Mechanical Issues</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+
+                      {lintFixSuccessMessage && (
+                        <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium animate-in fade-in flex items-center gap-2">
+                          <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                          <span>{lintFixSuccessMessage}</span>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-stone-700 bg-stone-50 p-2.5 rounded-xl border border-stone-200/80">
+                        {mechanicalLintReport.summary}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Itemized Mechanical Issues List */}
+                  <div className="space-y-3">
+                    <span className="text-xs font-bold text-stone-800 uppercase tracking-wider block">
+                      Mechanical Items ({mechanicalLintReport?.issues.length || 0})
+                    </span>
+
+                    {mechanicalLintReport && mechanicalLintReport.issues.length > 0 ? (
+                      mechanicalLintReport.issues.map((issue) => (
+                        <div
+                          key={issue.id}
+                          className="p-4 rounded-xl bg-white border border-stone-200/90 shadow-2xs space-y-2"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-bold text-stone-950 text-xs">
+                              {issue.sectionTitle}
+                            </span>
+                            <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full font-bold uppercase">
+                              {issue.type.replace("_", " ")}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-stone-600">
+                            <strong>Problem:</strong> {issue.description}
+                          </p>
+
+                          <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-200/60 font-mono text-[10px] text-stone-700 space-y-1">
+                            <div><span className="text-rose-600">- Current:</span> {issue.contextSnippet}</div>
+                            <div><span className="text-emerald-600">+ Proposed:</span> {issue.proposedFix}</div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-6 rounded-2xl bg-white border border-stone-200 text-center space-y-2">
+                        <CheckCircle2 className="size-8 text-emerald-600 mx-auto" />
+                        <h4 className="font-bold text-stone-900 text-xs">Mechanical Formatting Pristine</h4>
+                        <p className="text-[11px] text-stone-500">
+                          All punctuation marks, spacing, brackets, and heading cases conform to academic standards.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 4: stream.log (Raw Execution Stream) */}
+              {workspaceTab === "logs" && (
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar font-sans text-xs text-stone-600 space-y-2 bg-[#F8F7F4]" data-lenis-prevent>
+                  <div className="text-[11px] text-stone-500 pb-2 border-b border-stone-200 font-mono font-semibold">
+                    // Live SSE Execution Activity Stream
                   </div>
                   {streamTimelineEvents.map((ev) => (
-                    <div key={ev.id} className="flex items-start gap-2 text-[11px] leading-relaxed font-sans">
-                      <span className="text-[#8C8983] shrink-0">[{ev.timestamp}]</span>
+                    <div key={ev.id} className="flex items-start gap-2 text-[11px] leading-relaxed font-mono">
+                      <span className="text-stone-400 shrink-0">[{ev.timestamp}]</span>
                       <div className="flex-1">
                         <span
                           className={
@@ -2323,12 +2784,12 @@ export default function PaperrrrrrApp() {
                               ? "text-[#C3644B] font-bold"
                               : ev.type === "research"
                               ? "text-blue-700"
-                              : "text-[#19191C]"
+                              : "text-stone-900"
                           }
                         >
                           {ev.title}
                         </span>
-                        {ev.detail && <p className="text-[#5C5A55] text-[10px] mt-0.5">{ev.detail}</p>}
+                        {ev.detail && <p className="text-stone-500 text-[10px] mt-0.5">{ev.detail}</p>}
                       </div>
                     </div>
                   ))}
