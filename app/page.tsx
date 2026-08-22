@@ -1762,53 +1762,31 @@ export default function PaperrrrrrApp() {
                   </button>
                 </div>
 
-                {/* Redesigned Document Settings Panel (Visual Rhythm & Metric Card) */}
+                {/* Simplified, Sleek Document Settings Panel */}
                 {showDocSettingsPanel && (
-                  <div className="w-full mt-3 p-6 rounded-2xl border border-stone-300 shadow-xl space-y-5 animate-in fade-in zoom-in-95 duration-200 text-xs font-sans bg-[#FAF9F6]">
-                    {/* Highlighted Target Output Glanceable Readout Card */}
-                    <div className="p-4 bg-white rounded-2xl border border-stone-200/80 shadow-xs space-y-3 font-sans">
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-xs font-semibold text-stone-900">
-                          <span className="size-2 rounded-full bg-[#C3644B] animate-ping" />
-                          <span>Target Document Budget</span>
-                        </span>
-                        <span className="text-[11px] font-sans text-[#C3644B] font-semibold bg-[#C3644B]/10 px-2.5 py-0.5 rounded-full">
-                          {docType} Specification
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-3 pt-1 border-t border-stone-100">
-                        <div className="p-2.5 rounded-xl bg-stone-50/80 border border-stone-200/60">
-                          <span className="text-[10px] text-stone-500 uppercase tracking-wider font-medium block">Total Words</span>
-                          <span className="text-base font-bold text-stone-950 font-serif">~{calculatedBudget.totalWords.toLocaleString()}</span>
-                          <span className="text-[10px] text-stone-500 block">words target</span>
-                        </div>
-                        <div className="p-2.5 rounded-xl bg-stone-50/80 border border-stone-200/60">
-                          <span className="text-[10px] text-stone-500 uppercase tracking-wider font-medium block">Printed Volume</span>
-                          <span className="text-base font-bold text-stone-950 font-serif">{pageCount}</span>
-                          <span className="text-[10px] text-stone-500 block">pages (~{calculatedBudget.wordsPerPage} w/pg)</span>
-                        </div>
-                        <div className="p-2.5 rounded-xl bg-stone-50/80 border border-stone-200/60">
-                          <span className="text-[10px] text-stone-500 uppercase tracking-wider font-medium block">Architecture</span>
-                          <span className="text-base font-bold text-stone-950 font-serif">{calculatedBudget.chapters}</span>
-                          <span className="text-[10px] text-stone-500 block">chapters (~{calculatedBudget.wordsPerChapter} w/ch)</span>
-                        </div>
-                      </div>
+                  <div className="w-full mt-3 p-6 rounded-2xl border border-stone-200/90 shadow-lg space-y-4 animate-in fade-in zoom-in-95 duration-200 text-xs font-sans bg-white/95 backdrop-blur-md">
+                    {/* 1. Single Inline Readout Summary Line */}
+                    <div className="pb-3 border-b border-stone-100 flex items-center justify-between text-xs font-sans">
+                      <span className="font-semibold text-stone-900">
+                        ~{calculatedBudget.totalWords.toLocaleString()} words · {pageCount} pages · {calculatedBudget.chapters} chapters
+                      </span>
+                      <span className="text-[11px] font-sans text-[#C3644B] font-semibold">
+                        {docType}
+                      </span>
                     </div>
 
-                    {/* Section 1: Typography & Visual Rhythm */}
-                    <div className="space-y-2.5">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-stone-800">
-                        <span className="size-1.5 rounded-full bg-[#C3644B]" />
-                        <span>Typography &amp; Visual Tone</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-sans">
+                    {/* 2. Typography & Tone (Generous Whitespace & Underline Inputs) */}
+                    <div className="pt-1 space-y-3 font-sans">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">
+                        Typography &amp; Tone
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div className="space-y-1">
-                          <label className="text-[11px] text-stone-600 font-medium">Font Family</label>
+                          <label className="text-[11px] text-stone-500 block font-medium">Font Family</label>
                           <select
                             value={selectedFont}
                             onChange={(e) => setSelectedFont(e.target.value)}
-                            className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-medium outline-none cursor-pointer focus:border-[#C3644B] shadow-2xs font-sans transition-colors"
+                            className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 font-medium outline-none cursor-pointer transition-colors"
                           >
                             <option value="Times New Roman">Times New Roman (Academic)</option>
                             <option value="Arial">Arial (Clean Sans)</option>
@@ -1819,11 +1797,11 @@ export default function PaperrrrrrApp() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[11px] text-stone-600 font-medium">Heading Accent</label>
+                          <label className="text-[11px] text-stone-500 block font-medium">Heading Accent</label>
                           <select
                             value={accentColor}
                             onChange={(e) => setAccentColor(e.target.value)}
-                            className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-medium outline-none cursor-pointer focus:border-[#C3644B] shadow-2xs font-sans transition-colors"
+                            className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 font-medium outline-none cursor-pointer transition-colors"
                           >
                             <option value="000000">Classic Black (Standard)</option>
                             <option value="1B365D">Navy Blue (#1B365D)</option>
@@ -1834,11 +1812,11 @@ export default function PaperrrrrrApp() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[11px] text-stone-600 font-medium">Editorial Tone</label>
+                          <label className="text-[11px] text-stone-500 block font-medium">Editorial Tone</label>
                           <select
                             value={tone}
                             onChange={(e) => setTone(e.target.value)}
-                            className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-semibold outline-none focus:border-[#C3644B] shadow-2xs font-sans transition-colors"
+                            className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 font-medium outline-none cursor-pointer transition-colors"
                           >
                             <option value="Academic Paper">Scholarly Academic</option>
                             <option value="Executive Brief">Executive Direct</option>
@@ -1849,60 +1827,61 @@ export default function PaperrrrrrApp() {
                       </div>
                     </div>
 
-                    {/* Section 2: Volume & Chapter Architecture */}
-                    <div className="space-y-2.5 pt-3 border-t border-stone-200">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-stone-800">
-                        <span className="size-1.5 rounded-full bg-[#C3644B]" />
-                        <span>Volume &amp; Chapter Structure</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-sans">
+                    {/* 3. Volume & Structure (Underline Inputs) */}
+                    <div className="pt-3 space-y-3 font-sans">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">
+                        Volume &amp; Structure
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1">
-                          <label className="text-[11px] text-stone-600 font-medium">Target Page Count</label>
+                          <label className="text-[11px] text-stone-500 block font-medium">Target Page Count</label>
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
                               min={1}
                               value={pageCount}
                               onChange={(e) => setPageCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                              className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-medium outline-none focus:border-[#C3644B] shadow-2xs font-sans"
+                              className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 font-medium outline-none transition-colors"
                             />
-                            <span className="text-stone-500 text-xs shrink-0 font-medium">Pages</span>
+                            <span className="text-stone-400 text-xs shrink-0">pages</span>
                           </div>
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[11px] text-stone-600 font-medium">Custom Chapter Count Override</label>
+                          <label className="text-[11px] text-stone-500 block font-medium">Chapter Count Override</label>
                           <input
                             type="number"
                             min={2}
-                            placeholder={`Auto (${calculatedBudget.chapters} chapters suggested)`}
+                            placeholder={`Auto (${calculatedBudget.chapters} chapters)`}
                             value={customChapterCount}
                             onChange={(e) => setCustomChapterCount(e.target.value)}
-                            className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-medium outline-none placeholder-stone-400 focus:border-[#C3644B] shadow-2xs font-sans"
+                            className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 font-medium outline-none placeholder-stone-400 transition-colors"
                           />
                         </div>
                       </div>
                     </div>
 
-                    {/* Section 3: Custom Guidance Instructions */}
-                    <div className="space-y-1.5 pt-3 border-t border-stone-200 font-sans">
-                      <label className="text-[11px] text-stone-600 font-medium block">Custom Instructions &amp; Focus Areas</label>
+                    {/* 4. Custom Guidance Instructions (Lightweight Subtle Border) */}
+                    <div className="pt-3 space-y-1.5 font-sans">
+                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">
+                        Custom Instructions
+                      </label>
                       <textarea
                         rows={2}
                         value={additionalRequirements}
                         onChange={(e) => setAdditionalRequirements(e.target.value)}
                         placeholder="e.g. Emphasize experimental benchmark tables, include IEEE citations, focus on architectural trade-offs..."
-                        className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 font-normal outline-none placeholder-stone-400 focus:border-[#C3644B] shadow-2xs resize-none font-sans"
+                        className="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-2.5 text-xs text-stone-900 font-normal outline-none placeholder-stone-400 focus:border-[#C3644B] focus:bg-white resize-none transition-colors"
                       />
                     </div>
 
-                    {/* Section 4: Formal Academic Front Matter Toggle (Custom Tactile Switch) */}
-                    <div className="pt-3 border-t border-stone-200 space-y-3 font-sans">
-                      <div className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-stone-200/90 shadow-2xs">
+                    {/* 5. Formal Academic Front Matter Toggle & Underlined Inputs */}
+                    <div className="pt-3 space-y-3 font-sans">
+                      <div className="flex items-center justify-between py-1">
                         <div className="space-y-0.5 pr-4">
-                          <span className="text-xs text-stone-950 font-bold block">Formal Academic Front Matter</span>
+                          <span className="text-xs text-stone-900 font-semibold block">Formal Academic Front Matter</span>
                           <p className="text-[11px] text-stone-500">
-                            Injects College Cover, Bonafide Certificate of Approval, Candidate Declaration, and Table of Contents.
+                            Injects College Cover, Bonafide Certificate, Candidate Declaration, and Table of Contents.
                           </p>
                         </div>
 
@@ -1924,58 +1903,60 @@ export default function PaperrrrrrApp() {
                         </button>
                       </div>
 
-                      {/* Expanded Academic Metadata Input Fields */}
+                      {/* Expanded Academic Metadata with subtle left border & underline inputs */}
                       {isFormalAcademicReport && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-white rounded-2xl border border-stone-200 shadow-xs text-xs font-sans animate-in fade-in duration-200">
-                          <div>
-                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Institution / University Name</label>
-                            <input
-                              type="text"
-                              value={institutionName}
-                              onChange={(e) => setInstitutionName(e.target.value)}
-                              placeholder="e.g. Institute of Technology & Applied Science"
-                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Department</label>
-                            <input
-                              type="text"
-                              value={department}
-                              onChange={(e) => setDepartment(e.target.value)}
-                              placeholder="e.g. Dept. of Computer Science & Engineering"
-                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Degree Program</label>
-                            <input
-                              type="text"
-                              value={degree}
-                              onChange={(e) => setDegree(e.target.value)}
-                              placeholder="e.g. Bachelor of Technology"
-                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Submitted By (Author Names)</label>
-                            <input
-                              type="text"
-                              value={submittedBy}
-                              onChange={(e) => setSubmittedBy(e.target.value)}
-                              placeholder="e.g. Alex Chen (ID: 2021104012)"
-                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
-                            />
-                          </div>
-                          <div className="sm:col-span-2">
-                            <label className="text-[11px] text-stone-700 font-medium block mb-1">Faculty Supervisor / Project Guide</label>
-                            <input
-                              type="text"
-                              value={guideName}
-                              onChange={(e) => setGuideName(e.target.value)}
-                              placeholder="e.g. Dr. Robert Smith, Professor & Head of Research"
-                              className="w-full bg-stone-50/50 border border-stone-300 rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-[#C3644B] focus:bg-white"
-                            />
+                        <div className="pl-4 border-l-2 border-[#C3644B]/30 pt-1 space-y-3 animate-in fade-in duration-200">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-stone-500 block font-medium">Institution / University</label>
+                              <input
+                                type="text"
+                                value={institutionName}
+                                onChange={(e) => setInstitutionName(e.target.value)}
+                                placeholder="e.g. Institute of Technology & Science"
+                                className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 outline-none transition-colors"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-stone-500 block font-medium">Department</label>
+                              <input
+                                type="text"
+                                value={department}
+                                onChange={(e) => setDepartment(e.target.value)}
+                                placeholder="e.g. Dept. of Computer Science"
+                                className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 outline-none transition-colors"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-stone-500 block font-medium">Degree Program</label>
+                              <input
+                                type="text"
+                                value={degree}
+                                onChange={(e) => setDegree(e.target.value)}
+                                placeholder="e.g. Bachelor of Technology"
+                                className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 outline-none transition-colors"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-stone-500 block font-medium">Submitted By (Authors)</label>
+                              <input
+                                type="text"
+                                value={submittedBy}
+                                onChange={(e) => setSubmittedBy(e.target.value)}
+                                placeholder="e.g. Alex Chen (ID: 2021104012)"
+                                className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 outline-none transition-colors"
+                              />
+                            </div>
+                            <div className="sm:col-span-2 space-y-1">
+                              <label className="text-[11px] text-stone-500 block font-medium">Faculty Supervisor / Guide</label>
+                              <input
+                                type="text"
+                                value={guideName}
+                                onChange={(e) => setGuideName(e.target.value)}
+                                placeholder="e.g. Dr. Robert Smith, Professor & Head"
+                                className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 outline-none transition-colors"
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
