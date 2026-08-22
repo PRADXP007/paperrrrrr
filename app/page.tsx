@@ -225,9 +225,11 @@ export default function PaperrrrrrApp() {
 
   // Explicit Document Architecture Mode: 'paper' | 'report' | 'deck'
   const [documentMode, setDocumentMode] = useState<"paper" | "report" | "deck">("report");
+  const [hasUserManuallySelectedMode, setHasUserManuallySelectedMode] = useState<boolean>(false);
 
-  // Autonomous Natural Language Format & Mode Detection
+  // Autonomous Natural Language Format & Mode Detection (only runs if user hasn't explicitly clicked a mode pill)
   useEffect(() => {
+    if (hasUserManuallySelectedMode) return;
     const p = prompt.toLowerCase().trim();
     if (p.length > 3) {
       if (
@@ -253,6 +255,7 @@ export default function PaperrrrrrApp() {
         setFormat("docx");
         setDocType("IEEE Research Paper");
         setTone("Academic Paper");
+        setIsFormalAcademicReport(false);
       } else if (
         p.includes("report") ||
         p.includes("project") ||
@@ -263,9 +266,10 @@ export default function PaperrrrrrApp() {
         setFormat("docx");
         setDocType("Research Report");
         setTone("Academic Paper");
+        setIsFormalAcademicReport(true);
       }
     }
-  }, [prompt]);
+  }, [prompt, hasUserManuallySelectedMode]);
 
   // Enforce dark mode permanently, restore user session, and restore active workspace on page refresh
   useEffect(() => {
@@ -571,6 +575,8 @@ export default function PaperrrrrrApp() {
         subsections: s.subsections,
       }));
 
+      const isIEEE = (documentMode === "paper" || docType === "IEEE Research Paper" || outline.docType === "IEEE Research Paper") && documentMode !== "report";
+
       const resAssemble = await fetch("/api/assemble", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -579,17 +585,17 @@ export default function PaperrrrrrApp() {
           title: projectTitleOverride || outline.title,
           subtitle: outline.subtitle,
           format: outline.format || format,
-          docType: outline.docType || docType,
-          isIEEEPaper: docType === "IEEE Research Paper" || docType === "Research Paper" || (outline.title || "").toLowerCase().includes("ieee"),
+          docType: isIEEE ? "IEEE Research Paper" : (outline.docType || docType),
+          isIEEEPaper: isIEEE,
           sections: compiledSections,
           chapters: compiledSections,
           selectedFont,
           accentColor,
           academicMeta: {
-            isFormalAcademicReport: isFormalAcademicReport || docType === "Research Report",
-            institutionName,
-            department,
-            degree,
+            isFormalAcademicReport: !isIEEE && isFormalAcademicReport,
+            institutionName: !isIEEE ? institutionName : undefined,
+            department: !isIEEE ? department : undefined,
+            degree: !isIEEE ? degree : undefined,
             submittedBy,
             guideName,
             academicYear,
@@ -1374,6 +1380,8 @@ export default function PaperrrrrrApp() {
                   body: JSON.stringify(docRecord),
                 }).catch((saveErr) => console.warn("Document history auto-save:", saveErr));
 
+                const isIEEEStreamDoc = (documentMode === "paper" || docType === "IEEE Research Paper" || (targetOutline.docType === "IEEE Research Paper")) && documentMode !== "report";
+
                 const resAssemble = await fetch("/api/assemble", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -1382,17 +1390,17 @@ export default function PaperrrrrrApp() {
                     title: projectTitleOverride || targetOutline.title,
                     subtitle: targetOutline.subtitle,
                     format: targetOutline.format || format,
-                    docType,
-                    isIEEEPaper: docType === "Research Paper" || docType === "IEEE Research Paper" || (targetOutline.title || "").toLowerCase().includes("ieee"),
+                    docType: isIEEEStreamDoc ? "IEEE Research Paper" : (targetOutline.docType || docType),
+                    isIEEEPaper: isIEEEStreamDoc,
                     sections: compiledSections,
                     chapters: compiledSections,
                     selectedFont,
                     accentColor,
                     academicMeta: {
-                      isFormalAcademicReport,
-                      institutionName,
-                      department,
-                      degree,
+                      isFormalAcademicReport: !isIEEEStreamDoc && isFormalAcademicReport,
+                      institutionName: !isIEEEStreamDoc ? institutionName : undefined,
+                      department: !isIEEEStreamDoc ? department : undefined,
+                      degree: !isIEEEStreamDoc ? degree : undefined,
                       submittedBy,
                       guideName,
                       academicYear,
@@ -1603,6 +1611,7 @@ export default function PaperrrrrrApp() {
                     setFormat("docx");
                     setTone("Academic Paper");
                     setIsFormalAcademicReport(true);
+                    setHasUserManuallySelectedMode(true);
                   }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     documentMode === "report"
@@ -1622,6 +1631,7 @@ export default function PaperrrrrrApp() {
                     setFormat("docx");
                     setTone("Academic Paper");
                     setIsFormalAcademicReport(false);
+                    setHasUserManuallySelectedMode(true);
                   }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     documentMode === "paper"
@@ -1640,6 +1650,7 @@ export default function PaperrrrrrApp() {
                     setDocType("Presentation Deck");
                     setFormat("pptx");
                     setTone("Executive & Direct");
+                    setHasUserManuallySelectedMode(true);
                   }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     documentMode === "deck"

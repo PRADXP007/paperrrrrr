@@ -37,6 +37,7 @@ export interface GenerateOutlineOptions {
   audience?: string;
   targetLength?: string;
   docType?: string;
+  isIEEEPaper?: boolean;
   customGeminiKey?: string;
   customOpenAIKey?: string;
   geminiModel?: string;
@@ -624,138 +625,313 @@ export function buildDynamicOutline(
   };
 }
 
-export async function generateStructuredOutline(
+/**
+ * Dedicated Outline Generator for IEEE Conference & Journal Research Papers
+ * Strictly adheres to 2-column Roman numeral taxonomy with lettered subsections
+ */
+export async function generateIEEEPaperOutline(
   prompt: string,
   options: GenerateOutlineOptions = {},
   researchBundle?: ResearchBundle
 ): Promise<GeneratedOutline> {
   const geminiApiKey = options.customGeminiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-  const docType = options.docType || "Research Report";
+  const cleanTitle = prompt.replace(/\.$/, "").trim();
+
+  const systemPrompt = `You are an IEEE Senior Transactions Editor and Lead Academic Document Architect.
+You must construct an authentic, publication-grade IEEE Conference/Journal Research Paper outline.
+Output ONLY valid JSON matching this exact structure:
+{
+  "title": "Formal Scholarly Paper Title",
+  "subtitle": "IEEE Conference & Journal Standard Manuscript",
+  "docType": "IEEE Research Paper",
+  "format": "docx",
+  "targetLength": "Standard IEEE Paper (6–8 Sections)",
+  "sections": [
+    {
+      "id": "sec_abstract",
+      "title": "Abstract & Keywords",
+      "brief": "Comprehensive 150-250 word scholarly abstract framing domain context, problem statement, methodological innovation, empirical results, and significance, followed by 4-6 Index Terms.",
+      "keyPoints": ["Domain context & motivation", "Proposed architectural innovation", "Quantitative benchmark results", "Index keywords & taxonomy"],
+      "relevantSourceIndices": [1]
+    },
+    {
+      "id": "sec_1",
+      "title": "I. INTRODUCTION",
+      "brief": "Contextual background, domain urgency, formal problem formulation, key contributions, and paper organization.",
+      "keyPoints": ["Historical & industrial context", "Core challenges & baseline limitations", "Explicit list of novel research contributions", "Paper structural roadmap"],
+      "relevantSourceIndices": [1, 2],
+      "subsections": [
+        { "id": "sec_1_1", "title": "A. Motivation and Domain Urgency", "brief": "Contemporary technological and empirical drivers motivating innovation.", "keyPoints": ["Industrial drivers", "Empirical motivations"] },
+        { "id": "sec_1_2", "title": "B. Formal Problem Formulation", "brief": "Mathematical and architectural definition of operational bottlenecks.", "keyPoints": ["Mathematical scope", "Vulnerabilities"] },
+        { "id": "sec_1_3", "title": "C. Research Contributions & Organization", "brief": "Itemized novel contributions and sequential structure of the manuscript.", "keyPoints": ["Novel contributions", "Structural roadmap"] }
+      ]
+    },
+    {
+      "id": "sec_2",
+      "title": "II. RELATED WORK & THEORETICAL FOUNDATIONS",
+      "brief": "Taxonomy of prior literature, baseline algorithms, comparative paradigms, and identified research gaps.",
+      "keyPoints": ["Taxonomy of state-of-the-art literature", "Comparative analysis of prevailing paradigms", "Empirical gaps addressed"],
+      "relevantSourceIndices": [1, 2],
+      "subsections": [
+        { "id": "sec_2_1", "title": "A. Taxonomy of Prior Approaches", "brief": "Classification and trajectory of existing models and methods.", "keyPoints": ["Existing models", "Comparative baseline"] },
+        { "id": "sec_2_2", "title": "B. Baseline Limitations & Research Gaps", "brief": "Critical analysis of vulnerabilities and computational bottlenecks in current paradigms.", "keyPoints": ["Computational bottlenecks", "Unresolved gaps"] }
+      ]
+    },
+    {
+      "id": "sec_3",
+      "title": "III. PROPOSED SYSTEM METHODOLOGY & ARCHITECTURE",
+      "brief": "Rigorous mathematical formulation, algorithmic pipelines, component modules, and optimization protocols.",
+      "keyPoints": ["Mathematical formulation & system equations", "Architectural schematic & data pipelines", "Optimization theorems & complexity"],
+      "relevantSourceIndices": [1, 2],
+      "subsections": [
+        { "id": "sec_3_1", "title": "A. Mathematical Formulation & System Model", "brief": "Formal mathematical equations, parameter notations, and boundary constraints.", "keyPoints": ["System equations", "Parameter notations"] },
+        { "id": "sec_3_2", "title": "B. Architectural Pipeline & Module Topology", "brief": "Detailed component interactions, data flow representations, and protocols.", "keyPoints": ["Data pipelines", "Module topology"] },
+        { "id": "sec_3_3", "title": "C. Algorithmic Complexity & Execution Safeguards", "brief": "Time/space complexity analysis and convergence guarantees.", "keyPoints": ["Complexity analysis", "Convergence guarantees"] }
+      ]
+    },
+    {
+      "id": "sec_4",
+      "title": "IV. EXPERIMENTAL SETUP & EMPIRICAL RESULTS",
+      "brief": "Quantitative testbed benchmarks, comparative baseline distributions, evaluation metrics, and ablation data.",
+      "keyPoints": ["Experimental testbed & dataset specifications", "Comparative benchmark tables against state-of-the-art", "Statistical significance & runtime latency"],
+      "relevantSourceIndices": [1, 2],
+      "subsections": [
+        { "id": "sec_4_1", "title": "A. Benchmark Testbeds & Dataset Specifications", "brief": "Experimental parameters, baseline configurations, and hardware/software setup.", "keyPoints": ["Dataset parameters", "Hardware testbed"] },
+        { "id": "sec_4_2", "title": "B. Quantitative Benchmark Evaluation", "brief": "Granular comparison tables evaluating accuracy, throughput, and efficiency.", "keyPoints": ["Throughput metrics", "Comparative performance"] },
+        { "id": "sec_4_3", "title": "C. Statistical Significance & Latency Analysis", "brief": "Empirical distributions, p-values, and convergence rates across iterations.", "keyPoints": ["Hypothesis validation", "Latency distributions"] }
+      ]
+    },
+    {
+      "id": "sec_5",
+      "title": "V. DISCUSSION, ABLATION ANALYSIS & THREATS TO VALIDITY",
+      "brief": "In-depth ablation studies, architectural trade-offs, internal/external validity constraints, and practical deployment considerations.",
+      "keyPoints": ["Ablation studies isolating individual components", "Operational trade-offs and computational costs", "Threats to validity"],
+      "relevantSourceIndices": [1, 2],
+      "subsections": [
+        { "id": "sec_5_1", "title": "A. Component Ablation Experiments", "brief": "Empirical isolation of individual system components and their contributions.", "keyPoints": ["Component contributions", "Ablation tables"] },
+        { "id": "sec_5_2", "title": "B. Critical Trade-offs & Deployment Constraints", "brief": "Practical latency, memory, and bandwidth trade-offs in production.", "keyPoints": ["Memory trade-offs", "Operational constraints"] },
+        { "id": "sec_5_3", "title": "C. Threats to Internal & External Validity", "brief": "Analysis of confounding variables and generalizability across diverse domains.", "keyPoints": ["Confounding variables", "Generalizability"] }
+      ]
+    },
+    {
+      "id": "sec_6",
+      "title": "VI. CONCLUSION & FUTURE WORK",
+      "brief": "Scholarly synthesis of findings, verified impact on the research community, and high-priority open research directions.",
+      "keyPoints": ["Summary of verified empirical outcomes", "Key theoretical and engineering implications", "Prospective research avenues for future scholars"],
+      "relevantSourceIndices": [1]
+    }
+  ]
+}`;
+
+  const userMessage = `Create an authentic IEEE Conference / Journal Research Paper outline on the topic:
+"${cleanTitle}"
+
+Tone: Academic & Scholarly
+Format: docx (IEEE 2-Column Standard)
+
+Live Research Sources Available:
+${JSON.stringify(researchBundle?.results || [], null, 2)}
+
+STRICT STRUCTURAL REQUIREMENTS FOR IEEE RESEARCH PAPER:
+1. ROMAN NUMERAL HEADINGS ONLY: Main sections MUST be numbered with uppercase Roman numerals ("I. INTRODUCTION", "II. RELATED WORK", "III. PROPOSED METHODOLOGY", "IV. EXPERIMENTAL RESULTS", "V. DISCUSSION & ABLATIONS", "VI. CONCLUSION").
+2. LETTERED SUBSECTIONS ONLY: Subsections MUST use uppercase letters ("A. Motivation", "B. Problem Formulation", "C. Research Contributions").
+3. ABSOLUTE PROHIBITION: NEVER use decimal chapter numbers (NO "1. Introduction", NO "1.1 Background", NO "Chapter 1"). This is an IEEE Paper, not a book or report.
+4. INLINE ABSTRACT & KEYWORDS: First section MUST be "Abstract & Keywords".`;
+
+  if (geminiApiKey) {
+    const requestedModel = options.geminiModel || "gemini-2.5-flash";
+    try {
+      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+      let response = await ai.models.generateContent({
+        model: requestedModel,
+        contents: `${systemPrompt}\n\n${userMessage}`,
+        config: { responseMimeType: "application/json" }
+      });
+
+      if (response && response.text) {
+        const parsed = JSON.parse(response.text);
+        if (parsed.sections && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+          parsed.docType = "IEEE Research Paper";
+          return parsed as GeneratedOutline;
+        }
+      }
+    } catch (e) {
+      console.warn("Gemini IEEE outline failed, falling back to dynamic IEEE outline:", e);
+    }
+  }
+
+  return buildDynamicOutline(prompt, { ...options, docType: "IEEE Research Paper" }, researchBundle);
+}
+
+/**
+ * Dedicated Outline Generator for Multi-Chapter Academic & Project Reports
+ * Strictly adheres to decimal chapter numbering (1. Introduction, 1.1 Background, 2. Literature Review)
+ */
+export async function generateAcademicReportOutline(
+  prompt: string,
+  options: GenerateOutlineOptions = {},
+  researchBundle?: ResearchBundle
+): Promise<GeneratedOutline> {
+  const geminiApiKey = options.customGeminiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const cleanTitle = prompt.replace(/\.$/, "").trim();
   const docBudget = calculateDocumentBudget(prompt, options);
 
-  const docTypePromptInstructions: Record<string, string> = {
-    "IEEE Research Paper": "Structure according to authentic IEEE Conference/Journal standard: Abstract & Keywords, I. INTRODUCTION, II. RELATED WORK & FOUNDATIONAL LITERATURE, III. PROPOSED SYSTEM METHODOLOGY & ARCHITECTURE, IV. EXPERIMENTAL SETUP & EMPIRICAL RESULTS, V. DISCUSSION, ABLATION ANALYSIS & THREATS TO VALIDITY, VI. CONCLUSION & FUTURE WORK, and REFERENCES.",
-    "Research Paper": "Structure according to authentic IEEE Conference/Journal standard: Abstract & Keywords, I. INTRODUCTION, II. RELATED WORK & FOUNDATIONAL LITERATURE, III. PROPOSED SYSTEM METHODOLOGY & ARCHITECTURE, IV. EXPERIMENTAL SETUP & EMPIRICAL RESULTS, V. DISCUSSION, ABLATION ANALYSIS & THREATS TO VALIDITY, VI. CONCLUSION & FUTURE WORK, and REFERENCES.",
-    "Research Report": `Structure as a rigorous multi-chapter Academic Project Report with exactly ${docBudget.chapterCount} chapters, each with ${docBudget.subsectionsPerChapterMin} to ${docBudget.subsectionsPerChapterMax} subsections (e.g., 1.1, 1.2, 1.3). Total target output: ~${docBudget.pageCount} printed pages (~${docBudget.totalTargetWords.toLocaleString()} words).`,
-    "Academic Essay": "Structure as a formal Academic Essay: Introduction & Thesis Statement, Theoretical Foundations & Counter-arguments, Critical Textual Synthesis, and Scholarly Conclusion.",
-    "Literature Review": "Structure as a formal Literature Review: Methodological Scope & Taxonomy, Synthesis of Contemporary Scholarship, Empirical Gaps & Divergences, and Future Research Agenda.",
-    "Freeform Summary": "Structure as a concise Executive Summary: Core Takeaways, Structural Analysis of Themes, and Actionable Next Steps."
-  };
-
-  const systemPrompt = `You are Paperrrrrr's Lead Academic Document Architect. Output ONLY valid JSON matching this exact nested schema:
+  const systemPrompt = `You are a Senior Academic Project Lead and Document Architect.
+You must construct a comprehensive multi-chapter Academic/Project Report outline with decimal chapter numbers.
+Output ONLY valid JSON matching this exact structure:
 {
-  "title": "Document Title",
+  "title": "Comprehensive Project Report Title",
   "subtitle": "Comprehensive Academic & Empirical Project Report",
-  "docType": "${docType}",
+  "docType": "Research Report",
   "format": "${options.format || "docx"}",
   "targetLength": "${docBudget.label}",
   "sections": [
     {
       "id": "sec_1",
       "title": "1. Introduction & Foundational Scope",
-      "brief": "One sentence summary of this chapter",
-      "keyPoints": ["Key point 1", "Key point 2"],
+      "brief": "Executive introduction to baseline metrics, institutional significance, and scope of inquiry.",
+      "keyPoints": ["Contextual background and domain importance", "Core problem definition and inefficiencies", "Scope boundaries and project objectives"],
+      "relevantSourceIndices": [1],
+      "subsections": [
+        { "id": "sec_1_1", "title": "1.1 Background and Domain Urgency", "brief": "Historical and contemporary context motivating the project.", "keyPoints": ["Historical context", "Domain urgency"] },
+        { "id": "sec_1_2", "title": "1.2 Formal Problem Statement", "brief": "Detailed breakdown of structural inefficiencies and technical bottlenecks.", "keyPoints": ["Inefficiencies", "Bottlenecks"] },
+        { "id": "sec_1_3", "title": "1.3 Project Aims & Scope Boundaries", "brief": "Specific analytical aims, hypotheses, and scope boundaries.", "keyPoints": ["Aims", "Scope limits"] }
+      ]
+    },
+    {
+      "id": "sec_2",
+      "title": "2. Literature Review & Theoretical Framework",
+      "brief": "Exhaustive analysis of seminal scholarship, prevailing conceptual models, and academic debates.",
+      "keyPoints": ["Seminal theoretical models", "Taxonomy of existing research streams", "Critical analysis of research gaps"],
       "relevantSourceIndices": [1, 2],
       "subsections": [
-        {
-          "id": "sec_1_1",
-          "title": "1.1 Background and Motivation",
-          "brief": "One sentence brief for this subsection",
-          "keyPoints": ["Point 1", "Point 2"]
-        },
-        {
-          "id": "sec_1_2",
-          "title": "1.2 Problem Formulation",
-          "brief": "One sentence brief for this subsection",
-          "keyPoints": ["Point 1", "Point 2"]
-        }
+        { "id": "sec_2_1", "title": "2.1 Historical Genesis & Evolution", "brief": "Pioneering initiatives, early prototypes, and initial standardizations.", "keyPoints": ["Evolutionary path", "Milestones"] },
+        { "id": "sec_2_2", "title": "2.2 Theoretical Taxonomy & Models", "brief": "Classification of prevailing mathematical and operational frameworks.", "keyPoints": ["Conceptual frameworks", "Taxonomy"] },
+        { "id": "sec_2_3", "title": "2.3 Gaps in Contemporary Literature", "brief": "Systematic evaluation of research gaps and unanswered inquiries.", "keyPoints": ["Research gaps", "Unresolved inquiries"] }
+      ]
+    },
+    {
+      "id": "sec_3",
+      "title": "3. System Architecture & Technical Methodology",
+      "brief": "Technical infrastructure, systems integration, protocol standards, and data pipelines.",
+      "keyPoints": ["System topology and modular architecture", "Data ingestion pipelines", "Security and fault-tolerance mechanisms"],
+      "relevantSourceIndices": [2, 3],
+      "subsections": [
+        { "id": "sec_3_1", "title": "3.1 High-Level Architectural Topology", "brief": "System topology, component modularity, and operational workflow design.", "keyPoints": ["Architectural components", "Topology"] },
+        { "id": "sec_3_2", "title": "3.2 Data Pipelines & Protocol Standards", "brief": "Data ingestion, processing pipeline, and protocol harmonization.", "keyPoints": ["Ingestion pipelines", "Protocols"] },
+        { "id": "sec_3_3", "title": "3.3 Security Protocols & Fault Tolerance", "brief": "Redundancy safeguards, cryptographic integrity, and disaster recovery.", "keyPoints": ["Security protocols", "Fault tolerance"] }
+      ]
+    },
+    {
+      "id": "sec_4",
+      "title": "4. Empirical Findings & Performance Benchmarks",
+      "brief": "Deep data synthesis with structured comparison tables, verified institutional statistics, and performance distributions.",
+      "keyPoints": ["Granular statistical distributions and verified data tables", "Demographic and sector performance benchmarks", "Comparative unit economics and operational metrics"],
+      "relevantSourceIndices": [1, 3],
+      "subsections": [
+        { "id": "sec_4_1", "title": "4.1 Quantitative Performance Distributions", "brief": "Empirical distributions and performance benchmark metrics across testbeds.", "keyPoints": ["Benchmark distributions", "Testbed metrics"] },
+        { "id": "sec_4_2", "title": "4.2 Comparative Performance Data Tables", "brief": "Granular comparison tables evaluating multi-variable yield against existing standards.", "keyPoints": ["Comparison tables", "Multi-variable yield"] },
+        { "id": "sec_4_3", "title": "4.3 Statistical Significance & Sensitivity Analysis", "brief": "Hypothesis validation, p-values, and parameter sensitivity testing.", "keyPoints": ["Hypothesis testing", "Sensitivity matrices"] }
+      ]
+    },
+    {
+      "id": "sec_5",
+      "title": "5. Institutional Case Studies & Field Implementations",
+      "brief": "Exhaustive real-world case evaluations demonstrating concrete implementations and institutional outcomes.",
+      "keyPoints": ["Enterprise tier implementation review", "Public sector and academic deployment review", "Post-mortem analysis of observed friction"],
+      "relevantSourceIndices": [2, 4],
+      "subsections": [
+        { "id": "sec_5_1", "title": "5.1 Enterprise Tier Implementation Review", "brief": "Large-scale deployment outcomes, timeline analysis, and measured ROI.", "keyPoints": ["Enterprise deployment", "ROI metrics"] },
+        { "id": "sec_5_2", "title": "5.2 Public Sector & Institutional Deployments", "brief": "Academic and regulatory consortium deployments and compliance.", "keyPoints": ["Consortium deployments", "Public sector"] },
+        { "id": "sec_5_3", "title": "5.3 Implementation Friction & Corrective Lessons", "brief": "Analysis of implementation friction, failed assumptions, and remedies.", "keyPoints": ["Friction analysis", "Corrective measures"] }
+      ]
+    },
+    {
+      "id": "sec_6",
+      "title": "6. Strategic Implementation Roadmap & Risk Governance",
+      "brief": "Actionable phased implementation timeline, capital deployment sequencing, risk mitigation matrix, and governance checkpoints.",
+      "keyPoints": ["Phased rollout milestones (Phase I, II, III)", "Comprehensive risk governance matrix", "Cost structures, unit economics, and return on investment"],
+      "relevantSourceIndices": [1, 2, 3, 4],
+      "subsections": [
+        { "id": "sec_6_1", "title": "6.1 Phased Execution Timeline & Milestones", "brief": "Sequential implementation phases across near-term, mid-term, and long-term horizons.", "keyPoints": ["Phased timeline", "Milestones"] },
+        { "id": "sec_6_2", "title": "6.2 Comprehensive Risk Governance Matrix", "brief": "Systematic risk scoring, mitigation protocols, and compliance checkpoints.", "keyPoints": ["Risk matrix", "Mitigation protocols"] },
+        { "id": "sec_6_3", "title": "6.3 Economic Feasibility & Capital Allocation Modeling", "brief": "Unit economics, operational expenditure, and long-term commercial sustainability.", "keyPoints": ["Unit economics", "Financial feasibility"] }
+      ]
+    },
+    {
+      "id": "sec_7",
+      "title": "7. Conclusion & Future Directives",
+      "brief": "Synthesized resolution of project findings, methodological contributions, and strategic directives.",
+      "keyPoints": ["Integrated resolution of theoretical and empirical findings", "Methodological contributions to the field", "Actionable future research questions"],
+      "relevantSourceIndices": [1, 2],
+      "subsections": [
+        { "id": "sec_7_1", "title": "7.1 Integrated Resolution of Findings", "brief": "Synthesized summary of theoretical and empirical discoveries.", "keyPoints": ["Summary of discoveries", "Resolution"] },
+        { "id": "sec_7_2", "title": "7.2 Practical & Policy Contributions", "brief": "Key contributions and industry implications.", "keyPoints": ["Practical implications", "Policy directives"] },
+        { "id": "sec_7_3", "title": "7.3 Future Trajectory & Open Questions", "brief": "High-priority inquiries for upcoming project phases.", "keyPoints": ["Next phase priorities", "Open questions"] }
       ]
     }
   ]
 }`;
 
-  const userMessage = `Create an authoritative, nested multi-chapter document outline for the following prompt:
-"${prompt}"
+  const userMessage = `Create an exhaustive Academic / Project Report outline on the topic:
+"${cleanTitle}"
 
-Document Type: ${docType} (${docTypePromptInstructions[docType] || docTypePromptInstructions["Research Report"]})
-Target Format: ${options.format || "docx"}
-Target Tone: ${options.tone || "Academic Paper"}
-Target Audience: ${options.audience || "Researchers & Practitioners"}
-Target Length: ${docBudget.label} (Explicit target: ~${docBudget.pageCount} printed pages, ~${docBudget.totalTargetWords.toLocaleString()} words across ${docBudget.chapterCount} chapters)
-
-${options.referenceNotes ? `User Provided Background / Reference Notes:\n${options.referenceNotes}\n` : ""}
-${options.additionalRequirements ? `User Additional Custom Requirements:\n${options.additionalRequirements}\n` : ""}
+Target Tone: ${options.tone || "Academic & Analytical"}
+Target Length: ${docBudget.label} (~${docBudget.pageCount} pages, ~${docBudget.chapterCount} chapters)
 
 Live Research Sources Available:
 ${JSON.stringify(researchBundle?.results || [], null, 2)}
 
-Strict Structural Requirements:
-1. CHAPTER COUNT: Generate exactly ${docBudget.chapterCount} top-level chapters (e.g. Chapter 1 through Chapter ${docBudget.chapterCount}), numbered with standard decimal prefix like "1. Introduction", "2. Historical Genesis", etc. Scale the chapter count specifically to meet the ${docBudget.pageCount}-page publication requirement.
-2. NESTED SUBSECTIONS: Each top-level chapter MUST contain an array of ${docBudget.subsectionsPerChapterMin} to ${docBudget.subsectionsPerChapterMax} subsections with proper decimal numbering (e.g., "1.1 Background and Motivation", "1.2 Problem Statement", "1.3 Research Objectives").
-3. Each subsection must have its own descriptive title and 1-sentence brief.
-4. Link relevant research source indices to each chapter.`;
+STRICT STRUCTURAL REQUIREMENTS FOR ACADEMIC/PROJECT REPORT:
+1. DECIMAL CHAPTER NUMBERING ONLY: Generate chapters numbered with standard decimal prefix like "1. Introduction & Foundational Scope", "2. Literature Review & Theoretical Framework", "3. System Architecture & Technical Methodology", etc.
+2. DECIMAL SUBSECTIONS ONLY: Subsections MUST use decimal numbering (e.g., "1.1 Background", "1.2 Problem Statement", "2.1 Historical Genesis").
+3. ABSOLUTE PROHIBITION: NEVER use IEEE Roman numerals (NO "I. INTRODUCTION", NO "II. RELATED WORK", NO "A. Motivation"). This is a formal academic/project report, not an IEEE paper.`;
 
-  // 1. Primary AI Provider: Google Gemini (@google/genai)
   if (geminiApiKey) {
     const requestedModel = options.geminiModel || "gemini-2.5-flash";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-      let response;
-      try {
-        response = await ai.models.generateContent({
-          model: requestedModel,
-          contents: `${systemPrompt}\n\n${userMessage}`,
-          config: {
-            responseMimeType: "application/json"
-          }
-        });
-      } catch (modelErr) {
-        console.warn(`Gemini model "${requestedModel}" failed, falling back to gemini-2.5-flash:`, modelErr);
-        response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: `${systemPrompt}\n\n${userMessage}`,
-          config: {
-            responseMimeType: "application/json"
-          }
-        });
-      }
+      let response = await ai.models.generateContent({
+        model: requestedModel,
+        contents: `${systemPrompt}\n\n${userMessage}`,
+        config: { responseMimeType: "application/json" }
+      });
 
       if (response && response.text) {
         const parsed = JSON.parse(response.text);
-        if (parsed.sections && Array.isArray(parsed.sections)) {
+        if (parsed.sections && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+          parsed.docType = "Research Report";
           return parsed as GeneratedOutline;
         }
       }
     } catch (e) {
-      console.warn("Gemini API call failed for outline, checking secondary provider:", e);
+      console.warn("Gemini Academic Report outline failed, falling back to dynamic outline:", e);
     }
   }
 
-  // 2. Secondary AI Provider: OpenAI (gpt-4o-mini)
-  const openaiApiKey = options.customOpenAIKey || process.env.OPENAI_API_KEY;
-  if (openaiApiKey) {
-    try {
-      const openai = new OpenAI({ apiKey: openaiApiKey });
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage }
-        ],
-        response_format: { type: "json_object" }
-      });
+  return buildDynamicOutline(prompt, { ...options, docType: "Research Report" }, researchBundle);
+}
 
-      const parsed = JSON.parse(completion.choices[0].message.content || "{}");
-      if (parsed.sections && Array.isArray(parsed.sections)) {
-        return parsed as GeneratedOutline;
-      }
-    } catch (e) {
-      console.warn("OpenAI API call failed for outline, using dynamic generator:", e);
-    }
+/**
+ * Main Structured Outline Router - Strictly routes to isolated generator functions
+ */
+export async function generateStructuredOutline(
+  prompt: string,
+  options: GenerateOutlineOptions = {},
+  researchBundle?: ResearchBundle
+): Promise<GeneratedOutline> {
+  const isIEEE = options.isIEEEPaper === true ||
+    options.docType === "IEEE Research Paper" ||
+    options.docType === "Research Paper" ||
+    options.docType === "Conference Paper";
+
+  if (isIEEE) {
+    return await generateIEEEPaperOutline(prompt, options, researchBundle);
+  } else if (options.format === "pptx" || options.docType === "Presentation Deck") {
+    return buildDynamicOutline(prompt, options, researchBundle);
+  } else {
+    return await generateAcademicReportOutline(prompt, options, researchBundle);
   }
-
-  // 3. Dynamic outline generator
-  return buildDynamicOutline(prompt, options, researchBundle);
 }
 
 export async function generateSectionProse(

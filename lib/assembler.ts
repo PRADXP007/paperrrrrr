@@ -845,14 +845,13 @@ export async function assembleWordDocument(
       }
     : inputOrTitle;
 
-  const docTypeLower = (input.docType || "").toLowerCase();
-  const titleLower = (input.title || "").toLowerCase();
-  const isIEEE = input.isIEEEPaper ||
-    docTypeLower.includes("research paper") ||
-    docTypeLower.includes("ieee") ||
-    docTypeLower.includes("conference") ||
-    titleLower.includes("ieee") ||
-    (docTypeLower.includes("research") && !input.academicMeta?.isFormalAcademicReport);
+  const docTypeLower = (input.docType || "").toLowerCase().trim();
+  const isIEEE = input.isIEEEPaper === true ||
+    docTypeLower === "ieee research paper" ||
+    docTypeLower === "ieee paper" ||
+    docTypeLower === "conference paper" ||
+    docTypeLower === "research paper" ||
+    (docTypeLower.includes("ieee") && !docTypeLower.includes("report"));
 
   if (isIEEE) {
     return await assembleIEEEWordDocument(input);
