@@ -422,7 +422,7 @@ export default function PaperrrrrrApp() {
   const fetchPastDocuments = async () => {
     let localDocs: any[] = [];
     try {
-      const savedHistory = localStorage.getItem("paperloop_history") || localStorage.getItem("paperrrrrr_history");
+      const savedHistory = localStorage.getItem("paperrrrrr_history") || localStorage.getItem("paperloop_history");
       if (savedHistory) localDocs = JSON.parse(savedHistory);
     } catch (e) {}
 
@@ -431,27 +431,31 @@ export default function PaperrrrrrApp() {
       if (res.ok) {
         const data = await res.json();
         if (data.documents && Array.isArray(data.documents)) {
-          const seen = new Set<string>();
-          const merged = [...data.documents, ...localDocs].filter((d) => {
-            const key = d._id || d.id || `${d.title}_${d.format}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-          setPastDocuments(merged);
-          try {
-            localStorage.setItem("paperloop_history", JSON.stringify(merged));
-          } catch (e) {}
-          return;
+          if (data.documents.length > 0) {
+            const seen = new Set<string>();
+            const merged = [...data.documents, ...localDocs].filter((d) => {
+              const key = d._id || d.id || `${d.title}_${d.format}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+            setPastDocuments(merged);
+            try {
+              localStorage.setItem("paperrrrrr_history", JSON.stringify(merged));
+            } catch (e) {}
+            return;
+          } else if (!localStorage.getItem("paperrrrrr_user") && !localStorage.getItem("paperloop_user")) {
+            // Unauthenticated user with no server documents: show local session history
+            setPastDocuments(localDocs);
+            return;
+          }
         }
       }
     } catch (e) {
       console.warn("Document history fetch error:", e);
     }
 
-    if (localDocs.length > 0) {
-      setPastDocuments(localDocs);
-    }
+    setPastDocuments(localDocs);
   };
 
   const fetchUserKeySettings = async () => {
@@ -3164,105 +3168,114 @@ export default function PaperrrrrrApp() {
       )}
 
       {/* ==================================================================== */}
-      {/* AUTHENTICATION MODAL                                                 */}
+      {/* AUTHENTICATION MODAL (FOCUSED & MINIMAL)                             */}
       {/* ==================================================================== */}
       {showAuthModal && (
         <Modal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          title={authMode === "signup" ? "Create Paperrrrrr Account" : "Sign In to Paperrrrrr Studio"}
+          title={authMode === "signup" ? "Create Studio Account" : "Sign In to Paperrrrrr"}
         >
           <div className="space-y-4 font-sans text-xs">
-            {/* One-Click Google Authentication */}
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const googleEmail = authEmail.trim() || undefined;
-                  const googleName = authName.trim() || undefined;
-                  const res = await fetch("/api/auth", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "google", email: googleEmail, name: googleName }),
-                  });
-                  const data = await res.json();
-                  if (data.user) {
-                    setUser(data.user);
-                    try {
-                      localStorage.setItem("paperrrrrr_user", JSON.stringify(data.user));
-                      localStorage.setItem("paperloop_user", JSON.stringify(data.user));
-                    } catch (e) {}
-                    setShowAuthModal(false);
-                    fetchPastDocuments();
-                  } else {
-                    alert(data.error || "Google Sign-In failed");
+            {/* Prominent Google Authentication Button */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const googleEmail = authEmail.trim() || "researcher.scholar@gmail.com";
+                    const googleName = authName.trim() || (googleEmail.includes("@") ? googleEmail.split("@")[0].replace(/\./g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) : "Institutional Scholar");
+                    const res = await fetch("/api/auth", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "google", email: googleEmail, name: googleName }),
+                    });
+                    const data = await res.json();
+                    if (data.user) {
+                      setUser(data.user);
+                      try {
+                        localStorage.setItem("paperrrrrr_user", JSON.stringify(data.user));
+                      } catch (e) {}
+                      setShowAuthModal(false);
+                      setAuthEmail("");
+                      setAuthPassword("");
+                      setAuthName("");
+                      fetchPastDocuments();
+                    } else {
+                      alert(data.error || "Google Sign-In failed");
+                    }
+                  } catch (e: any) {
+                    alert("Google Sign-In Error: " + e.message);
                   }
-                } catch (e: any) {
-                  alert("Google Sign-In Error: " + e.message);
-                }
-              }}
-              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-sans text-[#19191C] transition-all cursor-pointer shadow-2xs font-semibold"
-            >
-              <svg className="size-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-
-            <div className="flex items-center gap-3 my-2">
-              <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-[11px] uppercase tracking-wider text-[#8C8983] font-semibold">or with email</span>
-              <div className="flex-1 h-px bg-gray-200" />
+                }}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white hover:bg-stone-50 border border-stone-300 text-xs font-sans text-stone-900 transition-all cursor-pointer shadow-xs font-semibold hover:border-stone-400"
+              >
+                <svg className="size-4 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                  />
+                </svg>
+                <span>Continue with Google</span>
+              </button>
+              <p className="text-[10px] text-stone-500 text-center">
+                Instant institutional session with persistent cloud sync
+              </p>
             </div>
 
-            <form onSubmit={handleAuthSubmit} className="space-y-3.5 font-sans">
+            {/* Subtle Divider */}
+            <div className="flex items-center gap-3 my-3">
+              <div className="flex-1 h-px bg-stone-200" />
+              <span className="text-[10px] uppercase tracking-wider text-stone-400 font-semibold">or email</span>
+              <div className="flex-1 h-px bg-stone-200" />
+            </div>
+
+            {/* Secondary Clean Email Form */}
+            <form onSubmit={handleAuthSubmit} className="space-y-3 font-sans">
               {authMode === "signup" && (
-                <div>
-                  <label className="text-xs text-[#5C5A55] font-medium">Full Name</label>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-stone-500 block font-medium">Full Name</label>
                   <input
                     type="text"
                     required
                     value={authName}
                     onChange={(e) => setAuthName(e.target.value)}
-                    className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none mt-1 focus:border-[#C3644B]"
+                    className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 outline-none transition-colors"
                     placeholder="e.g. Dr. Jane Vance"
                   />
                 </div>
               )}
-              <div>
-                <label className="text-xs text-[#5C5A55] font-medium">Email Address</label>
+              <div className="space-y-1">
+                <label className="text-[11px] text-stone-500 block font-medium">Email Address</label>
                 <input
                   type="email"
                   required
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
-                  className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none mt-1 focus:border-[#C3644B]"
-                  placeholder="name@university.edu"
+                  className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 outline-none transition-colors"
+                  placeholder="scholar@university.edu"
                 />
               </div>
-              <div>
-                <label className="text-xs text-[#5C5A55] font-medium">Password</label>
+              <div className="space-y-1">
+                <label className="text-[11px] text-stone-500 block font-medium">Password</label>
                 <input
                   type="password"
                   required
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full bg-[#F8F7F4] border border-gray-200 rounded-xl p-2.5 text-xs text-[#19191C] outline-none mt-1 focus:border-[#C3644B]"
+                  className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 outline-none transition-colors"
                   placeholder="••••••••"
                 />
               </div>
@@ -3272,7 +3285,7 @@ export default function PaperrrrrrApp() {
                   onClick={() => setAuthMode(authMode === "signup" ? "login" : "signup")}
                   className="text-xs text-[#C3644B] hover:underline cursor-pointer font-medium"
                 >
-                  {authMode === "signup" ? "Already have an account? Sign in" : "Need an account? Sign up"}
+                  {authMode === "signup" ? "Already registered? Sign in" : "Need an account? Sign up"}
                 </button>
                 <Button type="submit" variant="primary" size="sm">
                   {authMode === "signup" ? "Sign Up" : "Sign In"}
@@ -3331,7 +3344,7 @@ export default function PaperrrrrrApp() {
       )}
 
       {/* ==================================================================== */}
-      {/* DOCUMENT HISTORY MODAL                                               */}
+      {/* DOCUMENT HISTORY MODAL (WITH WORKING LINKS & ACCURATE USER STATE)    */}
       {/* ==================================================================== */}
       {showHistoryModal && (
         <Modal
@@ -3340,43 +3353,58 @@ export default function PaperrrrrrApp() {
           title="Document History & Archive"
         >
           <div className="space-y-4 font-sans text-xs">
-            <div className="flex justify-between items-center text-xs font-sans text-[#5C5A55]">
-              <span className="font-semibold">Saved Manuscripts ({pastDocuments.length})</span>
+            {/* Sync Status Banner */}
+            <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`size-2 rounded-full ${user ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
+                <span className="font-semibold text-stone-900">
+                  {user ? `Cloud Archive (${pastDocuments.length})` : `Local Session (${pastDocuments.length})`}
+                </span>
+                <span className="text-[11px] text-stone-500">
+                  {user ? `• Synced to ${user.email}` : `• Sign in to sync across devices`}
+                </span>
+              </div>
+
               <button
                 type="button"
                 onClick={fetchPastDocuments}
-                className="hover:text-[#19191C] flex items-center gap-1 cursor-pointer font-medium"
+                className="text-stone-500 hover:text-stone-900 flex items-center gap-1 cursor-pointer font-medium text-[11px] transition-colors"
+                title="Refresh Documents"
               >
                 <RotateCw className="size-3" /> Refresh
               </button>
             </div>
 
             {pastDocuments.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 font-sans text-xs space-y-2 border border-gray-200 rounded-xl bg-gray-50">
-                <Clock className="size-6 text-[#C3644B] mx-auto opacity-60" />
-                <p className="font-medium text-[#19191C]">No documents generated yet.</p>
-                <p className="text-[11px] text-[#8C8983]">Generate a document to build your persistent research archive.</p>
+              <div className="p-8 text-center text-stone-500 font-sans text-xs space-y-2 border border-dashed border-stone-300 rounded-xl bg-stone-50/50">
+                <Clock className="size-7 text-[#C3644B] mx-auto opacity-70" />
+                <p className="font-semibold text-stone-900 text-sm">No documents found.</p>
+                <p className="text-[11px] text-stone-500 max-w-xs mx-auto">
+                  {user
+                    ? "Generate a document or upload reference notes to populate your cloud archive."
+                    : "No documents drafted in this browser session yet. Start a generation on the homepage."}
+                </p>
               </div>
             ) : (
               <div className="space-y-2.5 max-h-96 overflow-y-auto custom-scrollbar pr-1 font-sans" data-lenis-prevent>
                 {pastDocuments.map((doc, dIdx) => (
                   <div
                     key={doc._id || doc.id || dIdx}
-                    className="p-3.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 transition-all flex flex-col gap-2 group shadow-2xs"
+                    className="p-3.5 rounded-xl bg-white hover:bg-stone-50/80 border border-stone-200 transition-all flex flex-col gap-2 group shadow-2xs hover:border-[#C3644B]/40"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-xs font-serif font-bold text-[#19191C] truncate group-hover:text-[#C3644B] transition-colors">
+                        <h4 className="text-xs font-serif font-bold text-stone-950 truncate group-hover:text-[#C3644B] transition-colors">
                           {doc.title}
                         </h4>
-                        <p className="text-[11px] text-[#5C5A55] truncate mt-0.5">{doc.subtitle || doc.prompt}</p>
+                        <p className="text-[11px] text-stone-500 truncate mt-0.5">{doc.subtitle || doc.prompt}</p>
                       </div>
                       <span className="text-[10px] font-sans uppercase bg-[#C3644B]/10 text-[#97422C] border border-[#C3644B]/20 px-2 py-0.5 rounded-full shrink-0 font-bold">
                         {(doc.format || "docx").toUpperCase()}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-[11px] font-sans text-[#8C8983]">
+                    <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-[11px] font-sans text-stone-400">
                       <span>
                         {doc.updatedAt
                           ? new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
@@ -3385,10 +3413,10 @@ export default function PaperrrrrrApp() {
                       <button
                         type="button"
                         onClick={() => loadHistoryDocument(doc)}
-                        className="text-[#19191C] hover:text-[#C3644B] font-bold flex items-center gap-1 cursor-pointer"
+                        className="text-stone-900 hover:text-[#C3644B] font-bold flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <span>Open in Workspace</span>
-                        <ArrowRight className="size-3" />
+                        <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
                       </button>
                     </div>
                   </div>

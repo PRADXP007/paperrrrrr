@@ -8,10 +8,16 @@ export interface AuthUser {
   id: string;
   email: string;
   name?: string;
+  avatar?: string;
 }
 
 export async function createSessionToken(user: AuthUser): Promise<string> {
-  const jwt = await new SignJWT({ id: user.id, email: user.email, name: user.name })
+  const jwt = await new SignJWT({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    avatar: user.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.email}`
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
@@ -27,7 +33,8 @@ export async function verifySessionToken(token: string): Promise<AuthUser | null
     return {
       id: payload.id as string,
       email: payload.email as string,
-      name: payload.name as string | undefined
+      name: payload.name as string | undefined,
+      avatar: (payload.avatar as string) || `https://api.dicebear.com/7.x/bottts/svg?seed=${payload.email || "scholar"}`
     };
   } catch (error) {
     return null;

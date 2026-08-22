@@ -40,11 +40,11 @@ export interface IDocument extends MongooseDocument {
 const DocumentSectionSchema = new Schema<IDocumentSection>({
   id: { type: String, required: true },
   title: { type: String, required: true },
-  brief: { type: String, required: true },
+  brief: { type: String, default: "" },
   keyPoints: [{ type: String }],
   relevantSourceIndices: [{ type: Number }],
   content: { type: String, default: "" },
-  status: { type: String, enum: ["pending", "generating", "completed"], default: "pending" }
+  status: { type: String, enum: ["pending", "generating", "completed"], default: "completed" }
 });
 
 const ResearchSourceSchema = new Schema<IResearchSource>({
