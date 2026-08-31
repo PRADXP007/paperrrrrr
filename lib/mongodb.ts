@@ -33,22 +33,30 @@ export async function connectToDatabase() {
     return cached.conn;
   }
 
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 2000,
-      connectTimeoutMS: 2000
-    };
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((m) => m);
-  }
+  const timeoutPromise = new Promise<null>((resolve) =>
+    setTimeout(() => resolve(null), 1500)
+  );
 
-  try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    console.warn("MongoDB connection could not be established; continuing in-memory mode:", e);
-    return null;
-  }
+  const connectPromise = (async () => {
+    try {
+      if (!cached.promise) {
+        const opts = {
+          bufferCommands: false,
+          serverSelectionTimeoutMS: 1500,
+          connectTimeoutMS: 1500,
+          socketTimeoutMS: 2000
+        };
+        cached.promise = mongoose.connect(MONGODB_URI!, opts).then((m) => m);
+      }
+      cached.conn = await cached.promise;
+      return cached.conn;
+    } catch (e) {
+      cached.promise = null;
+      console.warn("MongoDB connection could not be established; continuing in-memory mode:", e);
+      return null;
+    }
+  })();
 
-  return cached.conn;
+  const result = await Promise.race([connectPromise, timeoutPromise]);
+  return result;
 }
