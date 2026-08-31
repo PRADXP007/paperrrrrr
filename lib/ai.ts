@@ -2,6 +2,14 @@ import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import { ResearchBundle, ResearchSnippet } from "./tavily";
 
+export function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 12000): Promise<T> {
+  let timeoutId: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`LLM operation timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+}
+
 export interface OutlineSubsection {
   id: string;
   title: string;
@@ -731,17 +739,23 @@ STRICT STRUCTURAL REQUIREMENTS FOR IEEE RESEARCH PAPER:
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
       try {
-        response = await ai.models.generateContent({
-          model: requestedModel,
-          contents: `${systemPrompt}\n\n${userMessage}`,
-          config: { responseMimeType: "application/json" }
-        });
+        response = await withTimeout(
+          ai.models.generateContent({
+            model: requestedModel,
+            contents: `${systemPrompt}\n\n${userMessage}`,
+            config: { responseMimeType: "application/json" }
+          }),
+          12000
+        );
       } catch (mErr) {
-        response = await ai.models.generateContent({
-          model: "gemini-flash-latest",
-          contents: `${systemPrompt}\n\n${userMessage}`,
-          config: { responseMimeType: "application/json" }
-        });
+        response = await withTimeout(
+          ai.models.generateContent({
+            model: "gemini-flash-latest",
+            contents: `${systemPrompt}\n\n${userMessage}`,
+            config: { responseMimeType: "application/json" }
+          }),
+          10000
+        );
       }
 
       if (response && response.text) {
@@ -752,7 +766,7 @@ STRICT STRUCTURAL REQUIREMENTS FOR IEEE RESEARCH PAPER:
         }
       }
     } catch (e) {
-      console.warn("Gemini IEEE outline failed, falling back to dynamic IEEE outline:", e);
+      console.warn("Gemini IEEE outline failed or timed out, falling back to dynamic IEEE outline:", e);
     }
   }
 
@@ -890,17 +904,23 @@ STRICT STRUCTURAL REQUIREMENTS FOR ACADEMIC REPORT:
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
       try {
-        response = await ai.models.generateContent({
-          model: requestedModel,
-          contents: `${systemPrompt}\n\n${userMessage}`,
-          config: { responseMimeType: "application/json" }
-        });
+        response = await withTimeout(
+          ai.models.generateContent({
+            model: requestedModel,
+            contents: `${systemPrompt}\n\n${userMessage}`,
+            config: { responseMimeType: "application/json" }
+          }),
+          12000
+        );
       } catch (mErr) {
-        response = await ai.models.generateContent({
-          model: "gemini-flash-latest",
-          contents: `${systemPrompt}\n\n${userMessage}`,
-          config: { responseMimeType: "application/json" }
-        });
+        response = await withTimeout(
+          ai.models.generateContent({
+            model: "gemini-flash-latest",
+            contents: `${systemPrompt}\n\n${userMessage}`,
+            config: { responseMimeType: "application/json" }
+          }),
+          10000
+        );
       }
 
       if (response && response.text) {
@@ -911,7 +931,7 @@ STRICT STRUCTURAL REQUIREMENTS FOR ACADEMIC REPORT:
         }
       }
     } catch (e) {
-      console.warn("Gemini Academic Report outline failed, falling back to dynamic outline:", e);
+      console.warn("Gemini Academic Report outline failed or timed out, falling back to dynamic outline:", e);
     }
   }
 
@@ -1057,7 +1077,7 @@ Target Length: ${targetLength}
 Tone: ${tone}
 Section Title: ${section.title}
 Section Brief: ${section.brief}
-Key Points: ${section.keyPoints.join("; ")}
+Key Points: ${(section.keyPoints || []).join("; ") || "Core analytical breakdown"}
 Word Budget Target: ~${targetWords} words total (~${targetSubWords} words per subsection)
 
 ${customKeys?.referenceNotes ? `User Reference Notes:\n${customKeys.referenceNotes}\n` : ""}
