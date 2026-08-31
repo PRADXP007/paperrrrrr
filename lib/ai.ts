@@ -1047,10 +1047,16 @@ ${customKeys?.additionalRequirements ? `User Additional Requirements:\n${customK
 
 ${toneGuide}
 
-CRITICAL VOCABULARY RULE ACROSS ALL TONES:
+CRITICAL VOCABULARY & HUMAN-READABILITY RULES ACROSS ALL TONES:
+- Every sentence must be clearly understandable to an intelligent reader who is not a specialist in the topic.
 - Use common, widely understood everyday words throughout the text.
-- Do NOT use obscure, pretentious vocabulary, or complex jargon for its own sake.
+- Do NOT use obscure, pretentious vocabulary or complex jargon when a simpler word conveys the same meaning.
 - Section titles and headings must describe content in simple, direct words.
+
+ABSOLUTE PROHIBITION ON PLACEHOLDER OR FILLER TEXT:
+- Strictly NEVER generate placeholder sentences (e.g. "more details to be added", "to be determined", "further analysis required", "lorem ipsum").
+- Strictly NEVER generate vague, empty statements that convey zero concrete information.
+- Avoid empty AI hedge phrases and throat-clearing transitions ("In today's landscape...", "It is important to remember that..."). Every sentence must state a concrete fact, architectural mechanism, empirical metric, or specific decision.
 
 Filtered Research Snippets for this section ONLY:
 ${JSON.stringify(filteredSources, null, 2)}
@@ -1137,7 +1143,8 @@ ${formatInstruction}
       const matchedSource = filteredSources[sourceIdx];
       const sourceCitation = matchedSource ? `[Source: ${matchedSource.title}](${matchedSource.url})` : "";
       const sourceSnippet = matchedSource?.snippet || "";
-      const cleanSub = sub.title.replace(/^\d+(\.\d+)*\s*/, "").trim();
+      const cleanSub = sub.title.replace(/^(\d+(\.\d+)*|[A-Z]\.|\b[IVXLCDM]+\b\.?)\s*/, "").trim() || sub.title;
+      const cleanBrief = sub.brief.replace(/\.+$/, "").trim();
       const variant = (secHash + sIdx * 7) % 5;
 
       let p1 = "";
@@ -1149,7 +1156,7 @@ ${formatInstruction}
       if (t.includes("executive") || t.includes("direct")) {
         // Executive Direct: Brief, results-oriented, manager-level takeaways
         p1 = `### ${sub.title}\n\n` +
-          `**Executive Focus:** ${cleanSub} directly impacts ${sub.brief.toLowerCase()}. ` +
+          `**Executive Focus:** ${cleanSub} directly impacts ${cleanBrief.toLowerCase()}. ` +
           (sourceSnippet ? `Verified benchmark data: "${sourceSnippet}" ${sourceCitation}. ` : "") +
           `Prioritizing this area delivers measurable operational efficiency and eliminates workflow friction.`;
         p2 = `**Key Operational Trade-offs:** Leadership must balance implementation speed against infrastructure complexity. ` +
@@ -1158,7 +1165,7 @@ ${formatInstruction}
       } else if (t.includes("technical") || t.includes("spec")) {
         // Technical Specification: Exact engineering requirements, interfaces, bounds
         p1 = `### ${sub.title}\n\n` +
-          `**Functional Scope:** Specifications for ${cleanSub.toLowerCase()} mandate strict adherence to ${sub.brief.toLowerCase()}. ` +
+          `**Functional Scope:** Specifications for ${cleanSub.toLowerCase()} mandate strict adherence to ${cleanBrief.toLowerCase()}. ` +
           (sourceSnippet ? `Performance constraints: "${sourceSnippet}" ${sourceCitation}. ` : "") +
           `System modules must implement deterministic error boundaries and maintain bounded latency under peak load.`;
         p2 = `**Interface & Data Flow:** Component interfaces require explicit schema validation, immutable audit logging, and isolated process isolation. ` +
@@ -1167,7 +1174,7 @@ ${formatInstruction}
       } else if (t.includes("concise") || t.includes("factual")) {
         // Concise & Factual: Short, plain, direct statements with zero embellishment
         p1 = `### ${sub.title}\n\n` +
-          `${cleanSub} covers ${sub.brief.toLowerCase()}. ` +
+          `${cleanSub} covers ${cleanBrief.toLowerCase()}. ` +
           (sourceSnippet ? `Source data confirms that "${sourceSnippet}" ${sourceCitation}. ` : "") +
           `The measured baselines provide clear targets for system performance.`;
         p2 = `The architecture uses decoupled components to isolate errors and prevent system slowdowns.`;
@@ -1175,7 +1182,7 @@ ${formatInstruction}
       } else {
         // Scholarly Academic: Formal, structured academic analysis in clear, plain language
         p1 = `### ${sub.title}\n\n` +
-          `An analysis of ${cleanSub.toLowerCase()} clarifies how ${sub.brief.toLowerCase()}. ` +
+          `An analysis of ${cleanSub.toLowerCase()} clarifies how ${cleanBrief.toLowerCase()}. ` +
           (sourceSnippet ? `Recent empirical research confirms: "${sourceSnippet}" ${sourceCitation}. ` : "") +
           `By isolating the underlying factors of ${cleanSub.toLowerCase()}, researchers and practitioners establish reliable benchmarks based on observable evidence.`;
         p2 = `At the implementation level, processes in ${cleanSub.toLowerCase()} must balance component dependencies against operational latency. ` +
