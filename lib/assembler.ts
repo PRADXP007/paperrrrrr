@@ -166,11 +166,12 @@ function parseParagraphsToDocx(
       continue;
     }
 
-    // Handle Sub-subheadings (e.g. #### )
+    // Handle Sub-subsections (#### 1.1.1)
     if (block.startsWith("#### ")) {
       const headingText = cleanMarkdownFormatting(block.replace(/^####\s*/, ""));
       elements.push(
         new Paragraph({
+          heading: HeadingLevel.HEADING_3,
           children: [
             new TextRun({
               text: headingText,
@@ -181,48 +182,29 @@ function parseParagraphsToDocx(
             })
           ],
           alignment: AlignmentType.LEFT,
-          spacing: { before: 240, after: 120 }
+          spacing: { before: 240, after: 100 }
         })
       );
       continue;
     }
 
-    // Handle Subsection Headings (e.g. ### 1.1 or ### )
-    if (block.startsWith("### ")) {
-      const headingText = cleanMarkdownFormatting(block.replace(/^###\s*/, ""));
+    // Handle Subsection Headings (### 1.1 or ## 1.1)
+    if (block.startsWith("### ") || block.startsWith("## ")) {
+      const headingText = cleanMarkdownFormatting(block.replace(/^#{2,3}\s*/, ""));
       elements.push(
         new Paragraph({
+          heading: HeadingLevel.HEADING_2,
           children: [
             new TextRun({
               text: headingText,
               bold: true,
               font,
-              size: 28, // 14pt Bold
+              size: 26, // 13pt Bold
               color: headingColor
             })
           ],
           alignment: AlignmentType.LEFT,
-          spacing: { before: 360, after: 140 }
-        })
-      );
-      continue;
-    }
-
-    if (block.startsWith("## ")) {
-      const headingText = cleanMarkdownFormatting(block.replace(/^##\s*/, ""));
-      elements.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: headingText,
-              bold: true,
-              font,
-              size: 28, // 14pt Bold
-              color: headingColor
-            })
-          ],
-          alignment: AlignmentType.LEFT,
-          spacing: { before: 360, after: 140 }
+          spacing: { before: 320, after: 120 }
         })
       );
       continue;
@@ -384,10 +366,11 @@ function parseIEEEParagraphsToDocx(
     }
 
     // Handle Subsection Headings (e.g. ### ) -> A. Subsection Title (Italic Left-Aligned)
-    if (block.startsWith("### ")) {
-      const headingText = cleanMarkdownFormatting(block.replace(/^###\s*/, ""));
+    if (block.startsWith("### ") || block.startsWith("## ")) {
+      const headingText = cleanMarkdownFormatting(block.replace(/^#{2,3}\s*/, ""));
       elements.push(
         new Paragraph({
+          heading: HeadingLevel.HEADING_2,
           children: [
             new TextRun({
               text: headingText,
@@ -400,27 +383,6 @@ function parseIEEEParagraphsToDocx(
           ],
           alignment: AlignmentType.LEFT,
           spacing: { before: 180, after: 80 }
-        })
-      );
-      continue;
-    }
-
-    if (block.startsWith("## ")) {
-      const headingText = cleanMarkdownFormatting(block.replace(/^##\s*/, ""));
-      elements.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: headingText,
-              italics: true,
-              bold: true,
-              font,
-              size: 20, // 10pt Italic Bold
-              color: headingColor
-            })
-          ],
-          alignment: AlignmentType.LEFT,
-          spacing: { before: 200, after: 80 }
         })
       );
       continue;
@@ -693,6 +655,7 @@ export async function assembleIEEEWordDocument(input: AssembleDocumentInput): Pr
     // Heading 1: Roman Numeral, Centered / Small Caps, 10pt Bold
     bodyChildren.push(
       new Paragraph({
+        heading: HeadingLevel.HEADING_1,
         children: [
           new TextRun({
             text: heading1Text,
@@ -1421,9 +1384,10 @@ export async function assembleWordDocument(
     const chapterNum = idx + 1;
     const cleanChapterTitle = sec.title.replace(/^\d+\.\s*/, "").trim();
 
-    // Chapter Title: "1. Introduction" (Centered, Bold, 15pt)
+    // Chapter Heading: "1. Introduction" (Centered, Bold, 15pt)
     bodyChildren.push(
       new Paragraph({
+        heading: HeadingLevel.HEADING_1,
         children: [
           new TextRun({
             text: `${chapterNum}. ${cleanChapterTitle}`,
@@ -1486,6 +1450,7 @@ export async function assembleWordDocument(
         // Subsection Heading: "1.1 Background and Motivation" (Left-aligned, Bold, 13pt)
         bodyChildren.push(
           new Paragraph({
+            heading: HeadingLevel.HEADING_2,
             children: [
               new TextRun({
                 text: `${subNumber} ${cleanSubTitle}`,
