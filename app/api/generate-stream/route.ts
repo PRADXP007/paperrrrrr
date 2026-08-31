@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const {
       prompt,
       format = "docx",
-      tone = "Academic & Analytical",
+      tone = "Scholarly Academic",
       audience = "Students & Researchers",
       targetLength = "Detailed (~2,000 words)",
       docType = "Research Report",
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       additionalRequirements,
       customGeminiKey,
       customOpenAIKey,
-      geminiModel = "gemini-3.6-flash"
+      geminiModel = "gemini-2.5-flash-lite"
     } = body;
 
     if (!prompt && !approvedOutline) {
@@ -160,133 +160,138 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // STEP 3: Optimized Concurrent Section Prose Drafting with Real-time Events
+          // STEP 3: Optimized Concurrent Section Prose Drafting with Sliding Worker Queue (3 concurrent workers)
           const sections = outline.sections || [];
           let compiledSections: Array<{ id: string; title: string; brief: string; content: string; subsections?: any[] }> = new Array(sections.length);
 
-          console.log(`[Stream Pipeline] Initiating high-speed concurrent prose generation for ${sections.length} sections (Budget: ~${docBudget.wordsPerChapterTarget} words/chapter)...`);
+          console.log(`[Stream Pipeline] Initiating sliding concurrency queue (3 workers) for ${sections.length} sections (Budget: ~${docBudget.wordsPerChapterTarget} words/chapter)...`);
 
-          // Process in batches of 2 concurrent streams for maximum speed and instant responsiveness
-          const BATCH_SIZE = 2;
-          for (let b = 0; b < sections.length; b += BATCH_SIZE) {
-            const currentBatch = sections.slice(b, b + BATCH_SIZE);
-            await Promise.all(
-              currentBatch.map(async (section: any, idxInBatch: number) => {
-                const i = b + idxInBatch;
-                const normSectionId = section.id || `sec_${i + 1}`;
-                const subCount = section.subsections && section.subsections.length > 0 ? section.subsections.length : 3;
-                const targetSubWords = Math.round(docBudget.wordsPerChapterTarget / subCount);
+          const CONCURRENCY = Math.min(3, Math.max(1, sections.length));
+          let nextSectionIndex = 0;
 
-                sendEvent({
-                  type: "status",
-                  step: "section_start",
-                  index: i,
-                  total: sections.length,
-                  sectionId: normSectionId,
-                  title: section.title,
-                  message: `Drafting Section ${i + 1} of ${sections.length}: "${section.title}" (Target: ~${docBudget.wordsPerChapterTarget} words)...`
-                });
+          const executeSectionTask = async (i: number) => {
+            const section = sections[i];
+            const normSectionId = section.id || `sec_${i + 1}`;
 
-                const filteredSources = (researchBundle?.results || []).filter((src: any) =>
-                  (section.relevantSourceIndices || [1]).includes(src.index)
-                );
+            sendEvent({
+              type: "status",
+              step: "section_start",
+              index: i,
+              total: sections.length,
+              sectionId: normSectionId,
+              title: section.title,
+              message: `Drafting Section ${i + 1} of ${sections.length}: "${section.title}" (Target: ~${docBudget.wordsPerChapterTarget} words)...`
+            });
 
-                const startTime = Date.now();
-                let prose = "";
-
-                try {
-                  prose = await generateSectionProse(
-                    outline.title,
-                    section,
-                    filteredSources.length > 0 ? filteredSources : (researchBundle?.results || []).slice(0, 2),
-                    {
-                      customGeminiKey,
-                      customOpenAIKey,
-                      geminiModel: geminiModel || "gemini-2.5-flash",
-                      docType,
-                      tone,
-                      referenceNotes,
-                      format,
-                      targetLength: docBudget.label,
-                      targetChapterWords: docBudget.wordsPerChapterTarget,
-                    }
-                  );
-                } catch (sectionErr: any) {
-                  console.error(`[Stream Pipeline] ❌ Error drafting Section ${i + 1} ("${section.title}"):`, sectionErr);
-                  prose = `### ${section.title}\n\n${section.brief}\n\nEmpirical research across verified literature benchmarks demonstrates foundational advancements in this domain.`;
-                }
-
-                let finalWords = prose.split(/\s+/).filter(Boolean).length;
-
-                // Auto-expansion pass if drafted words are under 75% of chapter budget
-                if (finalWords < docBudget.wordsPerChapterTarget * 0.75 && docBudget.wordsPerChapterTarget >= 350) {
-                  try {
-                    const expanded = await expandSectionProse(
-                      outline.title,
-                      section,
-                      prose,
-                      docBudget.wordsPerChapterTarget,
-                      filteredSources.length > 0 ? filteredSources : (researchBundle?.results || []).slice(0, 2),
-                      {
-                        customGeminiKey,
-                        customOpenAIKey,
-                        geminiModel: geminiModel || "gemini-2.5-flash",
-                        tone
-                      }
-                    );
-                    if (expanded && expanded.length > prose.length) {
-                      prose = expanded;
-                      finalWords = prose.split(/\s+/).filter(Boolean).length;
-                    }
-                  } catch (expErr) {
-                    console.warn(`[Stream Pipeline] Expansion pass skipped for section ${i + 1}:`, expErr);
-                  }
-                }
-
-                const duration = Date.now() - startTime;
-                console.log(`[Stream Pipeline] ✓ Section ${i + 1}/${sections.length} COMPLETED in ${duration}ms (${finalWords} words).`);
-
-                compiledSections[i] = {
-                  id: normSectionId,
-                  title: section.title,
-                  brief: section.brief,
-                  content: prose,
-                  subsections: section.subsections
-                };
-
-                sendEvent({
-                  type: "section_done",
-                  id: normSectionId,
-                  index: i,
-                  total: sections.length,
-                  title: section.title,
-                  brief: section.brief,
-                  content: prose,
-                  wordCount: finalWords,
-                  subsections: section.subsections,
-                  message: `Section ${i + 1} ("${section.title}") completed (${finalWords} words).`
-                });
-
-                // Update MongoDB section status incrementally
-                try {
-                  const db = await connectToDatabase();
-                  if (db && docId) {
-                    await (Document as any).updateOne(
-                      { _id: docId, "outline.id": normSectionId },
-                      {
-                        $set: {
-                          "outline.$.content": prose,
-                          "outline.$.status": "completed"
-                        }
-                      }
-                    );
-                  }
-                } catch (dbErr) {
-                  console.warn("MongoDB section prose update skipped:", dbErr);
-                }
-              })
+            const filteredSources = (researchBundle?.results || []).filter((src: any) =>
+              (section.relevantSourceIndices || [1]).includes(src.index)
             );
-          }
+
+            const startTime = Date.now();
+            let prose = "";
+
+            try {
+              prose = await generateSectionProse(
+                outline.title,
+                section,
+                filteredSources.length > 0 ? filteredSources : (researchBundle?.results || []).slice(0, 2),
+                {
+                  customGeminiKey,
+                  customOpenAIKey,
+                  geminiModel: geminiModel || "gemini-2.5-flash-lite",
+                  docType,
+                  tone,
+                  referenceNotes,
+                  format,
+                  targetLength: docBudget.label,
+                  targetChapterWords: docBudget.wordsPerChapterTarget,
+                }
+              );
+            } catch (sectionErr: any) {
+              console.error(`[Stream Pipeline] ❌ Error drafting Section ${i + 1} ("${section.title}"):`, sectionErr);
+              prose = `### ${section.title}\n\n${section.brief}\n\nEmpirical research across verified literature benchmarks demonstrates foundational advancements in this domain.`;
+            }
+
+            let finalWords = prose.split(/\s+/).filter(Boolean).length;
+
+            // Auto-expansion pass if drafted words are under 75% of chapter budget
+            if (finalWords < docBudget.wordsPerChapterTarget * 0.75 && docBudget.wordsPerChapterTarget >= 350) {
+              try {
+                const expanded = await expandSectionProse(
+                  outline.title,
+                  section,
+                  prose,
+                  docBudget.wordsPerChapterTarget,
+                  filteredSources.length > 0 ? filteredSources : (researchBundle?.results || []).slice(0, 2),
+                  {
+                    customGeminiKey,
+                    customOpenAIKey,
+                    geminiModel: geminiModel || "gemini-2.5-flash-lite",
+                    tone
+                  }
+                );
+                if (expanded && expanded.length > prose.length) {
+                  prose = expanded;
+                  finalWords = prose.split(/\s+/).filter(Boolean).length;
+                }
+              } catch (expErr) {
+                console.warn(`[Stream Pipeline] Expansion pass skipped for section ${i + 1}:`, expErr);
+              }
+            }
+
+            const duration = Date.now() - startTime;
+            console.log(`[Stream Pipeline] ✓ Section ${i + 1}/${sections.length} COMPLETED in ${duration}ms (${finalWords} words).`);
+
+            compiledSections[i] = {
+              id: normSectionId,
+              title: section.title,
+              brief: section.brief,
+              content: prose,
+              subsections: section.subsections
+            };
+
+            sendEvent({
+              type: "section_done",
+              id: normSectionId,
+              index: i,
+              total: sections.length,
+              title: section.title,
+              brief: section.brief,
+              content: prose,
+              wordCount: finalWords,
+              subsections: section.subsections,
+              progress: Math.round(((compiledSections.filter(Boolean).length) / sections.length) * 100),
+              message: `Drafted Section ${i + 1} ("${section.title}") (${finalWords} words)`
+            });
+
+            // Update MongoDB section status incrementally in background
+            try {
+              const db = await connectToDatabase();
+              if (db && docId) {
+                await (Document as any).updateOne(
+                  { _id: docId, "outline.id": normSectionId },
+                  {
+                    $set: {
+                      "outline.$.content": prose,
+                      "outline.$.status": "completed"
+                    }
+                  }
+                );
+              }
+            } catch (dbErr) {
+              console.warn("MongoDB section prose update skipped:", dbErr);
+            }
+          };
+
+          // Continuous sliding worker pool: each worker picks the next item as soon as it finishes
+          const workers = Array.from({ length: CONCURRENCY }, async () => {
+            while (nextSectionIndex < sections.length) {
+              const currentIndex = nextSectionIndex++;
+              await executeSectionTask(currentIndex);
+            }
+          });
+
+          await Promise.all(workers);
 
           // STEP 4: Assembled and Completed (with Anti-Duplication Filtering)
           compiledSections = filterDuplicateParagraphs(compiledSections);

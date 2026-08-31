@@ -199,7 +199,7 @@ export default function PaperrrrrrApp() {
   // Screen 3: Live SSE Generation & Split-Screen Workspace State
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamStatusText, setStreamStatusText] = useState("Initializing generation engine...");
-  const [activeGeneratingSectionIndex, setActiveGeneratingSectionIndex] = useState<number | null>(null);
+  const [activeGeneratingSectionIndices, setActiveGeneratingSectionIndices] = useState<number[]>([]);
   const [generatedSections, setGeneratedSections] = useState<Record<string, string>>({});
   const [streamTimelineEvents, setStreamTimelineEvents] = useState<
     Array<{ id: string; timestamp: string; type: "status" | "research" | "outline" | "section" | "complete" | "error"; title: string; detail?: string }>
@@ -1307,10 +1307,13 @@ export default function PaperrrrrrApp() {
               if (event.type === "status") {
                 setStreamStatusText(event.message || "Processing...");
                 if (event.step === "section_start" && typeof event.index === "number") {
-                  setActiveGeneratingSectionIndex(event.index);
+                  setActiveGeneratingSectionIndices((prev) => Array.from(new Set([...prev, event.index])));
                 }
               } else if (event.type === "section_done") {
                 const secId = event.id || `sec_${event.index + 1}`;
+                if (typeof event.index === "number") {
+                  setActiveGeneratingSectionIndices((prev) => prev.filter((i) => i !== event.index));
+                }
                 accumulatedSections[secId] = event.content;
                 accumulatedSections[event.index] = event.content;
                 setGeneratedSections((prev) => ({
@@ -1331,7 +1334,7 @@ export default function PaperrrrrrApp() {
                 ]);
               } else if (event.type === "complete") {
                 setIsStreaming(false);
-                setActiveGeneratingSectionIndex(null);
+                setActiveGeneratingSectionIndices([]);
                 setStreamStatusText("All chapters completed. Assembling download package...");
 
                 const compiledSections = (event.sections && event.sections.length > 0)
@@ -2459,7 +2462,7 @@ export default function PaperrrrrrApp() {
                       generatedSections[idx] ||
                       generatedSections[`sec_${idx + 1}`] ||
                       (generatedSections as any)[sec.title];
-                    const isCurrent = activeGeneratingSectionIndex === idx;
+                    const isCurrent = activeGeneratingSectionIndices.includes(idx);
                     const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
 
                     return (
