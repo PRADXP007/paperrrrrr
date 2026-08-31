@@ -8,9 +8,10 @@
     "build": "next build",
     "start": "next start",
     "test": "npx tsx scripts/verify_all_seven_fixes.ts",
-    "test:all": "npx tsx scripts/verify_all_seven_fixes.ts",
-    "test:ieee": "node scripts/test-ieee.cjs",
-    "test:ppt": "node scripts/test-ppt.cjs"
+    "test:pipeline": "npx tsx scripts/run_six_stage_audit.ts",
+    "test:visual": "npx tsx scripts/run_visual_verification_all_formats.ts",
+    "test:server": "npx tsx scripts/test_live_server_endpoints.ts",
+    "test:concurrency": "npx tsx scripts/test_sliding_queue_concurrency.ts"
   },
   "keywords": [],
   "author": "",
