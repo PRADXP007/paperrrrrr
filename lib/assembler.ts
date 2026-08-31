@@ -3,6 +3,7 @@ import {
   Packer,
   Paragraph,
   TextRun,
+  ImageRun,
   HeadingLevel,
   Header,
   Footer,
@@ -21,6 +22,7 @@ import {
 } from "docx";
 import pptxgen from "pptxgenjs";
 import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
+import { detectAndCreateDiagramsForSection } from "./diagrams";
 
 export interface AssembleSubsection {
   id?: string;
@@ -33,7 +35,7 @@ export interface AssembleSubsection {
 export interface AssembleSection {
   id?: string;
   title: string;
-  brief: string;
+  brief?: string;
   content: string;
   keyPoints?: string[];
   subsections?: AssembleSubsection[];
@@ -683,7 +685,7 @@ export async function assembleIEEEWordDocument(input: AssembleDocumentInput): Pr
   // Section 2: 2-Column Body Content
   const bodyChildren: any[] = [];
 
-  contentSections.forEach((sec, idx) => {
+  for (const [idx, sec] of contentSections.entries()) {
     const rawTitle = sec.title.replace(/^\d+\.\s*/, "").replace(/^Slide \d+:\s*/, "");
     const roman = toRomanNumeral(idx + 1);
     const heading1Text = `${roman}. ${rawTitle.toUpperCase()}`;
@@ -709,7 +711,46 @@ export async function assembleIEEEWordDocument(input: AssembleDocumentInput): Pr
     const secBody = sec.content || sec.brief || "";
     const parsedElements = parseIEEEParagraphsToDocx(secBody, selectedFont, headingColor);
     bodyChildren.push(...parsedElements);
-  });
+
+    // Detect and embed visual diagrams (flowcharts/charts)
+    try {
+      const diagrams = await detectAndCreateDiagramsForSection(sec.title, secBody);
+      for (const diag of diagrams) {
+        const targetW = 310;
+        const targetH = Math.round((diag.height / diag.width) * targetW);
+        bodyChildren.push(
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: diag.pngBuffer,
+                transformation: {
+                  width: targetW,
+                  height: targetH
+                }
+              } as any)
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 160, after: 60 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: diag.caption,
+                italics: true,
+                font: selectedFont,
+                size: 17, // 8.5pt
+                color: "334155"
+              })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 160 }
+          })
+        );
+      }
+    } catch (diagErr) {
+      console.warn("IEEE diagram generation skipped:", diagErr);
+    }
+  }
 
   // Acknowledgment Section
   bodyChildren.push(
@@ -1375,11 +1416,11 @@ export async function assembleWordDocument(
   const bodyChildren: any[] = [];
 
   // Chapters (1 through N)
-  contentSections.forEach((sec, idx) => {
+  for (const [idx, sec] of contentSections.entries()) {
     const chapterNum = idx + 1;
     const cleanChapterTitle = sec.title.replace(/^\d+\.\s*/, "").trim();
 
-    // Chapter Title: "1. Introduction" (Centered, Bold, 16pt)
+    // Chapter Title: "1. Introduction" (Centered, Bold, 15pt)
     bodyChildren.push(
       new Paragraph({
         children: [
@@ -1387,13 +1428,13 @@ export async function assembleWordDocument(
             text: `${chapterNum}. ${cleanChapterTitle}`,
             bold: true,
             font: selectedFont,
-            size: 32, // 16pt Bold
+            size: 30, // 15pt Bold
             color: headingColor
           })
         ],
         alignment: AlignmentType.CENTER,
         pageBreakBefore: true,
-        spacing: { before: 720, after: 360 }
+        spacing: { before: 480, after: 200 }
       })
     );
 
@@ -1411,7 +1452,7 @@ export async function assembleWordDocument(
             })
           ],
           alignment: AlignmentType.JUSTIFIED,
-          spacing: { after: 240, line: 360 }
+          spacing: { after: 200, line: 360 }
         })
       );
     }
@@ -1426,7 +1467,7 @@ export async function assembleWordDocument(
           try {
             const docxTable = parseMarkdownTableToDocx(block, selectedFont);
             bodyChildren.push(docxTable);
-            bodyChildren.push(new Paragraph({ spacing: { after: 240 } }));
+            bodyChildren.push(new Paragraph({ spacing: { after: 200 } }));
             continue;
           } catch (tableErr) {
             console.warn("Table parse fallback:", tableErr);
@@ -1441,7 +1482,7 @@ export async function assembleWordDocument(
         const subNumber = `${chapterNum}.${subIdx + 1}`;
         const cleanSubTitle = sub.title.replace(/^\d+\.\d+\s*/, "").trim();
 
-        // Subsection Heading: "1.1 Background and Motivation" (Left-aligned, Bold, 14pt)
+        // Subsection Heading: "1.1 Background and Motivation" (Left-aligned, Bold, 13pt)
         bodyChildren.push(
           new Paragraph({
             children: [
@@ -1449,12 +1490,12 @@ export async function assembleWordDocument(
                 text: `${subNumber} ${cleanSubTitle}`,
                 bold: true,
                 font: selectedFont,
-                size: 28, // 14pt Bold
+                size: 26, // 13pt Bold
                 color: headingColor
               })
             ],
             alignment: AlignmentType.LEFT,
-            spacing: { before: 360, after: 160 }
+            spacing: { before: 280, after: 120 }
           })
         );
 
@@ -1463,7 +1504,46 @@ export async function assembleWordDocument(
         bodyChildren.push(...subParagraphs);
       });
     }
-  });
+
+    // Detect and embed visual diagrams (flowcharts/charts) for this chapter
+    try {
+      const diagrams = await detectAndCreateDiagramsForSection(sec.title, rawContent);
+      for (const diag of diagrams) {
+        const targetW = 520;
+        const targetH = Math.round((diag.height / diag.width) * targetW);
+        bodyChildren.push(
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: diag.pngBuffer,
+                transformation: {
+                  width: targetW,
+                  height: targetH
+                }
+              } as any)
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 80 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: diag.caption,
+                italics: true,
+                font: selectedFont,
+                size: 20, // 10pt
+                color: "475569"
+              })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 }
+          })
+        );
+      }
+    } catch (diagErr) {
+      console.warn("Diagram generation skipped for chapter:", diagErr);
+    }
+  }
 
   // Conclusion (Centered, Bold, 16pt)
   bodyChildren.push(

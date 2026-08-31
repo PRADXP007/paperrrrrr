@@ -127,7 +127,7 @@ export default function PaperrrrrrApp() {
   const [showParameters, setShowParameters] = useState(false);
   const [format, setFormat] = useState<"docx" | "pptx" | "pdf">("docx");
   const [docType, setDocType] = useState("Research Report");
-  const [tone, setTone] = useState("Academic Paper");
+  const [tone, setTone] = useState("Scholarly Academic");
   const [audience, setAudience] = useState("Researchers & Academics");
   const [targetLength, setTargetLength] = useState("Standard Report (6–8 Chapters)");
   const [researchDepth, setResearchDepth] = useState<"standard" | "deep">("standard");
@@ -254,7 +254,7 @@ export default function PaperrrrrrApp() {
         setDocumentMode("paper");
         setFormat("docx");
         setDocType("IEEE Research Paper");
-        setTone("Academic Paper");
+        setTone("Scholarly Academic");
         setIsFormalAcademicReport(false);
       } else if (
         p.includes("report") ||
@@ -265,7 +265,7 @@ export default function PaperrrrrrApp() {
         setDocumentMode("report");
         setFormat("docx");
         setDocType("Research Report");
-        setTone("Academic Paper");
+        setTone("Scholarly Academic");
         setIsFormalAcademicReport(true);
       }
     }
@@ -1609,7 +1609,7 @@ export default function PaperrrrrrApp() {
                     setDocumentMode("report");
                     setDocType("Research Report");
                     setFormat("docx");
-                    setTone("Academic Paper");
+                    setTone("Scholarly Academic");
                     setIsFormalAcademicReport(true);
                     setHasUserManuallySelectedMode(true);
                   }}
@@ -1629,7 +1629,7 @@ export default function PaperrrrrrApp() {
                     setDocumentMode("paper");
                     setDocType("IEEE Research Paper");
                     setFormat("docx");
-                    setTone("Academic Paper");
+                    setTone("Scholarly Academic");
                     setIsFormalAcademicReport(false);
                     setHasUserManuallySelectedMode(true);
                   }}
@@ -1833,10 +1833,10 @@ export default function PaperrrrrrApp() {
                             onChange={(e) => setTone(e.target.value)}
                             className="w-full bg-transparent border-b border-stone-200 hover:border-stone-400 focus:border-[#C3644B] py-1.5 text-xs text-stone-900 font-medium outline-none cursor-pointer transition-colors"
                           >
-                            <option value="Academic Paper">Scholarly Academic</option>
-                            <option value="Executive Brief">Executive Direct</option>
-                            <option value="Technical Spec">Technical Specification</option>
-                            <option value="Direct & Concise">Concise &amp; Factual</option>
+                            <option value="Scholarly Academic">Scholarly Academic</option>
+                            <option value="Executive Direct">Executive Direct</option>
+                            <option value="Technical Specification">Technical Specification</option>
+                            <option value="Concise & Factual">Concise &amp; Factual</option>
                           </select>
                         </div>
                       </div>
@@ -3049,7 +3049,7 @@ export default function PaperrrrrrApp() {
                           generatedSections[`sec_${idx + 1}`] ||
                           (generatedSections as any)[sec.title];
 
-                        const isIEEE = tone === "Academic Paper" || format === "docx" || format === "pdf";
+                        const isIEEE = docType === "IEEE Research Paper" || outline.docType === "IEEE Research Paper";
 
                         return (
                           <div

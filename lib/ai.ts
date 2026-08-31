@@ -353,175 +353,174 @@ export function buildDynamicOutline(
       }
     ];
   } else if (lengthSpec.pageCount >= 30) {
-    subtitle = `An Exhaustive Multi-Chapter Treatise (${lengthSpec.label})`;
+    subtitle = `A Multi-Chapter Report (${lengthSpec.label})`;
     sections = [
       {
         id: "sec_1",
-        title: "1. Introduction & Foundational Scope",
-        brief: `Executive introduction to baseline metrics, institutional significance, and scope of inquiry for ${cleanTitle}.`,
-        keyPoints: [`Contextual background and domain importance`, "Core problem definition and inefficiencies", "Scope boundaries and project objectives"],
+        title: "1. Introduction",
+        brief: `Overview of baseline metrics, scope, and key objectives for ${cleanTitle}.`,
+        keyPoints: [`Background and core purpose`, "Key problems and inefficiencies", "Scope boundaries and project goals"],
         relevantSourceIndices: [1],
         subsections: [
-          { id: "sec_1_1", title: "1.1 Background and Domain Urgency", brief: `Historical and contemporary context motivating research in ${cleanTitle}.` },
-          { id: "sec_1_2", title: "1.2 Formal Problem Statement", brief: `Detailed breakdown of structural inefficiencies and technical bottlenecks.` },
-          { id: "sec_1_3", title: "1.3 Research Aims and Inquiries", brief: `Specific analytical questions, hypotheses, and scope boundaries.` },
-          { id: "sec_1_4", title: "1.4 Methodological Contributions", brief: `Expected empirical deliverables and scholarly taxonomy contributions.` }
+          { id: "sec_1_1", title: "1.1 Background & Motivation", brief: `Context and motivation for ${cleanTitle}.` },
+          { id: "sec_1_2", title: "1.2 Problem Statement", brief: `Clear breakdown of key challenges and bottlenecks.` },
+          { id: "sec_1_3", title: "1.3 Project Goals & Scope", brief: `Specific goals and scope boundaries.` }
         ]
       },
       {
         id: "sec_2",
-        title: "2. Historical Genesis & Evolutionary Inflection Points",
-        brief: `Chronological maturation, early developmental milestones, and structural inflection points of ${cleanTitle}.`,
-        keyPoints: ["Early developmental phases", "Major historical inflection points", "Structural evolution of the ecosystem"],
+        title: "2. Background & History",
+        brief: `Timeline, milestones, and development history of ${cleanTitle}.`,
+        keyPoints: ["Early development phases", "Major turning points", "Current adoption state"],
         relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1],
         subsections: [
-          { id: "sec_2_1", title: "2.1 Early Developmental Phases", brief: `Pioneering initiatives, early prototypes, and initial standardizations.` },
-          { id: "sec_2_2", title: "2.2 Decade-Long Inflection Points", brief: `Critical technological pivots, catalysts, and paradigm transitions.` },
-          { id: "sec_2_3", title: "2.3 Contemporary Ecosystem Maturation", brief: `Current state of global adoption and operational scaling.` }
+          { id: "sec_2_1", title: "2.1 Early Developments", brief: `Initial efforts and early prototypes.` },
+          { id: "sec_2_2", title: "2.2 Key Turning Points", brief: `Major pivots and breakthrough events.` },
+          { id: "sec_2_3", title: "2.3 Current State", brief: `Where the technology and market stand today.` }
         ]
       },
       {
         id: "sec_3",
-        title: "3. Literature Survey & Theoretical Frameworks",
-        brief: `Exhaustive analysis of seminal scholarship, prevailing conceptual models, and academic debates.`,
-        keyPoints: ["Seminal theoretical models", "Taxonomy of existing research streams", "Critical counter-perspectives"],
+        title: "3. Literature Review",
+        brief: `Summary of published studies, baseline methods, and existing research.`,
+        keyPoints: ["Foundational studies", "Comparison of current approaches", "Key unanswered questions"],
         relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1],
         subsections: [
-          { id: "sec_3_1", title: "3.1 Theoretical Taxonomy & Conceptual Models", brief: `Classification of prevailing mathematical and operational frameworks.` },
-          { id: "sec_3_2", title: "3.2 Comparative Analysis of Prior Literature", brief: `Critical synthesis of empirical findings across leading studies.` },
-          { id: "sec_3_3", title: "3.3 Unresolved Theoretical Blind Spots", brief: `Systematic evaluation of research gaps and unanswered inquiries.` }
+          { id: "sec_3_1", title: "3.1 Prior Research", brief: `Overview of existing methods and published findings.` },
+          { id: "sec_3_2", title: "3.2 Comparison of Existing Approaches", brief: `Strengths and weaknesses of current models.` },
+          { id: "sec_3_3", title: "3.3 Unresolved Questions", brief: `Identified gaps that this project addresses.` }
         ]
       },
       {
         id: "sec_4",
-        title: "4. Methodological Design & Empirical Framework",
-        brief: `Systematic selection criteria, measurement protocols, and quantitative evaluation indices for ${cleanTitle}.`,
-        keyPoints: ["Sampling protocols and dataset verification", "Mathematical metric formulations", "Validity and reproducibility controls"],
+        title: "4. Methodology & Research Approach",
+        brief: `Step-by-step methodology, data collection, and evaluation criteria for ${cleanTitle}.`,
+        keyPoints: ["Data collection methods", "Measurement criteria", "Testing and verification controls"],
         relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1],
         subsections: [
-          { id: "sec_4_1", title: "4.1 Dataset Selection & Sampling Parameters", brief: `Inclusion criteria, verification protocols, and corpus integrity.` },
-          { id: "sec_4_2", title: "4.2 Quantitative Metrics & Mathematical Formulations", brief: `Formulas for yield tracking, latency, error bounds, and CAGR.` },
-          { id: "sec_4_3", title: "4.3 Internal & External Validity Safeguards", brief: `Controls for systematic bias, noise isolation, and reproducibility.` }
+          { id: "sec_4_1", title: "4.1 Data Collection & Setup", brief: `How data was gathered and verified.` },
+          { id: "sec_4_2", title: "4.2 Evaluation Metrics", brief: `Key metrics used to measure performance.` },
+          { id: "sec_4_3", title: "4.3 Testing Controls", brief: `Safeguards to ensure accurate and repeatable results.` }
         ]
       },
       {
         id: "sec_5",
-        title: "5. High-Level Architectural Topology",
-        brief: `Core system topology, component modularity, and operational workflow design.`,
-        keyPoints: ["Modular component hierarchy", "Communication bus and data interchange", "High-throughput operational topology"],
+        title: "5. System Architecture",
+        brief: `Overall system layout, component design, and operational workflows.`,
+        keyPoints: ["Core components", "Communication and data flow", "Performance and speed targets"],
         relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1],
         subsections: [
-          { id: "sec_5_1", title: "5.1 Structural Component Hierarchy", brief: `Decomposition of functional sub-modules and core engine components.` },
-          { id: "sec_5_2", title: "5.2 Inter-Module Protocols & Synchronization", brief: `Message bus, event dispatching, and state synchronization.` },
-          { id: "sec_5_3", title: "5.3 Pipeline Latency & Throughput Guarantees", brief: `Optimization techniques for high-concurrency throughput.` }
+          { id: "sec_5_1", title: "5.1 Component Design", brief: `Breakdown of main parts and modules.` },
+          { id: "sec_5_2", title: "5.2 Data Flow & Communication", brief: `How messages and data move through the system.` },
+          { id: "sec_5_3", title: "5.3 Speed & Latency Optimization", brief: `Techniques to keep the system responsive under load.` }
         ]
       },
       {
         id: "sec_6",
-        title: "6. Data Pipelines & Protocol Standardization",
-        brief: `Data ingestion, processing pipeline, and protocol harmonization standards.`,
-        keyPoints: ["Data transformation pipelines", "Standardization and schema validation", "Auditability and provenance tracking"],
+        title: "6. Data Pipelines & Standards",
+        brief: `Data ingestion, processing pipeline, and format standards.`,
+        keyPoints: ["Data intake pipelines", "Schema validation", "Tracking and audit logs"],
         relevantSourceIndices: srcCount >= 3 ? [1, 3] : [1],
         subsections: [
-          { id: "sec_6_1", title: "6.1 Ingestion Protocols & Parsing Pipelines", brief: `Streaming ingestion mechanisms and schema validation rules.` },
-          { id: "sec_6_2", title: "6.2 Data Integrity & Provenance Tracking", brief: `Cryptographic hashes, audit trails, and immutable logs.` },
-          { id: "sec_6_3", title: "6.3 Cross-Platform Protocol Interoperability", brief: `Harmonization across heterogeneous third-party interfaces.` }
+          { id: "sec_6_1", title: "6.1 Ingestion & Processing", brief: `Streaming ingestion and data validation rules.` },
+          { id: "sec_6_2", title: "6.2 Data Integrity", brief: `Verification checks and audit logs.` },
+          { id: "sec_6_3", title: "6.3 Compatibility & Standards", brief: `Integration with external tools and formats.` }
         ]
       },
       {
         id: "sec_7",
-        title: "7. Security Architecture & Fault-Tolerance Mechanisms",
-        brief: `Redundancy safeguards, cryptographic integrity, and disaster recovery.`,
-        keyPoints: ["Zero-trust protocols", "High-availability failover mechanisms", "Threat modeling and intrusion defense"],
+        title: "7. Security & Fault Tolerance",
+        brief: `Security safeguards, backup protocols, and disaster recovery.`,
+        keyPoints: ["Access control rules", "Backup and recovery systems", "Threat defense and monitoring"],
         relevantSourceIndices: srcCount >= 4 ? [2, 4] : [1],
         subsections: [
-          { id: "sec_7_1", title: "7.1 Threat Vector Modeling & Surface Analysis", brief: `Comprehensive taxonomy of adversarial vulnerabilities and defense strategies.` },
-          { id: "sec_7_2", title: "7.2 Distributed Redundancy & Failover Protocols", brief: `Automatic failover, partition tolerance, and self-healing state engines.` },
-          { id: "sec_7_3", title: "7.3 Cryptographic Integrity & Access Governance", brief: `Role-based access control, cryptographic verification, and secret management.` }
+          { id: "sec_7_1", title: "7.1 Threat Analysis", brief: `Identification of potential vulnerabilities and defenses.` },
+          { id: "sec_7_2", title: "7.2 Backup & Recovery", brief: `Automatic failover and data recovery systems.` },
+          { id: "sec_7_3", title: "7.3 Access Control & Encryption", brief: `User permissions and cryptographic safeguards.` }
         ]
       },
       {
         id: "sec_8",
-        title: "8. Quantitative Empirical Findings & Benchmark Synthesis",
-        brief: `Deep data synthesis with structured comparison tables, verified institutional statistics, and performance distributions.`,
-        keyPoints: ["Granular statistical distributions", "Comparative benchmark tables", "Multi-variable statistical significance tests"],
+        title: "8. Test Results & Metrics",
+        brief: `Testbed results, performance comparison tables, and benchmark data.`,
+        keyPoints: ["Performance test results", "Comparison against baseline", "Statistical metrics"],
         relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1],
         subsections: [
-          { id: "sec_8_1", title: "8.1 Baseline vs Achieved Metric Distributions", brief: `Empirical performance distributions across representative testbeds.` },
-          { id: "sec_8_2", title: "8.2 Multi-Variable Benchmark Data Tables", brief: `Structured Markdown comparison tables assessing throughput, cost, and yield.` },
-          { id: "sec_8_3", title: "8.3 Statistical Significance & Dispersion Analysis", brief: `Hypothesis validation, p-value calculations, and sensitivity matrices.` }
+          { id: "sec_8_1", title: "8.1 Benchmark Results", brief: `Measured performance across standard test cases.` },
+          { id: "sec_8_2", title: "8.2 Comparison Table", brief: `Side-by-side comparison with earlier baselines.` },
+          { id: "sec_8_3", title: "8.3 Statistical Summary", brief: `Significance tests, error ranges, and averages.` }
         ]
       },
       {
         id: "sec_9",
-        title: "9. Comparative Institutional Case Studies",
-        brief: `Exhaustive real-world case evaluations demonstrating concrete implementations and institutional outcomes.`,
-        keyPoints: ["Enterprise-scale case evaluation", "Public sector/academic deployment review", "Failure post-mortems and key lessons"],
+        title: "9. Case Studies",
+        brief: `Real-world examples and deployment reviews.`,
+        keyPoints: ["Company implementation review", "Public sector example", "Lessons learned and key takeaways"],
         relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1],
         subsections: [
-          { id: "sec_9_1", title: "9.1 Enterprise Tier Implementation Review", brief: `Large-scale deployment outcomes, timeline analysis, and measured ROI.` },
-          { id: "sec_9_2", title: "9.2 Public Sector & Institutional Deployments", brief: `Academic and regulatory consortium deployments and compliance.` },
-          { id: "sec_9_3", title: "9.3 Post-Mortem Analysis of Observed Failures", brief: `Analysis of implementation friction, failed assumptions, and remedies.` }
+          { id: "sec_9_1", title: "9.1 Commercial Deployment", brief: `Outcomes from a real-world enterprise deployment.` },
+          { id: "sec_9_2", title: "9.2 Public Sector Deployment", brief: `Outcomes from an institutional implementation.` },
+          { id: "sec_9_3", title: "9.3 Lessons Learned", brief: `Practical takeaways and corrective fixes.` }
         ]
       },
       {
         id: "sec_10",
-        title: "10. Economic Feasibility, Unit Economics & TCO Modeling",
-        brief: `Granular financial modeling, capital allocation efficiency, ROI, and total cost of ownership.`,
-        keyPoints: ["Unit economics breakdown", "CAPEX vs OPEX projections", "Long-term Net Present Value (NPV) modeling"],
+        title: "10. Costs & Unit Economics",
+        brief: `Financial breakdown, operating costs, and return on investment.`,
+        keyPoints: ["Cost per unit", "5-year ownership costs", "Estimated payback timeline"],
         relevantSourceIndices: srcCount >= 3 ? [1, 3] : [1],
         subsections: [
-          { id: "sec_10_1", title: "10.1 Unit Cost Drivers & Marginal Economics", brief: `Granular cost breakdown per transaction/compute unit.` },
-          { id: "sec_10_2", title: "10.2 Total Cost of Ownership (5-Year Model)", brief: `CAPEX requirements, operational staffing, and infrastructure overhead.` },
-          { id: "sec_10_3", title: "10.3 Net Present Value & Payback Horizon", brief: `Discounted cash flow projections and capital break-even calculations.` }
+          { id: "sec_10_1", title: "10.1 Unit Cost Breakdown", brief: `Cost per user, transaction, or compute unit.` },
+          { id: "sec_10_2", title: "10.2 Total Cost of Ownership", brief: `Setup costs, hosting, and ongoing maintenance.` },
+          { id: "sec_10_3", title: "10.3 Payback Period", brief: `Expected break-even and financial returns.` }
         ]
       },
       {
         id: "sec_11",
-        title: "11. Global Regulatory Frameworks & Compliance Policies",
-        brief: `Jurisdictional compliance requirements, global policy treaties, and statutory mandates.`,
-        keyPoints: ["Cross-border statutory compliance", "Liability protocols and audit mandates", "2026-2030 regulatory trajectory"],
+        title: "11. Regulations & Compliance",
+        brief: `Legal rules, data protection standards, and compliance policies.`,
+        keyPoints: ["Key regulations", "Compliance checklist", "Upcoming legal changes"],
         relevantSourceIndices: srcCount >= 4 ? [1, 4] : [1],
         subsections: [
-          { id: "sec_11_1", title: "11.1 Cross-Jurisdictional Statutory Landscape", brief: `Regulatory analysis across US, EU, and APAC administrative bodies.` },
-          { id: "sec_11_2", title: "11.2 Compliance Checkpoints & Audit Mandates", brief: `Continuous audit protocols and institutional liability management.` },
-          { id: "sec_11_3", title: "11.3 Emerging Policy Directives (2026–2030)", brief: `Anticipated legislative shifts and prospective regulatory safeguards.` }
+          { id: "sec_11_1", title: "11.1 Regulatory Requirements", brief: `Overview of relevant laws and regional guidelines.` },
+          { id: "sec_11_2", title: "11.2 Compliance Audits", brief: `Protocols for routine audits and record-keeping.` },
+          { id: "sec_11_3", title: "11.3 Future Policy Changes", brief: `Expected policy updates over the next 3-5 years.` }
         ]
       },
       {
         id: "sec_12",
-        title: "12. Phased Strategic Execution Roadmap",
-        brief: `Actionable phased implementation timeline, capital deployment sequencing, and governance checkpoints.`,
-        keyPoints: ["Near-term tactical rollout (Months 1–12)", "Medium-term scaling (Years 2–3)", "Long-term institutional governance (Years 4–5)"],
+        title: "12. Project Roadmap",
+        brief: `Phased rollout schedule, target milestones, and release plans.`,
+        keyPoints: ["Phase 1 (Months 1–12): Pilot", "Phase 2 (Years 2–3): Scaling", "Phase 3 (Years 4–5): Full Rollout"],
         relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1],
         subsections: [
-          { id: "sec_12_1", title: "12.1 Phase I: Foundation & Validation (Months 1–12)", brief: `Immediate technical priorities, pilot validation, and initial deployment.` },
-          { id: "sec_12_2", title: "12.2 Phase II: Optimization & Scale (Years 2–3)", brief: `Full-scale system scaling, feature maturity, and ecosystem growth.` },
-          { id: "sec_12_3", title: "12.3 Phase III: Long-Term Maturation (Years 4–5)", brief: `Sustained institutional leadership, governance standardization, and audit.` }
+          { id: "sec_12_1", title: "12.1 Phase 1: Pilot & Setup", brief: `Initial deployment and prototype validation.` },
+          { id: "sec_12_2", title: "12.2 Phase 2: Growth & Scaling", brief: `Expanding capacity and onboarding users.` },
+          { id: "sec_12_3", title: "12.3 Phase 3: Long-Term Operation", brief: `Ongoing maintenance and continuous improvements.` }
         ]
       },
       {
         id: "sec_13",
-        title: "13. Risk Governance & Contingency Protocol Matrix",
-        brief: `Systematic risk mitigation matrix, regulatory defense strategies, and business continuity frameworks.`,
-        keyPoints: ["Probability-impact scoring matrix", "Disaster recovery and fault-tolerance", "Continuous compliance monitoring"],
+        title: "13. Risk Management",
+        brief: `Risk assessment, mitigation steps, and emergency contingency plans.`,
+        keyPoints: ["Identified risks and severity", "Prevention steps", "Incident response procedures"],
         relevantSourceIndices: srcCount >= 4 ? [1, 4] : [1],
         subsections: [
-          { id: "sec_13_1", title: "13.1 Comprehensive Risk Scoring Matrix", brief: `Quantitative probability and impact evaluation across all risk vectors.` },
-          { id: "sec_13_2", title: "13.2 Operational Contingency Playbooks", brief: `Immediate incident response playbooks for system outages and breaches.` },
-          { id: "sec_13_3", title: "13.3 Continuous Governance & Audit Monitoring", brief: `Automated compliance monitoring and real-time governance metrics.` }
+          { id: "sec_13_1", title: "13.1 Key Risks & Severity", brief: `Evaluation of technical, legal, and operational risks.` },
+          { id: "sec_13_2", title: "13.2 Prevention & Mitigation", brief: `Specific safeguards to prevent failures.` },
+          { id: "sec_13_3", title: "13.3 Incident Response", brief: `Procedures to handle unexpected outages or issues.` }
         ]
       },
       {
         id: "sec_14",
-        title: "14. Scholarly Synthesis & Prospective Research Agenda",
-        brief: `Synthesized resolution of core findings, academic contributions, and prospective research agenda.`,
-        keyPoints: ["Integrated theoretical and empirical summary", "Core scholarly contributions", "Prospective research avenues for future investigators"],
+        title: "14. Summary & Next Steps",
+        brief: `Summary of main findings, core takeaways, and future priorities.`,
+        keyPoints: ["Summary of key findings", "Main contributions", "Next steps and future directions"],
         relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1],
         subsections: [
-          { id: "sec_14_1", title: "14.1 Integrated Resolution of Findings", brief: `Synthesized summary of theoretical and empirical discoveries.` },
-          { id: "sec_14_2", title: "14.2 Methodological & Practical Contributions", brief: `Key academic contributions and industry implications.` },
-          { id: "sec_14_3", title: "14.3 Future Research Trajectory & Open Questions", brief: `High-priority research questions for upcoming investigators.` }
+          { id: "sec_14_1", title: "14.1 Summary of Findings", brief: `Overview of the project results and conclusions.` },
+          { id: "sec_14_2", title: "14.2 Main Contributions", brief: `Practical benefits delivered by the project.` },
+          { id: "sec_14_3", title: "14.3 Future Directions", brief: `Recommended next steps and research questions.` }
         ]
       }
     ];
@@ -529,86 +528,74 @@ export function buildDynamicOutline(
     sections = [
       {
         id: "sec_1",
-        title: "1. Introduction & Foundational Scope",
-        brief: `Comprehensive introduction to baseline metrics, institutional significance, and scope of inquiry for ${cleanTitle}.`,
-        keyPoints: [`Contextual background and domain importance`, "Core problem definition and inefficiencies", "Scope boundaries and project objectives"],
+        title: "1. Introduction",
+        brief: `Introduction to baseline metrics, scope, and objectives for ${cleanTitle}.`,
+        keyPoints: [`Background and motivation`, "Problem statement and challenges", "Project scope and deliverables"],
         relevantSourceIndices: [1],
         subsections: [
-          { id: "sec_1_1", title: "1.1 Background and Motivation", brief: `Historical and contemporary context motivating research in ${cleanTitle}.` },
-          { id: "sec_1_2", title: "1.2 Problem Statement", brief: `Formal definition of core structural inefficiencies and challenges in ${cleanTitle}.` },
-          { id: "sec_1_3", title: "1.3 Research Objectives & Project Scope", brief: `Specific analytical aims, inquiry boundaries, and targeted deliverables.` }
+          { id: "sec_1_1", title: "1.1 Background & Motivation", brief: `Background context and reasons for this project.` },
+          { id: "sec_1_2", title: "1.2 Problem Statement", brief: `Clear description of the core problem.` },
+          { id: "sec_1_3", title: "1.3 Project Goals & Scope", brief: `Specific goals and scope limits.` }
         ]
       },
       {
         id: "sec_2",
-        title: "2. Literature Survey & Theoretical Frameworks",
-        brief: `Chronological maturation, seminal scholarship, and theoretical paradigms governing ${cleanTitle}.`,
-        keyPoints: ["Evolutionary inflection points over the past decade", "Seminal theoretical models and scholarly taxonomy", "Contemporary academic consensus and divergences"],
+        title: "2. Literature Review",
+        brief: `Overview of existing research, published studies, and baseline models for ${cleanTitle}.`,
+        keyPoints: ["History and development", "Current approaches and comparisons", "Unresolved gaps in literature"],
         relevantSourceIndices: srcCount >= 2 ? [1, 2] : [1],
         subsections: [
-          { id: "sec_2_1", title: "2.1 Historical Genesis & Inflection Points", brief: `Evolutionary milestones and early developmental phases of ${cleanTitle}.` },
-          { id: "sec_2_2", title: "2.2 Theoretical Taxonomy & Conceptual Models", brief: `Taxonomy of prevailing academic models and frameworks.` },
-          { id: "sec_2_3", title: "2.3 Gaps in Contemporary Literature", brief: `Unresolved empirical questions and theoretical blind spots.` }
+          { id: "sec_2_1", title: "2.1 History & Early Work", brief: `Key milestones in the field.` },
+          { id: "sec_2_2", title: "2.2 Current Approaches", brief: `How other teams currently solve this problem.` },
+          { id: "sec_2_3", title: "2.3 Unresolved Gaps", brief: `What is still missing in existing solutions.` }
         ]
       },
       {
         id: "sec_3",
-        title: "3. Methodological Design & Empirical Framework",
-        brief: `Systematic selection criteria, measurement protocols, and quantitative evaluation indices for ${cleanTitle}.`,
-        keyPoints: ["Sampling protocols and dataset verification", "Key performance metrics and quantitative tracking formulas", "Boundary conditions and error tolerances"],
+        title: "3. Methodology & System Architecture",
+        brief: `System design, technical setup, and testing methodology for ${cleanTitle}.`,
+        keyPoints: ["System layout and components", "Data pipelines and protocols", "Testing procedures and validation"],
         relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1],
         subsections: [
-          { id: "sec_3_1", title: "3.1 Sampling Protocols & Data Selection", brief: `Inclusion criteria, dataset curation, and verification protocols.` },
-          { id: "sec_3_2", title: "3.2 Quantitative Metrics & Performance Indicators", brief: `Mathematical formulation of core tracking metrics and KPIs.` },
-          { id: "sec_3_3", title: "3.3 Verification Safeguards & Validity Constraints", brief: `Controls for internal and external validity.` }
+          { id: "sec_3_1", title: "3.1 System Design", brief: `Overall layout and component roles.` },
+          { id: "sec_3_2", title: "3.2 Data Pipelines", brief: `How data is ingested and verified.` },
+          { id: "sec_3_3", title: "3.3 Testing & Validation", brief: `Testing procedures and accuracy checks.` }
         ]
       },
       {
         id: "sec_4",
-        title: "4. System Architecture & Technical Infrastructure",
-        brief: `Technical infrastructure, systems integration, protocol standards, and data pipelines supporting ${cleanTitle}.`,
-        keyPoints: ["System architecture and protocol design", "Infrastructure scalability, resilience, and uptime parameters", "Data pipelines and latency optimization"],
-        relevantSourceIndices: srcCount >= 3 ? [2, 3] : [1],
+        title: "4. Test Results & Benchmark Evaluation",
+        brief: `Empirical test results, performance comparisons, and benchmark data tables.`,
+        keyPoints: ["Test results summary", "Comparison table against baseline", "Key performance metrics"],
+        relevantSourceIndices: srcCount >= 2 ? [1, 3] : [1],
         subsections: [
-          { id: "sec_4_1", title: "4.1 High-Level Architectural Topology", brief: `System topology, component modularity, and operational workflow design.` },
-          { id: "sec_4_2", title: "4.2 Data Pipelines & Protocol Standards", brief: `Data ingestion, processing pipeline, and protocol harmonization.` },
-          { id: "sec_4_3", title: "4.3 Security & Fault-Tolerance Mechanisms", brief: `Redundancy safeguards, cryptographic integrity, and disaster recovery.` }
+          { id: "sec_4_1", title: "4.1 Test Results", brief: `Summary of measured performance.` },
+          { id: "sec_4_2", title: "4.2 Comparison Table", brief: `Side-by-side comparison table against baselines.` },
+          { id: "sec_4_3", title: "4.3 Metric Analysis", brief: `Detailed breakdown of speed, accuracy, and efficiency.` }
         ]
       },
       {
         id: "sec_5",
-        title: "5. Empirical Findings & Granular Benchmark Synthesis",
-        brief: `Deep data synthesis with structured comparison tables, verified institutional statistics, and performance distributions for ${cleanTitle}.`,
-        keyPoints: ["Granular statistical distributions and verified data tables", "Demographic and sector performance benchmarks", "Comparative unit economics and operational metrics"],
-        relevantSourceIndices: srcCount >= 2 ? [1, 3] : [1],
+        title: "5. Case Studies & Real-World Deployments",
+        brief: `Practical examples, deployment reviews, and real-world outcomes.`,
+        keyPoints: ["Commercial deployment review", "Public sector example", "Lessons learned"],
+        relevantSourceIndices: srcCount >= 3 ? [2, 4] : [1],
         subsections: [
-          { id: "sec_5_1", title: "5.1 Quantitative Performance Distributions", brief: `Empirical distributions and performance benchmark metrics across testbeds.` },
-          { id: "sec_5_2", title: "5.2 Comparative Benchmark Tables", brief: `Granular comparison tables evaluating multi-variable yield against existing standards.` },
-          { id: "sec_5_3", title: "5.3 Statistical Significance & Sensitivity Analysis", brief: `Hypothesis validation, p-values, and parameter sensitivity testing.` }
+          { id: "sec_5_1", title: "5.1 Commercial Deployment", brief: `Results from an enterprise deployment.` },
+          { id: "sec_5_2", title: "5.2 Public Sector Deployment", brief: `Results from an institutional project.` },
+          { id: "sec_5_3", title: "5.3 Lessons Learned", brief: `Key takeaways and operational fixes.` }
         ]
       },
       {
         id: "sec_6",
-        title: "6. Institutional Case Studies & Field Implementations",
-        brief: `Exhaustive real-world case evaluations demonstrating concrete implementations and institutional outcomes.`,
-        keyPoints: ["High-impact enterprise case study", "Public sector/academic deployment analysis", "Failures, post-mortems, and key lessons"],
-        relevantSourceIndices: srcCount >= 3 ? [2, 4] : [1],
+        title: "6. Project Roadmap & Risk Management",
+        brief: `Rollout roadmap, risk mitigation strategies, and future plans for ${cleanTitle}.`,
+        keyPoints: ["Phased implementation timeline", "Risk assessment and safeguards", "Next steps and future plans"],
+        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1],
         subsections: [
-          { id: "sec_6_1", title: "6.1 Enterprise-Scale Implementation Case", brief: `In-depth case review of commercial enterprise deployment and ROI metrics.` },
-          { id: "sec_6_2", title: "6.2 Public Sector & Academic Deployment Analysis", brief: `Institutional case review of governance and open ecosystem deployment.` },
-          { id: "sec_6_3", title: "6.3 Implementation Pitfalls & Post-Mortem Lessons", brief: `Analysis of observed implementation bottlenecks and key corrective measures.` }
-        ]
-      },
-      {
-        id: "sec_7",
-        title: "7. Strategic Roadmap, Risk Governance & Economic Feasibility",
-        brief: `Actionable phased implementation timeline, capital deployment sequencing, risk mitigation matrix, and governance checkpoints for ${cleanTitle}.`,
-        keyPoints: ["Phased rollout milestones (Phase I, II, III)", "Comprehensive risk governance matrix", "Cost structures, unit economics, and return on investment"],
-        relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2],
-        subsections: [
-          { id: "sec_7_1", title: "7.1 Phased Execution Timeline & Milestones", brief: `Sequential implementation phases across near-term, mid-term, and long-term horizons.` },
-          { id: "sec_7_2", title: "7.2 Comprehensive Risk Governance Matrix", brief: `Systematic risk scoring, mitigation protocols, and compliance checkpoints.` },
-          { id: "sec_7_3", title: "7.3 Economic Feasibility & Capital Allocation Modeling", brief: `Unit economics, operational expenditure, and long-term commercial sustainability.` }
+          { id: "sec_6_1", title: "6.1 Phased Timeline", brief: `Milestones across setup, rollout, and scaling.` },
+          { id: "sec_6_2", title: "6.2 Risk Mitigation", brief: `Safeguards to prevent and handle issues.` },
+          { id: "sec_6_3", title: "6.3 Next Steps", brief: `Recommended priorities for future work.` }
         ]
       }
     ];
@@ -876,16 +863,17 @@ Output ONLY valid JSON matching this exact structure:
   const userMessage = `Create an exhaustive Academic / Project Report outline on the topic:
 "${cleanTitle}"
 
-Target Tone: ${options.tone || "Academic & Analytical"}
+Target Tone: ${options.tone || "Scholarly Academic"}
 Target Length: ${docBudget.label} (~${docBudget.pageCount} pages, ~${docBudget.chapterCount} chapters)
 
 Live Research Sources Available:
 ${JSON.stringify(researchBundle?.results || [], null, 2)}
 
-STRICT STRUCTURAL REQUIREMENTS FOR ACADEMIC/PROJECT REPORT:
-1. DECIMAL CHAPTER NUMBERING ONLY: Generate chapters numbered with standard decimal prefix like "1. Introduction & Foundational Scope", "2. Literature Review & Theoretical Framework", "3. System Architecture & Technical Methodology", etc.
-2. DECIMAL SUBSECTIONS ONLY: Subsections MUST use decimal numbering (e.g., "1.1 Background", "1.2 Problem Statement", "2.1 Historical Genesis").
-3. ABSOLUTE PROHIBITION: NEVER use IEEE Roman numerals (NO "I. INTRODUCTION", NO "II. RELATED WORK", NO "A. Motivation"). This is a formal academic/project report, not an IEEE paper.`;
+STRICT STRUCTURAL REQUIREMENTS FOR ACADEMIC REPORT:
+1. PLAIN LANGUAGE TITLES (MANDATORY): Section and chapter titles MUST describe content in simple, ordinary everyday words. AVOID academic jargon, avoid stacking abstract nouns (e.g. use "Introduction", "Literature Review", "System Design", "Test Results", "Case Studies", "Costs & Budget", "Regulations", "Project Roadmap", "Risk Management", "Summary & Next Steps"). Titles must be immediately clear to any general reader.
+2. DECIMAL CHAPTER NUMBERING ONLY: Chapters MUST be numbered as "1. Introduction", "2. Literature Review", etc. Subsections MUST be numbered as "1.1 Background & Motivation", "1.2 Problem Statement", "1.3 Project Goals".
+3. CHAPTER COUNT: Generate EXACTLY ${docBudget.chapterCount} chapters to satisfy the requested ${docBudget.pageCount}-page depth.
+4. ABSOLUTE PROHIBITION: NEVER use IEEE Roman numerals (NO "I. INTRODUCTION", NO "II. RELATED WORK"). This is a formal academic/project report, not an IEEE paper.`;
 
   if (geminiApiKey) {
     const requestedModel = options.geminiModel || "gemini-2.5-flash";
@@ -934,6 +922,40 @@ export async function generateStructuredOutline(
   }
 }
 
+/**
+ * Returns distinct editorial tone instructions for the 4 supported styles
+ */
+export function getToneInstruction(tone: string = ""): string {
+  const t = tone.toLowerCase().trim();
+  if (t.includes("scholarly") || t.includes("academic")) {
+    return `EDITORIAL TONE: Scholarly Academic
+- Formal, structured academic writing in clear, plain vocabulary.
+- Do NOT use obscure, pompous, or archaic words for their own sake.
+- Ground all arguments in empirical evidence, logical deduction, and objective analysis.
+- Maintain a balanced, authoritative, and respectful tone.`;
+  }
+  if (t.includes("executive") || t.includes("direct") || t.includes("brief")) {
+    return `EDITORIAL TONE: Executive Direct
+- Brief, results-oriented business language, the way a manager summarizes for decision makers.
+- Get straight to the point: focus on key performance numbers, strategic trade-offs, operational impact, and bottom-line takeaways.
+- Use simple, direct everyday words. Eliminate conversational filler, academic throat-clearing, and theoretical digressions.
+- Format key decisions and strategic priorities with clear structure.`;
+  }
+  if (t.includes("technical") || t.includes("spec")) {
+    return `EDITORIAL TONE: Technical Specification
+- Precise, structured engineering-spec style writing.
+- Exact, unambiguous descriptions of system components, protocols, inputs, outputs, interfaces, latency bounds, and tolerances.
+- Use standard, widely understood technical and everyday terms with zero ambiguity.
+- State functional requirements and operational mechanics as clear declarative facts.`;
+  }
+  // Default: Concise & Factual
+  return `EDITORIAL TONE: Concise & Factual
+- Short, plain sentences stating facts with zero embellishment, zero fluff, and zero filler.
+- Present straightforward evidence, metrics, and definitions directly.
+- Use common, everyday vocabulary that anyone can immediately understand.
+- No rhetorical flourishes, promotional adjectives, or speculative commentary.`;
+}
+
 export async function generateSectionProse(
   docTitle: string,
   section: OutlineSection,
@@ -953,7 +975,7 @@ export async function generateSectionProse(
   }
 ): Promise<string> {
   const geminiApiKey = customKeys?.customGeminiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-  const tone = customKeys?.tone || "Academic & Analytical";
+  const tone = customKeys?.tone || "Scholarly Academic";
   const docType = customKeys?.docType || "Research Report";
   const format = customKeys?.format || "docx";
   const targetLength = customKeys?.targetLength || "Unlimited & Exhaustive (Comprehensive In-Depth, 30–50 Pages)";
@@ -965,6 +987,7 @@ export async function generateSectionProse(
   const targetSubWords = customKeys?.targetSubsectionWords || Math.round(targetWords / subCount);
 
   const isIEEE = docType === "Research Paper" || docType === "IEEE Research Paper" || docType === "Conference Paper" || docTitle.toLowerCase().includes("ieee");
+  const toneGuide = getToneInstruction(tone);
 
   let formatInstruction = "";
   if (isPptx) {
@@ -1021,6 +1044,13 @@ Word Budget Target: ~${targetWords} words total (~${targetSubWords} words per su
 
 ${customKeys?.referenceNotes ? `User Reference Notes:\n${customKeys.referenceNotes}\n` : ""}
 ${customKeys?.additionalRequirements ? `User Additional Requirements:\n${customKeys.additionalRequirements}\n` : ""}
+
+${toneGuide}
+
+CRITICAL VOCABULARY RULE ACROSS ALL TONES:
+- Use common, widely understood everyday words throughout the text.
+- Do NOT use obscure, pretentious vocabulary, or complex jargon for its own sake.
+- Section titles and headings must describe content in simple, direct words.
 
 Filtered Research Snippets for this section ONLY:
 ${JSON.stringify(filteredSources, null, 2)}
@@ -1114,46 +1144,43 @@ ${formatInstruction}
       let p2 = "";
       let p3 = "";
 
-      if (variant === 0) {
+      const t = (tone || "").toLowerCase();
+
+      if (t.includes("executive") || t.includes("direct")) {
+        // Executive Direct: Brief, results-oriented, manager-level takeaways
         p1 = `### ${sub.title}\n\n` +
-          `Understanding ${cleanSub.toLowerCase()} requires analyzing how ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Recent empirical research confirms: "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `By isolating the underlying parameters of ${cleanSub.toLowerCase()}, engineers and researchers establish practical operational benchmarks rather than relying on abstract assumptions.`;
-        p2 = `At the implementation level, workflows in ${cleanSub.toLowerCase()} must balance component dependencies against latency overhead. ` +
-          `Decoupled architectures reduce failure cascades and preserve state consistency across production nodes.`;
-        p3 = `Effective deployment relies on automated instrumentation, continuous regression testing, and predictable telemetry signals aligned directly with core project goals.`;
-      } else if (variant === 1) {
+          `**Executive Focus:** ${cleanSub} directly impacts ${sub.brief.toLowerCase()}. ` +
+          (sourceSnippet ? `Verified benchmark data: "${sourceSnippet}" ${sourceCitation}. ` : "") +
+          `Prioritizing this area delivers measurable operational efficiency and eliminates workflow friction.`;
+        p2 = `**Key Operational Trade-offs:** Leadership must balance implementation speed against infrastructure complexity. ` +
+          `Standardizing component workflows minimizes overhead while maintaining predictable team velocity.`;
+        p3 = `**Decision Milestone:** Establish clear quarterly performance targets and align resource allocation with core delivery goals.`;
+      } else if (t.includes("technical") || t.includes("spec")) {
+        // Technical Specification: Exact engineering requirements, interfaces, bounds
         p1 = `### ${sub.title}\n\n` +
-          `Field data from ${cleanSub.toLowerCase()} demonstrates clear constraints regarding ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Published findings report that "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `These baseline measurements give engineering teams actionable targets for throughput, error tolerance, and resource allocation.`;
-        p2 = `Operational environments handling ${cleanSub.toLowerCase()} demand strict integrity checks and isolated error boundaries. ` +
-          `Deterministic routing and bounded concurrency prevent tail-latency spikes during peak utilization windows.`;
-        p3 = `Teams that formalize these operational limits early avoid recurring technical debt and maintain stable execution cycles.`;
-      } else if (variant === 2) {
+          `**Functional Scope:** Specifications for ${cleanSub.toLowerCase()} mandate strict adherence to ${sub.brief.toLowerCase()}. ` +
+          (sourceSnippet ? `Performance constraints: "${sourceSnippet}" ${sourceCitation}. ` : "") +
+          `System modules must implement deterministic error boundaries and maintain bounded latency under peak load.`;
+        p2 = `**Interface & Data Flow:** Component interfaces require explicit schema validation, immutable audit logging, and isolated process isolation. ` +
+          `State transitions must execute atomically across all distributed nodes.`;
+        p3 = `**Verification Criteria:** Automated regression test suites must validate throughput limits, error handling paths, and failover recovery before production release.`;
+      } else if (t.includes("concise") || t.includes("factual")) {
+        // Concise & Factual: Short, plain, direct statements with zero embellishment
         p1 = `### ${sub.title}\n\n` +
-          `Governance and architectural constraints in ${cleanSub.toLowerCase()} directly shape how ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Institutional reports show that "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `Aligning system design with strict compliance parameters keeps audit trails verifiable and runtime configurations reproducible.`;
-        p2 = `Enforcing access boundaries in ${cleanSub.toLowerCase()} requires explicit permission scopes and structured audit logs. ` +
-          `These controls eliminate configuration drift while maintaining predictable service behavior across distributed clusters.`;
-        p3 = `Automating validation checks during build and deployment phases ensures that security requirements remain active across every release.`;
-      } else if (variant === 3) {
-        p1 = `### ${sub.title}\n\n` +
-          `Evaluating the infrastructure costs and lifecycle patterns of ${cleanSub.toLowerCase()} highlights real trade-offs in ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Industry metrics document that "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `Tracking resource consumption per compute unit enables precise budgeting across multi-quarter roadmaps.`;
-        p2 = `Managing compute overhead in ${cleanSub.toLowerCase()} favors lightweight abstractions over heavy runtime dependencies. ` +
-          `Standardized interfaces reduce integration friction and simplify maintenance over extended service lifetimes.`;
-        p3 = `Disciplined resource monitoring and regular capacity reviews protect production systems from unexpected provisioning spikes.`;
+          `${cleanSub} covers ${sub.brief.toLowerCase()}. ` +
+          (sourceSnippet ? `Source data confirms that "${sourceSnippet}" ${sourceCitation}. ` : "") +
+          `The measured baselines provide clear targets for system performance.`;
+        p2 = `The architecture uses decoupled components to isolate errors and prevent system slowdowns.`;
+        p3 = `Regular automated checks verify that all components operate within expected limits.`;
       } else {
+        // Scholarly Academic: Formal, structured academic analysis in clear, plain language
         p1 = `### ${sub.title}\n\n` +
-          `A comparative evaluation of ${cleanSub.toLowerCase()} clarifies key operational requirements for ${sub.brief.toLowerCase()}. ` +
-          (sourceSnippet ? `Empirical studies indicate that "${sourceSnippet}" ${sourceCitation}. ` : "") +
-          `Standardizing component definitions ensures clear communication across development teams and prevents integration mismatches.`;
-        p2 = `Deploying ${cleanSub.toLowerCase()} requires comprehensive test suites, clear interface contracts, and real-time observability. ` +
-          `These practices provide immediate feedback during degradation events, enabling fast root-cause identification.`;
-        p3 = `Continued refinement of ${cleanSub.toLowerCase()} depends on shared benchmarks and rigorous peer review across engineering groups.`;
+          `An analysis of ${cleanSub.toLowerCase()} clarifies how ${sub.brief.toLowerCase()}. ` +
+          (sourceSnippet ? `Recent empirical research confirms: "${sourceSnippet}" ${sourceCitation}. ` : "") +
+          `By isolating the underlying factors of ${cleanSub.toLowerCase()}, researchers and practitioners establish reliable benchmarks based on observable evidence.`;
+        p2 = `At the implementation level, processes in ${cleanSub.toLowerCase()} must balance component dependencies against operational latency. ` +
+          `Decoupled systems reduce cascading errors and preserve data consistency across production environments.`;
+        p3 = `Rigorous evaluation relies on continuous measurement, automated testing, and predictable monitoring signals aligned with the project's core research goals.`;
       }
 
       return `${p1}\n\n${p2}\n\n${p3}`;

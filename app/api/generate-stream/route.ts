@@ -209,8 +209,6 @@ export async function POST(req: NextRequest) {
                       format,
                       targetLength: docBudget.label,
                       targetChapterWords: docBudget.wordsPerChapterTarget,
-                      targetSubsectionWords: targetSubWords,
-                      additionalRequirements
                     }
                   );
                 } catch (sectionErr: any) {
@@ -218,7 +216,33 @@ export async function POST(req: NextRequest) {
                   prose = `### ${section.title}\n\n${section.brief}\n\nEmpirical research across verified literature benchmarks demonstrates foundational advancements in this domain.`;
                 }
 
-                const finalWords = prose.split(/\s+/).filter(Boolean).length;
+                let finalWords = prose.split(/\s+/).filter(Boolean).length;
+
+                // Auto-expansion pass if drafted words are under 75% of chapter budget
+                if (finalWords < docBudget.wordsPerChapterTarget * 0.75 && docBudget.wordsPerChapterTarget >= 350) {
+                  try {
+                    const expanded = await expandSectionProse(
+                      outline.title,
+                      section,
+                      prose,
+                      docBudget.wordsPerChapterTarget,
+                      filteredSources.length > 0 ? filteredSources : (researchBundle?.results || []).slice(0, 2),
+                      {
+                        customGeminiKey,
+                        customOpenAIKey,
+                        geminiModel: geminiModel || "gemini-2.5-flash",
+                        tone
+                      }
+                    );
+                    if (expanded && expanded.length > prose.length) {
+                      prose = expanded;
+                      finalWords = prose.split(/\s+/).filter(Boolean).length;
+                    }
+                  } catch (expErr) {
+                    console.warn(`[Stream Pipeline] Expansion pass skipped for section ${i + 1}:`, expErr);
+                  }
+                }
+
                 const duration = Date.now() - startTime;
                 console.log(`[Stream Pipeline] ✓ Section ${i + 1}/${sections.length} COMPLETED in ${duration}ms (${finalWords} words).`);
 
