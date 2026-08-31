@@ -722,12 +722,13 @@ export async function assembleIEEEWordDocument(input: AssembleDocumentInput): Pr
           new Paragraph({
             children: [
               new ImageRun({
+                type: "png",
                 data: diag.pngBuffer,
                 transformation: {
                   width: targetW,
                   height: targetH
                 }
-              } as any)
+              }),
             ],
             alignment: AlignmentType.CENTER,
             spacing: { before: 160, after: 60 }
@@ -739,7 +740,7 @@ export async function assembleIEEEWordDocument(input: AssembleDocumentInput): Pr
                 italics: true,
                 font: selectedFont,
                 size: 17, // 8.5pt
-                color: "334155"
+                color: "000000"
               })
             ],
             alignment: AlignmentType.CENTER,
@@ -1515,12 +1516,13 @@ export async function assembleWordDocument(
           new Paragraph({
             children: [
               new ImageRun({
+                type: "png",
                 data: diag.pngBuffer,
                 transformation: {
                   width: targetW,
                   height: targetH
                 }
-              } as any)
+              }),
             ],
             alignment: AlignmentType.CENTER,
             spacing: { before: 200, after: 80 }
@@ -1532,7 +1534,7 @@ export async function assembleWordDocument(
                 italics: true,
                 font: selectedFont,
                 size: 20, // 10pt
-                color: "475569"
+                color: "000000"
               })
             ],
             alignment: AlignmentType.CENTER,
