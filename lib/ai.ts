@@ -726,14 +726,23 @@ STRICT STRUCTURAL REQUIREMENTS FOR IEEE RESEARCH PAPER:
 4. INLINE ABSTRACT & KEYWORDS: First section MUST be "Abstract & Keywords".`;
 
   if (geminiApiKey) {
-    const requestedModel = options.geminiModel || "gemini-2.5-flash";
+    const requestedModel = options.geminiModel || "gemini-2.5-flash-lite";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-      let response = await ai.models.generateContent({
-        model: requestedModel,
-        contents: `${systemPrompt}\n\n${userMessage}`,
-        config: { responseMimeType: "application/json" }
-      });
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: requestedModel,
+          contents: `${systemPrompt}\n\n${userMessage}`,
+          config: { responseMimeType: "application/json" }
+        });
+      } catch (mErr) {
+        response = await ai.models.generateContent({
+          model: "gemini-flash-latest",
+          contents: `${systemPrompt}\n\n${userMessage}`,
+          config: { responseMimeType: "application/json" }
+        });
+      }
 
       if (response && response.text) {
         const parsed = JSON.parse(response.text);
@@ -876,14 +885,23 @@ STRICT STRUCTURAL REQUIREMENTS FOR ACADEMIC REPORT:
 4. ABSOLUTE PROHIBITION: NEVER use IEEE Roman numerals (NO "I. INTRODUCTION", NO "II. RELATED WORK"). This is a formal academic/project report, not an IEEE paper.`;
 
   if (geminiApiKey) {
-    const requestedModel = options.geminiModel || "gemini-2.5-flash";
+    const requestedModel = options.geminiModel || "gemini-2.5-flash-lite";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-      let response = await ai.models.generateContent({
-        model: requestedModel,
-        contents: `${systemPrompt}\n\n${userMessage}`,
-        config: { responseMimeType: "application/json" }
-      });
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: requestedModel,
+          contents: `${systemPrompt}\n\n${userMessage}`,
+          config: { responseMimeType: "application/json" }
+        });
+      } catch (mErr) {
+        response = await ai.models.generateContent({
+          model: "gemini-flash-latest",
+          contents: `${systemPrompt}\n\n${userMessage}`,
+          config: { responseMimeType: "application/json" }
+        });
+      }
 
       if (response && response.text) {
         const parsed = JSON.parse(response.text);
@@ -1076,7 +1094,7 @@ ${formatInstruction}
 
   // 1. Primary AI Provider: Google Gemini (@google/genai)
   if (geminiApiKey) {
-    const requestedModel = customKeys?.geminiModel || "gemini-2.5-flash";
+    const requestedModel = customKeys?.geminiModel || "gemini-2.5-flash-lite";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
@@ -1086,9 +1104,8 @@ ${formatInstruction}
           contents: prompt
         });
       } catch (modelErr) {
-        console.warn(`Gemini model "${requestedModel}" failed for section, falling back to gemini-2.5-flash:`, modelErr);
         response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-flash-latest",
           contents: prompt
         });
       }

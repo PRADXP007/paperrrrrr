@@ -64,6 +64,7 @@ export interface AssembleDocumentInput {
   sections: AssembleSection[];
   chapters?: AssembleSection[];
   academicMeta?: AcademicReportMeta;
+  meta?: AcademicReportMeta;
   selectedFont?: string;
   accentColor?: string;
 }
@@ -862,10 +863,10 @@ export async function assembleWordDocument(
     return await assembleIEEEWordDocument(input);
   }
 
-  const safeTitle = input.academicMeta?.projectTitleOverride || input.title || "Project Report";
+  const safeTitle = (input.academicMeta || input.meta)?.projectTitleOverride || input.title || "Project Report";
   const safeSubtitle = input.subtitle || "Comprehensive Academic & Project Report";
   const rawSections = input.chapters || input.sections || [];
-  const meta = input.academicMeta || {};
+  const meta = input.academicMeta || input.meta || {};
   const isFormal = !!meta.isFormalAcademicReport && !!meta.institutionName;
   const selectedFont = meta.selectedFont || input.selectedFont || "Times New Roman";
   const headingColor = (meta.accentColor || input.accentColor || "000000").replace("#", "");
