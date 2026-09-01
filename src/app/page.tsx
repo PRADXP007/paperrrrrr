@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDocumentContext } from "@/lib/DocumentContext";
-import { ArrowUp, Clock, Settings2, User } from "lucide-react";
+import { ArrowUp, Clock, Settings2, User, ChevronDown } from "lucide-react";
 import styles from "./page.module.css";
 import { Logo } from "@/components/ui/Logo";
 import { DotPattern } from "@/components/magicui/dot-pattern";
@@ -83,7 +83,7 @@ export default function Home() {
             <textarea 
               ref={textareaRef}
               className={styles.promptInput}
-              placeholder="E.g., An empirical analysis of glassmorphism in modern web interfaces, focusing on cognitive load..."
+              placeholder="Type your requirement..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={1}
@@ -123,13 +123,18 @@ export default function Home() {
 
           <div className={styles.settingsWrapper}>
             {!isSettingsOpen ? (
-              <button 
-                className={styles.settingsSummary} 
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings2 size={16} />
-                <span>Approx. 3,500 words &middot; 12 pages &middot; 5 chapters</span>
-              </button>
+              <div className={styles.settingsSummaryContainer} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+                <button 
+                  className={styles.settingsSummary} 
+                  onClick={() => setIsSettingsOpen(true)}
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <Settings2 size={16} />
+                  <span>Approx. {(totalPages * 275).toLocaleString()} words &middot; {totalPages} pages</span>
+                  <ChevronDown size={14} style={{ opacity: 0.6, marginLeft: "4px" }} />
+                </button>
+                <span style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.4)" }}>Configure document length, typography, and target audience</span>
+              </div>
             ) : (
               <div className={`${styles.settingsPanel} glass-panel`}>
                 <div className={styles.settingsRow}>
