@@ -124,7 +124,6 @@ export async function POST(req: NextRequest) {
               {
                 format,
                 tone,
-                audience,
                 targetLength: docBudget.label,
                 docType,
                 referenceNotes,
@@ -205,7 +204,6 @@ export async function POST(req: NextRequest) {
                   geminiModel: geminiModel || "gemini-3.1-pro",
                   docType,
                   tone,
-                  audience: audienceContext || audience,
                   referenceNotes,
                   format,
                   targetLength: docBudget.label,

@@ -4,6 +4,9 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { createSessionToken, extractAuthUser } from "@/lib/auth";
 import { findLocalUserByEmail, saveLocalUser } from "@/lib/localStore";
 import User from "@/models/User";
+import { OAuth2Client } from "google-auth-library";
+
+const googleClient = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,7 +23,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, name, email, password } = body;
+    const { action, name, email, password, credential } = body;
 
     if (action === "logout") {
       const res = NextResponse.json({ success: true, message: "Logged out" });
@@ -32,6 +35,70 @@ export async function POST(req: NextRequest) {
         path: "/"
       });
       return res;
+    }
+
+    if (action === "google_real") {
+      try {
+        const ticket = await googleClient.verifyIdToken({
+          idToken: credential,
+          audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        
+        if (!payload) {
+          return NextResponse.json({ error: "Invalid Google token" }, { status: 401 });
+        }
+
+        const gEmail = payload.email!.toLowerCase();
+        const gName = payload.name || payload.email!.split("@")[0];
+        const avatar = payload.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${gEmail}`;
+
+        let authUser;
+        const conn = await connectToDatabase();
+        if (conn) {
+          let user = await (User as any).findOne({ email: gEmail });
+          if (!user) {
+            user = await (User as any).create({
+              name: gName,
+              email: gEmail,
+              avatar,
+              authProvider: "google"
+            });
+          }
+          authUser = {
+            id: user._id.toString(),
+            name: user.name || gName,
+            email: user.email,
+            avatar: user.avatar || avatar
+          };
+          saveLocalUser({ _id: authUser.id, name: authUser.name, email: authUser.email });
+        } else {
+          // Local fallback auth
+          const googleUser = {
+            _id: `g_user_${payload.sub}`,
+            name: gName,
+            email: gEmail,
+            avatar,
+            provider: "google"
+          };
+          const saved = saveLocalUser(googleUser);
+          authUser = { id: saved._id, name: saved.name, email: saved.email, avatar };
+        }
+
+        const token = await createSessionToken(authUser);
+        const res = NextResponse.json({ success: true, user: authUser, token });
+        res.cookies.set("auth_token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 30 * 24 * 60 * 60,
+          path: "/"
+        });
+        return res;
+      } catch (err) {
+        console.error("Google verify error:", err);
+        return NextResponse.json({ error: "Google verification failed" }, { status: 401 });
+      }
     }
 
     if (action === "google") {

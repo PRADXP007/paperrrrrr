@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDocumentContext } from "@/lib/DocumentContext";
-import { ArrowUp, Clock, Settings2, User, ChevronDown } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { ArrowUp, Clock, Settings2, User, ChevronDown, LogOut } from "lucide-react";
 import styles from "./page.module.css";
 import { Logo } from "@/components/ui/Logo";
 import { DotPattern } from "@/components/magicui/dot-pattern";
@@ -13,6 +14,8 @@ import { cn } from "@/lib/utils";
 type FormatType = "academic" | "ieee" | "slide";
 
 export default function Home() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const { 
     setPrompt: setContextPrompt, 
     setFormat: setContextFormat, 
@@ -20,9 +23,9 @@ export default function Home() {
     font, setFont,
     totalPages, setTotalPages,
     color, setColor,
-    audienceContext, setAudienceContext
+    audienceContext, setAudienceContext,
+    customChapterCount, setCustomChapterCount
   } = useDocumentContext();
-  const router = useRouter();
 
   const [prompt, setPrompt] = useState("");
   const [format, setFormat] = useState<FormatType>("academic");
@@ -57,15 +60,27 @@ export default function Home() {
         <Logo size="md" />
         
         <div className={styles.headerRight}>
-          <button className={styles.headerPill}>
+          <button className={styles.headerPill} onClick={() => router.push(user ? "/history" : "/login")}>
             <Clock size={16} /> History
           </button>
           <div className={styles.headerPill}>
             Model: <span className="font-semibold text-primary">Gemini 3.1 Pro</span>
           </div>
-          <button className={styles.headerPill}>
-            <User size={16} /> Sign In
-          </button>
+          {user ? (
+            <div className={styles.userMenu}>
+              <div className={styles.headerPill} style={{ gap: "8px" }}>
+                <img src={user.avatar} alt="Avatar" style={{ width: 20, height: 20, borderRadius: "50%" }} />
+                <span style={{ maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name || user.email}</span>
+                <button onClick={() => logout()} title="Sign Out" style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", marginLeft: "4px", display: "flex", alignItems: "center" }}>
+                  <LogOut size={14} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button className={styles.headerPill} onClick={() => router.push("/login")}>
+              <User size={16} /> Sign In
+            </button>
+          )}
         </div>
       </header>
 
@@ -162,16 +177,27 @@ export default function Home() {
                   <div className={styles.settingsField}>
                     <span className={styles.fieldLabel}>Color</span>
                     <select className="form-input" value={color} onChange={e => setColor(e.target.value)}>
-                      <option value="Black">Black</option>
-                      <option value="Midnight Executive">Midnight Executive</option>
-                      <option value="Sepia">Sepia</option>
+                      <option value="000000">Black</option>
+                      <option value="1a237e">Midnight Executive</option>
+                      <option value="5d4037">Sepia</option>
                     </select>
+                  </div>
+                  <div className={styles.settingsField}>
+                    <span className={styles.fieldLabel}>Chapters</span>
+                    <input 
+                      type="number" 
+                      className="form-input" 
+                      value={customChapterCount} 
+                      onChange={e => setCustomChapterCount(Number(e.target.value))} 
+                      min={1} 
+                      max={20} 
+                    />
                   </div>
                 </div>
 
                 <div className={styles.settingsRow} style={{ marginTop: 12 }}>
-                  <div className={styles.settingsField} style={{ flex: 1 }}>
-                    <span className={styles.fieldLabel}>Target Audience / Context</span>
+                  <div className={styles.settingsField} style={{ maxWidth: "300px" }}>
+                    <span className={styles.fieldLabel}>Target Audience</span>
                     <select className="form-input" value={audienceContext} onChange={e => setAudienceContext(e.target.value)}>
                       <option value="School">School</option>
                       <option value="College">College</option>
@@ -181,16 +207,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className={styles.settingsRow} style={{ marginTop: 12 }}>
-                  <div className={styles.settingsField} style={{ flex: 1 }}>
-                    <span className={styles.fieldLabel}>Additional Structural Instructions</span>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      placeholder="e.g., Include a dedicated Methodology chapter before Results" 
-                    />
-                  </div>
-                </div>
+
 
                 <div className={styles.settingsRow} style={{ marginTop: 8 }}>
                   <div 

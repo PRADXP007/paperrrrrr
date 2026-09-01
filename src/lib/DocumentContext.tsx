@@ -23,6 +23,8 @@ interface DocumentContextType {
   setColor: (val: string) => void;
   audienceContext: string;
   setAudienceContext: (val: string) => void;
+  customChapterCount: number;
+  setCustomChapterCount: (val: number) => void;
   isInitialized: boolean;
 }
 
@@ -37,8 +39,9 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   const [finalSections, setFinalSections] = useState<any>({});
   const [font, setFont] = useState("Times New Roman");
   const [totalPages, setTotalPages] = useState(15);
-  const [color, setColor] = useState("Black");
+  const [color, setColor] = useState("000000");
   const [audienceContext, setAudienceContext] = useState("College");
+  const [customChapterCount, setCustomChapterCount] = useState(6);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -55,8 +58,9 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         if (parsed.finalSections) setFinalSections(parsed.finalSections);
         if (parsed.font) setFont(parsed.font);
         if (parsed.totalPages) setTotalPages(parsed.totalPages);
-        if (parsed.color) setColor(parsed.color);
+        if (parsed.color) setColor(parsed.color === "Black" ? "000000" : parsed.color);
         if (parsed.audienceContext) setAudienceContext(parsed.audienceContext);
+        if (parsed.customChapterCount) setCustomChapterCount(parsed.customChapterCount);
       } catch (e) {
         console.error("Failed to parse docContext from localStorage");
       }
@@ -67,9 +71,9 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Save state to localStorage whenever it changes, but only after initial load
     if (!isInitialized) return;
-    const data = { prompt, format, docType, researchBundle, outline, finalSections, font, totalPages, color, audienceContext };
+    const data = { prompt, format, docType, researchBundle, outline, finalSections, font, totalPages, color, audienceContext, customChapterCount };
     localStorage.setItem("docContext", JSON.stringify(data));
-  }, [prompt, format, docType, researchBundle, outline, finalSections, font, totalPages, color, audienceContext, isInitialized]);
+  }, [prompt, format, docType, researchBundle, outline, finalSections, font, totalPages, color, audienceContext, customChapterCount, isInitialized]);
 
   return (
     <DocumentContext.Provider
@@ -94,6 +98,8 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         setColor,
         audienceContext,
         setAudienceContext,
+        customChapterCount,
+        setCustomChapterCount,
         isInitialized,
       }}
     >

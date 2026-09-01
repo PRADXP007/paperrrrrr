@@ -9,7 +9,7 @@ import { Loader } from "@/components/ui/Loader";
 
 export default function BuildPage() {
   const router = useRouter();
-  const { prompt, format, docType, setResearchBundle, setOutline, isInitialized, font, totalPages, color, audienceContext } = useDocumentContext();
+  const { prompt, format, docType, setResearchBundle, setOutline, isInitialized, font, totalPages, color, audienceContext, customChapterCount } = useDocumentContext();
   
   const [status, setStatus] = useState("Initializing intelligence build...");
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export default function BuildPage() {
         const resOutline = await fetch("/api/outline", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, format, docType, researchBundle: rb, audienceContext, font, totalPages, color }),
+          body: JSON.stringify({ prompt, format, docType, researchBundle: rb, audienceContext, font, totalPages, color, customChapterCount }),
         });
 
         if (!resOutline.ok) throw new Error("Failed to generate outline.");
@@ -65,7 +65,7 @@ export default function BuildPage() {
     runBuild();
 
     return () => { isMounted = false; };
-  }, [prompt, format, docType, setResearchBundle, setOutline, router, isInitialized, font, totalPages, color, audienceContext]);
+  }, [prompt, format, docType, setResearchBundle, setOutline, router, isInitialized, font, totalPages, color, audienceContext, customChapterCount]);
 
   return (
     <div className={styles.container}>

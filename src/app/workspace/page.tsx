@@ -56,7 +56,7 @@ function LivePreview({ sections }: { sections: any[] }) {
 
 export default function WorkspacePage() {
   const router = useRouter();
-  const { prompt, format, docType, researchBundle, outline, finalSections, setFinalSections, isInitialized, font, totalPages, color, audienceContext } = useDocumentContext();
+  const { prompt, format, docType, researchBundle, outline, finalSections, setFinalSections, isInitialized, font, totalPages, color, audienceContext, customChapterCount } = useDocumentContext();
   
   const [streamStatus, setStreamStatus] = useState("Initializing stream...");
   const [isStreaming, setIsStreaming] = useState(true);
@@ -65,14 +65,25 @@ export default function WorkspacePage() {
   const [downloadFilename, setDownloadFilename] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-scroll the log container
   const logsEndRef = useRef<HTMLDivElement>(null);
   const [logs, setLogs] = useState<Array<{ id: string; text: string; time: string }>>([]);
   const [liveSections, setLiveSections] = useState<any[]>(outline?.sections || outline?.chapters || []);
+  const [typingBuffer, setTypingBuffer] = useState<string>("");
+  const typingBufferRef = useRef<string>("");
+  const [displayedText, setDisplayedText] = useState<string>("");
 
   const addLog = (text: string) => {
     setLogs((prev) => [...prev, { id: Math.random().toString(), text, time: new Date().toLocaleTimeString() }]);
   };
+
+  useEffect(() => {
+    if (typingBufferRef.current.length > displayedText.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText(typingBufferRef.current.slice(0, displayedText.length + 3)); // Type 3 chars at a time
+      }, 10);
+      return () => clearTimeout(timeout);
+    }
+  }, [displayedText, typingBuffer]);
 
   useEffect(() => {
     if (logsEndRef.current) {
@@ -108,7 +119,8 @@ export default function WorkspacePage() {
             audienceContext,
             totalPages,
             font,
-            color
+            color,
+            customChapterCount
           }),
         });
 
@@ -139,6 +151,13 @@ export default function WorkspacePage() {
                   const msg = `Drafted: ${event.title}`;
                   setStreamStatus(msg);
                   addLog(msg);
+                  
+                  // Append to typing buffer for the live typewriter effect
+                  if (event.content) {
+                    const snippet = `\n\n<section id="${event.id}">\n  <title>${event.title}</title>\n  <content>\n${event.content}\n  </content>\n</section>`;
+                    typingBufferRef.current += snippet;
+                    setTypingBuffer(typingBufferRef.current);
+                  }
                   
                   if (isMounted) {
                     setLiveSections(prev => {
@@ -200,7 +219,7 @@ export default function WorkspacePage() {
     runStreamAndAssemble();
 
     return () => { isMounted = false; };
-  }, [prompt, format, docType, outline, researchBundle, setFinalSections, router, isInitialized, font, totalPages, color, audienceContext]);
+  }, [prompt, format, docType, outline, researchBundle, setFinalSections, router, isInitialized, font, totalPages, color, audienceContext, customChapterCount]);
 
   return (
     <div className={styles.container} style={{ overflow: "hidden", display: "flex", flexDirection: "column", height: "100vh" }}>
@@ -232,6 +251,13 @@ export default function WorkspacePage() {
                 <span style={{ color: log.text.includes("Error") ? '#ff7b72' : log.text.includes("Complete") || log.text.includes("Drafted") ? '#7ee787' : '#c9d1d9' }}>{log.text}</span>
               </div>
             ))}
+            
+            {/* Live Typing Effect */}
+            {displayedText && (
+              <div style={{ marginTop: '16px', color: '#a5d6ff', whiteSpace: 'pre-wrap', borderLeft: '2px solid #30363d', paddingLeft: '12px' }}>
+                {displayedText}
+              </div>
+            )}
             {isStreaming && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--color-primary)', marginTop: '8px' }}>
                 <Loader2 size={14} className="animate-spin" />

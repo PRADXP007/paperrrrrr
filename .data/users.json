@@ -1,0 +1,19 @@
+[
+  {
+    "_id": "user_1788284943132_19qko",
+    "createdAt": "2026-09-01T17:49:03.132Z",
+    "updatedAt": "2026-09-01T17:49:03.132Z",
+    "name": "Test User",
+    "email": "test@example.com",
+    "passwordHash": "$2b$10$wI.p2r45fTpTbVmOiAXLZ.n6h8ZRxrC/Es2edzReRe8kW3YrrDp1u"
+  },
+  {
+    "_id": "g_user_1788285238736",
+    "createdAt": "2026-09-01T17:49:45.577Z",
+    "updatedAt": "2026-09-01T17:53:58.737Z",
+    "name": "Researcher Scholar",
+    "email": "researcher.scholar@gmail.com",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=researcher.scholar@gmail.com",
+    "provider": "google"
+  }
+]
