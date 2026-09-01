@@ -1,0 +1,270 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-8);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.headerPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.headerPill:hover {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Main Content Area */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 15vh; /* Push slightly above middle */
+  padding-bottom: var(--space-16);
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
+
+.promptArea {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.promptCopy {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.promptBar {
+  width: 100%;
+  position: relative;
+  margin-bottom: var(--space-6);
+}
+
+.promptInput {
+  width: 100%;
+  padding: var(--space-4) var(--space-6);
+  padding-right: 60px; /* space for submit button */
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  background-color: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  min-height: 60px;
+  max-height: 200px;
+}
+
+.promptInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+.submitBtn {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  background-color: var(--brand-accent);
+  transition: all var(--transition-fast);
+}
+
+.submitBtn:hover {
+  background-color: var(--brand-accent-hover);
+  transform: translateY(-1px);
+}
+
+/* Format Pills / Segment Control */
+.formatControl {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-8);
+}
+
+.formatPill {
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.formatPill:hover {
+  color: var(--text-primary);
+}
+
+.formatPill.active {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Settings Summary / Panel */
+.settingsWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.settingsSummary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: all var(--transition-fast);
+}
+
+.settingsSummary:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.settingsPanel {
+  width: 100%;
+  margin-top: var(--space-4);
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  animation: fadeSlideDown 300ms var(--transition-normal);
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.settingsField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+}
+
+.fieldLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+/* Toggle Switch */
+.toggleWrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggleTrack {
+  width: 36px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-tertiary);
+  position: relative;
+  transition: background-color var(--transition-fast);
+  border: 1px solid var(--border-light);
+}
+
+.toggleTrack.active {
+  background-color: var(--brand-accent);
+  border-color: var(--brand-accent);
+}
+
+.toggleThumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: white;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggleTrack.active .toggleThumb {
+  transform: translateX(16px);
+}
+
+.toggleLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Front Matter Fade In */
+.frontMatter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  animation: fadeIn 400ms var(--transition-normal);
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

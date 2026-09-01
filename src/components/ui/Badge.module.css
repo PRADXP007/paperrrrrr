@@ -1,0 +1,110 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  transition: colors var(--transition-fast);
+  white-space: nowrap;
+}
+
+/* Sizes */
+.sm {
+  padding: 0 var(--space-2);
+  font-size: 0.6875rem;
+  height: 20px;
+  gap: var(--space-1);
+  font-weight: 500;
+}
+.md {
+  padding: 0 var(--space-3);
+  font-size: 0.75rem;
+  height: 24px;
+  gap: 6px;
+  font-weight: 600;
+}
+.lg {
+  padding: 0 var(--space-4);
+  font-size: 0.875rem;
+  height: 32px;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+/* Variants */
+.gray {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+.brand {
+  background-color: #F0F4FF; /* light indigo */
+  color: var(--brand-primary);
+  border-color: #D8E2FF;
+}
+[data-theme="dark"] .brand {
+  background-color: rgba(44, 58, 140, 0.4);
+  color: #E0E7FF;
+  border-color: rgba(44, 58, 140, 0.8);
+}
+.success {
+  background-color: #ECFDF3;
+  color: #027A48;
+  border-color: #A6F4C5;
+}
+[data-theme="dark"] .success {
+  background-color: rgba(5, 51, 33, 0.6);
+  color: #6CE9A6;
+  border-color: #087443;
+}
+.warning {
+  background-color: #FEF6EE;
+  color: #B54708;
+  border-color: #F9DBAF;
+}
+[data-theme="dark"] .warning {
+  background-color: rgba(78, 29, 9, 0.6);
+  color: #FDB022;
+  border-color: #93370D;
+}
+.error {
+  background-color: #FEF3F2;
+  color: #B42318;
+  border-color: #FECDCA;
+}
+[data-theme="dark"] .error {
+  background-color: rgba(85, 22, 12, 0.6);
+  color: #FDA29B;
+  border-color: #912018;
+}
+
+/* Dot */
+.dotWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dot {
+  border-radius: 50%;
+  background-color: currentColor;
+}
+.sm .dot { width: 4px; height: 4px; }
+.md .dot { width: 6px; height: 6px; }
+.lg .dot { width: 8px; height: 8px; }
+
+.pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.75;
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}

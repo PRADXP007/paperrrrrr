@@ -1,0 +1,96 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  assembleWordDocument,
+  assemblePowerPoint,
+  assemblePdfDocument,
+  AssembleDocumentInput
+} from "@/lib/assembler";
+import { connectToDatabase } from "@/lib/mongodb";
+import Document from "@/models/Document";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+export async function POST(req: NextRequest) {
+  try {
+    const body: AssembleDocumentInput & { docId?: string } = await req.json();
+    const { title, subtitle, format = "docx", sections, chapters, academicMeta, docId } = body;
+
+    const safeTitle = (academicMeta?.projectTitleOverride || title || "Document").replace(/[^a-zA-Z0-9_\-]/g, "_");
+    const safeSubtitle = subtitle || "Comprehensive Academic & Project Report";
+    const safeSections = Array.isArray(chapters || sections) && (chapters || sections)!.length > 0
+      ? (chapters || sections)!
+      : [{ title: "1. Introduction & Overview", brief: "Document summary", content: "Prepared with Paperrrrrr Document Studio." }];
+
+    let fileBuffer: Buffer;
+    let contentType: string;
+    let fileExtension: string;
+
+    const selectedFont = body.selectedFont || academicMeta?.selectedFont || "Times New Roman";
+    const accentColor = body.accentColor || academicMeta?.accentColor || "000000";
+
+    const assembleInput: AssembleDocumentInput = {
+      title: title || "Document",
+      subtitle: safeSubtitle,
+      format,
+      docType: body.docType,
+      isIEEEPaper: body.isIEEEPaper || body.docType === "Research Paper" || body.docType === "IEEE Research Paper",
+      sections: safeSections,
+      chapters: safeSections,
+      selectedFont,
+      accentColor,
+      academicMeta: {
+        ...academicMeta,
+        selectedFont,
+        accentColor
+      }
+    };
+
+    switch (format) {
+      case "pptx":
+        fileBuffer = await assemblePowerPoint(assembleInput);
+        contentType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+        fileExtension = "pptx";
+        break;
+      case "pdf":
+        fileBuffer = await assemblePdfDocument(assembleInput);
+        contentType = "application/pdf";
+        fileExtension = "pdf";
+        break;
+      case "docx":
+      default:
+        fileBuffer = await assembleWordDocument(assembleInput);
+        contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        fileExtension = "docx";
+        break;
+    }
+
+    if (docId) {
+      try {
+        const db = await connectToDatabase();
+        if (db) {
+          await (Document as any).findByIdAndUpdate(docId, { status: "completed" });
+        }
+      } catch (dbErr) {
+        console.warn("MongoDB status update skipped:", dbErr);
+      }
+    }
+
+    const filename = `Paperrrrrr_${safeTitle}.${fileExtension}`;
+
+    return new Response(new Uint8Array(fileBuffer), {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Length": fileBuffer.length.toString()
+      }
+    });
+  } catch (error: any) {
+    console.error("Document assembly route error:", error);
+    return new Response(JSON.stringify({ error: error.message || "Document assembly failed", stack: error.stack }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+}
