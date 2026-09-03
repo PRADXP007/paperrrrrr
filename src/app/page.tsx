@@ -23,8 +23,10 @@ export default function Home() {
     font, setFont,
     totalPages, setTotalPages,
     color, setColor,
-    audienceContext, setAudienceContext,
-    customChapterCount, setCustomChapterCount
+    reportCategory, setReportCategory,
+    customChapterCount, setCustomChapterCount,
+    additionalInstructions, setAdditionalInstructions,
+    customGeminiKey, setCustomGeminiKey
   } = useDocumentContext();
 
   const [prompt, setPrompt] = useState("");
@@ -182,6 +184,9 @@ export default function Home() {
                       <option value="5d4037">Sepia</option>
                     </select>
                   </div>
+                </div>
+
+                <div className={styles.settingsRow} style={{ marginTop: 12 }}>
                   <div className={styles.settingsField}>
                     <span className={styles.fieldLabel}>Chapters</span>
                     <input 
@@ -193,17 +198,37 @@ export default function Home() {
                       max={20} 
                     />
                   </div>
-                </div>
-
-                <div className={styles.settingsRow} style={{ marginTop: 12 }}>
                   <div className={styles.settingsField} style={{ maxWidth: "300px" }}>
-                    <span className={styles.fieldLabel}>Target Audience</span>
-                    <select className="form-input" value={audienceContext} onChange={e => setAudienceContext(e.target.value)}>
+                    <span className={styles.fieldLabel}>Report Category</span>
+                    <select className="form-input" value={reportCategory} onChange={e => setReportCategory(e.target.value)}>
                       <option value="School">School</option>
                       <option value="College">College</option>
                       <option value="Engineering">Engineering</option>
                       <option value="Corporate">Corporate</option>
                     </select>
+                  </div>
+                  <div className={styles.settingsField} style={{ flex: 1 }}>
+                    <span className={styles.fieldLabel}>Additional Command</span>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="e.g., Use an authoritative tone"
+                      value={additionalInstructions}
+                      onChange={e => setAdditionalInstructions(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.settingsRow} style={{ marginTop: 12 }}>
+                  <div className={styles.settingsField} style={{ flex: 1 }}>
+                    <span className={styles.fieldLabel}>Gemini API Key <span style={{ opacity: 0.5, fontSize: "0.8rem", marginLeft: 4 }}>(Required for real AI generation)</span></span>
+                    <input 
+                      type="password" 
+                      className="form-input" 
+                      placeholder="Enter your Google Gemini API Key"
+                      value={customGeminiKey || ""}
+                      onChange={e => setCustomGeminiKey(e.target.value)}
+                    />
                   </div>
                 </div>
 

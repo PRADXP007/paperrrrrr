@@ -19,14 +19,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { docId, prompt, options = {}, researchBundle, audienceContext, font, totalPages, color } = body;
+    const { docId, prompt, options = {}, researchBundle, reportCategory, font, totalPages, color, customChapterCount, additionalInstructions, customGeminiKey } = body;
 
     const mergedOptions = {
       ...options,
-      audience: audienceContext,
+      reportCategory: reportCategory,
       font: font,
       pageCount: totalPages,
-      accentColor: color
+      accentColor: color,
+      customChapterCount: customChapterCount,
+      additionalRequirements: additionalInstructions,
+      customGeminiKey: customGeminiKey
     };
 
     const outline = await generateStructuredOutline(prompt, mergedOptions, researchBundle);

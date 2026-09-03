@@ -9,7 +9,7 @@ import { Loader } from "@/components/ui/Loader";
 
 export default function BuildPage() {
   const router = useRouter();
-  const { prompt, format, docType, setResearchBundle, setOutline, isInitialized, font, totalPages, color, audienceContext, customChapterCount } = useDocumentContext();
+  const { prompt, format, docType, setResearchBundle, setOutline, isInitialized, font, totalPages, color, reportCategory, customChapterCount, additionalInstructions, customGeminiKey } = useDocumentContext();
   
   const [status, setStatus] = useState("Initializing intelligence build...");
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export default function BuildPage() {
         const resResearch = await fetch("/api/research", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, depth: "standard", audienceContext }),
+          body: JSON.stringify({ prompt, depth: "standard", audienceContext: reportCategory }),
         });
         
         if (!resResearch.ok) throw new Error("Failed to gather research.");
@@ -43,7 +43,7 @@ export default function BuildPage() {
         const resOutline = await fetch("/api/outline", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, format, docType, researchBundle: rb, audienceContext, font, totalPages, color, customChapterCount }),
+          body: JSON.stringify({ prompt, docType, format, researchBundle: rb, font, totalPages, color, reportCategory, customChapterCount, additionalInstructions, customGeminiKey }),
         });
 
         if (!resOutline.ok) throw new Error("Failed to generate outline.");
@@ -65,7 +65,7 @@ export default function BuildPage() {
     runBuild();
 
     return () => { isMounted = false; };
-  }, [prompt, format, docType, setResearchBundle, setOutline, router, isInitialized, font, totalPages, color, audienceContext, customChapterCount]);
+  }, [prompt, format, docType, setResearchBundle, setOutline, router, isInitialized, font, totalPages, color, reportCategory, customChapterCount, additionalInstructions, customGeminiKey]);
 
   return (
     <div className={styles.container}>
@@ -93,7 +93,7 @@ export default function BuildPage() {
               <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 500 }}>
                 {status}
               </h2>
-              <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>
+              <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
                 Please wait while we formulate the {docType}.
               </p>
             </div>

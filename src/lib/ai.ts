@@ -43,6 +43,7 @@ export interface GenerateOutlineOptions {
   format?: string;
   tone?: string;
   audience?: string;
+  reportCategory?: string;
   targetLength?: string;
   docType?: string;
   isIEEEPaper?: boolean;
@@ -606,8 +607,29 @@ export function buildDynamicOutline(
           { id: "sec_6_3", title: "6.3 Next Steps", brief: `Recommended priorities for future work.` }
         ]
       }
-    ];
-  }
+      ];
+
+      // Trim or expand the sections to match customChapterCount
+      const requestedCount = lengthSpec.chapterCount;
+      if (requestedCount < sections.length) {
+        sections = sections.slice(0, requestedCount);
+      } else if (requestedCount > sections.length) {
+        for (let i = sections.length + 1; i <= requestedCount; i++) {
+          sections.push({
+            id: `sec_${i}`,
+            title: `${i}. ${cleanTitle} Analysis (Part ${i - sections.length})`,
+            brief: `Additional detailed analysis for chapter ${i}.`,
+            keyPoints: ["Detailed analysis", "Key metrics", "Implementation outcomes"],
+            relevantSourceIndices: [1],
+            subsections: [
+              { id: `sec_${i}_1`, title: `${i}.1 Context & Setup`, brief: `Contextual setup.` },
+              { id: `sec_${i}_2`, title: `${i}.2 Deep Dive`, brief: `Detailed breakdown.` },
+              { id: `sec_${i}_3`, title: `${i}.3 Conclusion`, brief: `Section conclusion.` }
+            ]
+          });
+        }
+      }
+    }
 
   return {
     title: capitalizedTitle,
@@ -734,7 +756,7 @@ STRICT STRUCTURAL REQUIREMENTS FOR IEEE RESEARCH PAPER:
 4. INLINE ABSTRACT & KEYWORDS: First section MUST be "Abstract & Keywords".`;
 
   if (geminiApiKey) {
-    const requestedModel = options.geminiModel || "gemini-3.1-pro";
+    const requestedModel = options.geminiModel || "gemini-3.1-pro-preview";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
@@ -786,8 +808,10 @@ export async function generateAcademicReportOutline(
   const cleanTitle = prompt.replace(/\.$/, "").trim();
   const docBudget = calculateDocumentBudget(prompt, options);
 
-  const systemPrompt = `You are a Senior Academic Project Lead and Document Architect.
-You must construct a comprehensive multi-chapter Academic/Project Report outline with decimal chapter numbers.
+  const category = options.reportCategory || "College";
+  
+  const systemPrompt = `You are a Senior Project Lead and Document Architect designing a ${category} Report.
+You must construct a comprehensive multi-chapter report outline tailored to a ${category} format.
 Output ONLY valid JSON matching this exact structure:
 {
   "title": "Comprehensive Project Report Title",
@@ -892,14 +916,22 @@ Target Length: ${docBudget.label} (~${docBudget.pageCount} pages, ~${docBudget.c
 Live Research Sources Available:
 ${JSON.stringify(researchBundle?.results || [], null, 2)}
 
-STRICT STRUCTURAL REQUIREMENTS FOR ACADEMIC REPORT:
-1. PLAIN LANGUAGE TITLES (MANDATORY): Section and chapter titles MUST describe content in simple, ordinary everyday words. AVOID academic jargon, avoid stacking abstract nouns (e.g. use "Introduction", "Literature Review", "System Design", "Test Results", "Case Studies", "Costs & Budget", "Regulations", "Project Roadmap", "Risk Management", "Summary & Next Steps"). Titles must be immediately clear to any general reader.
-2. DECIMAL CHAPTER NUMBERING ONLY: Chapters MUST be numbered as "1. Introduction", "2. Literature Review", etc. Subsections MUST be numbered as "1.1 Background & Motivation", "1.2 Problem Statement", "1.3 Project Goals".
+STRICT STRUCTURAL REQUIREMENTS FOR A ${category.toUpperCase()} REPORT:
+${category === "School" ? `1. SECTIONS: Generate plainly numbered sections (1, 2, 3). NO decimal subsections (NO 1.1, 1.2).
+2. STRUCTURE: Start with "1. Introduction", followed by 2 to 4 body sections, then "Conclusion", and ending with "Bibliography".
+3. NO ABSTRACT: Do not include an abstract.
+4. SECTION COUNT: Generate exactly ${docBudget.chapterCount} sections.` : 
+category === "Corporate" ? `1. TITLES: Section titles must be professional and descriptive (e.g., "1. Market Overview"). NEVER use the word "Chapter".
+2. STRUCTURE: Replace "Abstract" with "Executive Summary". Replace "Conclusion" with "Recommendations". Include "Appendices" if relevant.
+3. NUMBERING: Use decimal numbering (1, 1.1, 1.2) for all sections.
+4. SECTION COUNT: Generate exactly ${docBudget.chapterCount} sections.` : 
+`1. TITLES: Section and chapter titles MUST describe content in simple, ordinary everyday words.
+2. NUMBERING: Chapters MUST be numbered as "1. Introduction", "2. Literature Review", etc. Subsections MUST be numbered as "1.1 Background", "1.2 Problem Statement".
 3. CHAPTER COUNT: Generate EXACTLY ${docBudget.chapterCount} chapters to satisfy the requested ${docBudget.pageCount}-page depth.
-4. ABSOLUTE PROHIBITION: NEVER use IEEE Roman numerals (NO "I. INTRODUCTION", NO "II. RELATED WORK"). This is a formal academic/project report, not an IEEE paper.`;
+4. FORMAT: This is a formal academic/project report, not an IEEE paper.`}`;
 
   if (geminiApiKey) {
-    const requestedModel = options.geminiModel || "gemini-3.1-pro";
+    const requestedModel = options.geminiModel || "gemini-3.1-pro-preview";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
@@ -926,6 +958,31 @@ STRICT STRUCTURAL REQUIREMENTS FOR ACADEMIC REPORT:
       if (response && response.text) {
         const parsed = JSON.parse(response.text);
         if (parsed.sections && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+          // STRICTLY ENFORCE EXACT CHAPTER COUNT
+          const requestedCount = docBudget.chapterCount;
+          if (requestedCount > 0) {
+            if (parsed.sections.length > requestedCount) {
+              // Trim excess chapters
+              parsed.sections = parsed.sections.slice(0, requestedCount);
+            } else if (parsed.sections.length < requestedCount) {
+              // Pad missing chapters to meet exact count
+              const currentLength = parsed.sections.length;
+              for (let i = currentLength + 1; i <= requestedCount; i++) {
+                parsed.sections.push({
+                  id: `sec_${i}`,
+                  title: `${i}. Further Analysis & Discussion (Part ${i - currentLength})`,
+                  brief: `Additional deep-dive academic analysis focusing on extended operational and theoretical implications to satisfy exact depth requirements.`,
+                  keyPoints: ["Extended empirical analysis", "Secondary impact metrics", "Future considerations"],
+                  relevantSourceIndices: [1],
+                  subsections: category === "School" ? [] : [
+                    { id: `sec_${i}_1`, title: category === "Corporate" ? `${i}.1 Extended Analysis` : `${i}.1 Contextual Extensions`, brief: `Extended discussion of theoretical contexts.` },
+                    { id: `sec_${i}_2`, title: category === "Corporate" ? `${i}.2 Additional Metrics` : `${i}.2 Secondary Impacts`, brief: `Secondary consequences and quantitative metrics.` }
+                  ]
+                });
+              }
+            }
+          }
+          
           parsed.docType = "Research Report";
           return parsed as GeneratedOutline;
         }
@@ -1115,7 +1172,7 @@ ${formatInstruction}
 
   // 1. Primary AI Provider: Google Gemini (@google/genai)
   if (geminiApiKey) {
-    const requestedModel = customKeys?.geminiModel || "gemini-3.1-pro";
+    const requestedModel = customKeys?.geminiModel || "gemini-3.1-pro-preview";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
@@ -1125,8 +1182,9 @@ ${formatInstruction}
           contents: prompt
         });
       } catch (modelErr) {
+        console.warn("Requested model failed, falling back to gemini-2.5-pro:", modelErr);
         response = await ai.models.generateContent({
-          model: "gemini-3.1-pro",
+          model: "gemini-2.5-pro",
           contents: prompt
         });
       }
@@ -1287,10 +1345,12 @@ STRICT EMPIRICAL GROUNDING & ZERO-HALLUCINATION RULES:
 3. Every citation MUST use the real URLs provided in the research snippets: [Source: Title](URL).
 4. Substantially enrich each subsection with deep domain precision.
 5. Avoid repetition, templated phrases, or boilerplate clichés.
-6. Return the COMPLETE, expanded section markdown.`;
+6. When expanding the content to hit the target word count, seamlessly continue the prose under the existing headings. IF, AND ONLY IF, the new content introduces a genuinely distinct new subtopic, you may insert a highly specific and descriptive subsection heading (e.g., "### 1.3 Supply Chain Vulnerabilities"). 
+7. NEVER use generic, templated filler headings like "Extended Evaluation", "Additional Analysis", or "Further Discussion".
+8. Return the COMPLETE, expanded section markdown.`;
 
   if (geminiApiKey) {
-    const requestedModel = customKeys?.geminiModel || "gemini-3.1-pro";
+    const requestedModel = customKeys?.geminiModel || "gemini-3.1-pro-preview";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
@@ -1299,9 +1359,10 @@ STRICT EMPIRICAL GROUNDING & ZERO-HALLUCINATION RULES:
           model: requestedModel,
           contents: expansionPrompt
         });
-      } catch {
+      } catch (modelErr) {
+        console.warn("Requested outline model failed, falling back to gemini-2.5-pro:", modelErr);
         response = await ai.models.generateContent({
-          model: "gemini-3.1-pro",
+          model: "gemini-2.5-pro",
           contents: expansionPrompt
         });
       }
@@ -1333,7 +1394,7 @@ STRICT EMPIRICAL GROUNDING & ZERO-HALLUCINATION RULES:
     .map(s => `Documented research confirms: "${s.snippet}" [Source: ${s.title}](${s.url}).`)
     .join("\n\n");
 
-  const expansionAddition = `\n\n### ${section.title} - Extended Theoretical & Empirical Evaluation\n\n` +
+  const expansionAddition = `\n\n` +
     (sourceFacts ? `${sourceFacts}\n\n` : "") +
     `A deeper inquiry into ${section.title.toLowerCase()} reveals nuanced trade-offs between architectural agility and operational determinism. ` +
     `Practitioners must address cross-functional coordination challenges, data lifecycle policies, and ongoing validation protocols. ` +
@@ -1424,7 +1485,7 @@ Instructions:
 - Return ONLY the revised markdown prose.`;
 
   if (geminiApiKey) {
-    const requestedModel = customKeys?.geminiModel || "gemini-3.1-pro";
+    const requestedModel = customKeys?.geminiModel || "gemini-3.1-pro-preview";
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       let response;
@@ -1434,9 +1495,9 @@ Instructions:
           contents: prompt
         });
       } catch (modelErr) {
-        console.warn(`Gemini model "${requestedModel}" failed for regeneration, falling back to gemini-3.1-pro:`, modelErr);
+        console.warn(`Gemini model "${requestedModel}" failed for regeneration, falling back to gemini-2.5-pro:`, modelErr);
         response = await ai.models.generateContent({
-          model: "gemini-3.1-pro",
+          model: "gemini-2.5-pro",
           contents: prompt
         });
       }

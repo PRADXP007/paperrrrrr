@@ -37,10 +37,11 @@ export async function POST(req: NextRequest) {
       font = "Times New Roman",
       accentColor = "000000",
       additionalRequirements,
+      additionalInstructions,
       customGeminiKey,
       customOpenAIKey,
-      geminiModel = "gemini-3.1-pro",
-      audienceContext,
+      geminiModel = "gemini-3.1-pro-preview",
+      reportCategory,
       totalPages,
       color
     } = body;
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
               message: "Initiating live web research via Tavily Search..."
             });
 
-            researchBundle = await executeResearchPhase(prompt, { audience: audienceContext });
+            researchBundle = await executeResearchPhase(prompt, { reportCategory: reportCategory });
 
             sendEvent({
               type: "research_done",
@@ -131,8 +132,8 @@ export async function POST(req: NextRequest) {
                 customChapterCount: docBudget.chapterCount,
                 font: docBudget.font,
                 accentColor: color || accentColor,
-                audience: audienceContext || audience,
-                additionalRequirements,
+                reportCategory: reportCategory || audience,
+                additionalRequirements: additionalInstructions || additionalRequirements,
                 customGeminiKey,
                 customOpenAIKey,
                 geminiModel
@@ -201,7 +202,7 @@ export async function POST(req: NextRequest) {
                 {
                   customGeminiKey,
                   customOpenAIKey,
-                  geminiModel: geminiModel || "gemini-3.1-pro",
+                  geminiModel: geminiModel || "gemini-3.1-pro-preview",
                   docType,
                   tone,
                   referenceNotes,
@@ -229,7 +230,7 @@ export async function POST(req: NextRequest) {
                   {
                     customGeminiKey,
                     customOpenAIKey,
-                    geminiModel: geminiModel || "gemini-3.1-pro",
+                    geminiModel: geminiModel || "gemini-3.1-pro-preview",
                     tone
                   }
                 );

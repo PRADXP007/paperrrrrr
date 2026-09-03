@@ -11,10 +11,10 @@ function LivePreview({ sections }: { sections: any[] }) {
   if (!sections || sections.length === 0) return null;
   
   return (
-    <div style={{ padding: '24px', textAlign: 'left', width: '100%', height: '100%', overflowY: 'auto' }}>
+    <div style={{ padding: '24px 40px', textAlign: 'left', width: '100%', flex: 1, overflowY: 'auto', color: '#000', fontFamily: '"Times New Roman", Times, serif' }}>
       {sections.map((sec, idx) => (
         <div key={idx} style={{ marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '16px', color: 'var(--color-primary)' }}>{sec.title}</h2>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '16px', color: '#000' }}>{sec.title}</h2>
           {sec.content ? (
             sec.content.split("\n\n").map((para: string, pIdx: number) => {
               const trimmed = para.trim();
@@ -26,7 +26,7 @@ function LivePreview({ sections }: { sections: any[] }) {
                 return <h4 key={pIdx} style={{ fontSize: '1.1rem', marginTop: '20px', marginBottom: '12px' }}>{trimmed.replace(/^#### /, "")}</h4>;
               }
               if (trimmed.startsWith("> ")) {
-                return <blockquote key={pIdx} style={{ borderLeft: '3px solid var(--color-primary)', paddingLeft: '16px', fontStyle: 'italic', color: 'var(--color-text-muted)' }}>{trimmed.replace(/^> /, "")}</blockquote>;
+                return <blockquote key={pIdx} style={{ borderLeft: '3px solid var(--brand-accent)', paddingLeft: '16px', fontStyle: 'italic', color: 'var(--text-secondary)' }}>{trimmed.replace(/^> /, "")}</blockquote>;
               }
               
               // Simple bold matcher
@@ -44,7 +44,7 @@ function LivePreview({ sections }: { sections: any[] }) {
               );
             })
           ) : (
-             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                <Loader2 size={14} className="animate-spin" /> Drafting section...
              </div>
           )}
@@ -56,7 +56,7 @@ function LivePreview({ sections }: { sections: any[] }) {
 
 export default function WorkspacePage() {
   const router = useRouter();
-  const { prompt, format, docType, researchBundle, outline, finalSections, setFinalSections, isInitialized, font, totalPages, color, audienceContext, customChapterCount } = useDocumentContext();
+  const { prompt, format, docType, researchBundle, outline, finalSections, setFinalSections, isInitialized, font, totalPages, color, reportCategory, customChapterCount, additionalInstructions, customGeminiKey } = useDocumentContext();
   
   const [streamStatus, setStreamStatus] = useState("Initializing stream...");
   const [isStreaming, setIsStreaming] = useState(true);
@@ -65,6 +65,7 @@ export default function WorkspacePage() {
   const [downloadFilename, setDownloadFilename] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const terminalEndRef = useRef<HTMLDivElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const [logs, setLogs] = useState<Array<{ id: string; text: string; time: string }>>([]);
   const [liveSections, setLiveSections] = useState<any[]>(outline?.sections || outline?.chapters || []);
@@ -72,9 +73,30 @@ export default function WorkspacePage() {
   const typingBufferRef = useRef<string>("");
   const [displayedText, setDisplayedText] = useState<string>("");
 
+  useEffect(() => {
+    if (outline && (outline.sections || outline.chapters)) {
+      setLiveSections((prev) => {
+        const newOutlineSections = outline.sections || outline.chapters;
+        // If length changed or it's empty, sync it completely.
+        if (prev.length === 0 || prev.length !== newOutlineSections.length) {
+          return newOutlineSections;
+        }
+        return prev;
+      });
+    }
+  }, [outline]);
+
   const addLog = (text: string) => {
     setLogs((prev) => [...prev, { id: Math.random().toString(), text, time: new Date().toLocaleTimeString() }]);
   };
+
+  useEffect(() => {
+    if (terminalEndRef.current) {
+      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [displayedText, logs, streamStatus]);
+
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
     if (typingBufferRef.current.length > displayedText.length) {
@@ -92,12 +114,14 @@ export default function WorkspacePage() {
   }, [logs]);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!isInitialized) return;
+    if (hasRunRef.current) return;
+    hasRunRef.current = true;
+    
     let eventSource: EventSource | null = null;
     let localFinalSections: any = outline?.sections || outline?.chapters || [];
 
     async function runStreamAndAssemble() {
-      if (!isInitialized) return;
 
       if (!prompt || !outline) {
         router.push("/");
@@ -116,11 +140,13 @@ export default function WorkspacePage() {
             approvedOutline: outline,
             researchBundle,
             tone: "Scholarly Academic",
-            audienceContext,
+            reportCategory,
             totalPages,
             font,
             color,
-            customChapterCount
+            customChapterCount,
+            additionalInstructions,
+            customGeminiKey
           }),
         });
 
@@ -154,24 +180,22 @@ export default function WorkspacePage() {
                   
                   // Append to typing buffer for the live typewriter effect
                   if (event.content) {
-                    const snippet = `\n\n<section id="${event.id}">\n  <title>${event.title}</title>\n  <content>\n${event.content}\n  </content>\n</section>`;
+                    const snippet = `\n\n### ${event.title}\n${event.content}`;
                     typingBufferRef.current += snippet;
                     setTypingBuffer(typingBufferRef.current);
                   }
                   
-                  if (isMounted) {
-                    setLiveSections(prev => {
-                      const newSections = [...prev];
-                      if (event.index >= 0 && event.index < newSections.length) {
-                        newSections[event.index] = { ...newSections[event.index], content: event.content };
-                      }
-                      return newSections;
-                    });
-                  }
+                  setLiveSections(prev => {
+                    const newSections = [...prev];
+                    if (event.index >= 0 && event.index < newSections.length) {
+                      newSections[event.index] = { ...newSections[event.index], content: event.content };
+                    }
+                    return newSections;
+                  });
                 } else if (event.type === "complete") {
                   if (event.sections && event.sections.length > 0) {
                     localFinalSections = event.sections;
-                    if (isMounted) setFinalSections(event.sections);
+                    setFinalSections(event.sections);
                   }
                 }
               } catch (err) {}
@@ -179,8 +203,8 @@ export default function WorkspacePage() {
           }
         }
 
-        if (isMounted) setIsStreaming(false);
-        if (isMounted) setIsAssembling(true);
+        setIsStreaming(false);
+        setIsAssembling(true);
         addLog("Stream complete. Preparing for final assembly...");
 
         // Assemble phase
@@ -203,23 +227,19 @@ export default function WorkspacePage() {
         const blob = await resAssemble.blob();
         const url = URL.createObjectURL(blob);
         
-        if (isMounted) {
           setDownloadUrl(url);
           setDownloadFilename(`${(outline.title || prompt).replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${format}`);
           setIsAssembling(false);
           addLog("Assembly complete. Ready for download.");
-        }
       } catch (err: any) {
-        if (isMounted) setError(err.message || "Generation error.");
-        if (isMounted) setIsStreaming(false);
-        if (isMounted) setIsAssembling(false);
+        setError(err.message || "Generation error.");
+        setIsStreaming(false);
+        setIsAssembling(false);
       }
     }
 
     runStreamAndAssemble();
-
-    return () => { isMounted = false; };
-  }, [prompt, format, docType, outline, researchBundle, setFinalSections, router, isInitialized, font, totalPages, color, audienceContext, customChapterCount]);
+  }, [prompt, format, docType, outline, researchBundle, setFinalSections, router, isInitialized, font, totalPages, color, reportCategory, customChapterCount, additionalInstructions, customGeminiKey]);
 
   return (
     <div className={styles.container} style={{ overflow: "hidden", display: "flex", flexDirection: "column", height: "100vh" }}>
@@ -233,7 +253,13 @@ export default function WorkspacePage() {
       <main style={{ display: 'flex', flex: 1, gap: '24px', padding: '0 40px 40px 40px', overflow: 'hidden' }}>
         
         {/* Left Column: Live Progress Stream */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#0d1117', border: '1px solid #30363d', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+        <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: '16px', padding: '24px', position: 'relative' }}>
+          <h2 style={{ fontSize: '1.1rem', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Loader2 size={18} className={isStreaming ? "animate-spin text-primary" : ""} style={{ color: isStreaming ? 'var(--brand-accent)' : 'var(--text-secondary)' }} /> 
+            Live Generation Stream
+          </h2>
+          
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#0d1117', border: '1px solid #30363d', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)' }}>
           {/* macOS Window Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: '#161b22', borderBottom: '1px solid #30363d' }}>
             <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ff5f56' }} />
@@ -244,9 +270,9 @@ export default function WorkspacePage() {
             </div>
           </div>
           
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', padding: '24px', fontFamily: 'monospace', fontSize: '0.85rem' }}>
             {logs.map((log) => (
-              <div key={log.id} style={{ display: 'flex', gap: '16px', color: '#c9d1d9' }}>
+              <div key={log.id} style={{ display: 'flex', gap: '16px', color: '#c9d1d9', lineHeight: '1.5' }}>
                 <span style={{ color: '#8b949e', whiteSpace: 'nowrap', userSelect: 'none' }}>[{log.time}]</span>
                 <span style={{ color: log.text.includes("Error") ? '#ff7b72' : log.text.includes("Complete") || log.text.includes("Drafted") ? '#7ee787' : '#c9d1d9' }}>{log.text}</span>
               </div>
@@ -259,95 +285,58 @@ export default function WorkspacePage() {
               </div>
             )}
             {isStreaming && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--color-primary)', marginTop: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--brand-accent)', marginTop: '8px' }}>
                 <Loader2 size={14} className="animate-spin" />
                 <span>{streamStatus}</span>
               </div>
             )}
-            <div ref={logsEndRef} />
+            <div ref={terminalEndRef} />
+          </div>
           </div>
         </div>
 
         {/* Right Column: Preview & Output */}
-        <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: '16px', padding: '24px', position: 'relative' }}>
-          <h2 style={{ fontSize: '1.1rem', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle2 size={18} /> Document Assembly
-          </h2>
+        <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: '16px', padding: '24px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle2 size={18} /> Document Assembly
+            </h2>
+            {!isStreaming && isAssembling && (
+              <div style={{ margin: 0, padding: '8px 16px', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
+                <Loader2 size={16} className="animate-spin" /> Packaging {format.toUpperCase()}...
+              </div>
+            )}
+            {!isStreaming && !isAssembling && downloadUrl && (
+              <a href={downloadUrl} download={downloadFilename} className={styles.submitBtn} style={{ margin: 0, padding: '8px 16px', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+                <FileDown size={16} /> Download Document
+              </a>
+            )}
+          </div>
           
           <div style={{ 
             flex: 1, 
-            backgroundColor: 'var(--color-bg)', 
+            backgroundColor: 'var(--bg-secondary)', 
             borderRadius: '8px', 
-            border: '1px solid rgba(255,255,255,0.05)',
+            border: '1px solid var(--border-light)',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '40px',
-            textAlign: 'center'
+            position: 'relative',
+            overflow: 'hidden'
           }}>
             
             {error && (
-              <div style={{ color: 'red' }}>
+              <div style={{ color: 'red', zIndex: 10 }}>
                 <p>Failed to generate document: {error}</p>
                 <button onClick={() => router.push("/")} className={styles.submitBtn} style={{ marginTop: '16px' }}>Start Over</button>
               </div>
             )}
 
-            {!error && isStreaming && (
-              <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-                <LivePreview sections={liveSections} />
-              </div>
-            )}
-
-            {!error && !isStreaming && isAssembling && (
-              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                <div style={{ opacity: 0.3, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                  <LivePreview sections={liveSections} />
+            {!error && (
+              <>
+                <div style={{ flex: 1, width: '100%', minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                  <LivePreview sections={finalSections && finalSections.length > 0 ? finalSections : liveSections} />
                 </div>
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'var(--color-bg)', padding: '32px', borderRadius: '16px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Loader2 size={48} className="animate-spin text-primary" style={{ margin: '0 auto 16px auto' }} />
-                  <p>Packaging {format.toUpperCase()} binary file...</p>
-                </div>
-              </div>
-            )}
-
-            {!error && !isStreaming && !isAssembling && downloadUrl && (
-              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                <div style={{ opacity: 0.1, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                  <LivePreview sections={liveSections} />
-                </div>
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'var(--color-bg)', padding: '48px', borderRadius: '24px', boxShadow: '0 16px 64px rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '80%', maxWidth: '500px' }}>
-                  <div style={{ 
-                    width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(255, 107, 0, 0.15)', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' 
-                  }}>
-                    <CheckCircle2 size={40} />
-                  </div>
-                  
-                  <div>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.5rem' }}>Generation Complete</h3>
-                    <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>Your {docType} is ready.</p>
-                  </div>
-
-                  <a 
-                    href={downloadUrl} 
-                    download={downloadFilename}
-                    className={styles.submitBtn}
-                    style={{ textDecoration: 'none', padding: '16px 32px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '40px', width: 'auto', fontSize: '1.1rem' }}
-                  >
-                    <FileDown size={20} />
-                    Download Document
-                  </a>
-                  
-                  <button 
-                    onClick={() => router.push("/")} 
-                    style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', textDecoration: 'underline', marginTop: '16px' }}
-                  >
-                    Create another document
-                  </button>
-                </div>
-              </div>
+              </>
             )}
 
           </div>

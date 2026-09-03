@@ -43,6 +43,7 @@ export interface AssembleSection {
 
 export interface AcademicReportMeta {
   isFormalAcademicReport?: boolean;
+  reportCategory?: string;
   institutionName?: string;
   department?: string;
   degree?: string;
@@ -881,7 +882,8 @@ export async function assembleWordDocument(
   const safeSubtitle = input.subtitle || "Comprehensive Academic & Project Report";
   const rawSections = input.chapters || input.sections || [];
   const meta = input.academicMeta || input.meta || {};
-  const isFormal = !!meta.isFormalAcademicReport && !!meta.institutionName;
+  const reportCategory = meta.reportCategory || "College";
+  const isFormal = reportCategory === "Engineering";
   const selectedFont = meta.selectedFont || input.selectedFont || "Times New Roman";
   const headingColor = (meta.accentColor || input.accentColor || "000000").replace("#", "");
 
@@ -904,8 +906,93 @@ export async function assembleWordDocument(
   let frontMatterRomanPage = 1; // 1 = cover (unnumbered)
 
   // 1. Cover Page
-  if (isFormal) {
-    // Formal University / College Report Cover Page
+  if (reportCategory === "School") {
+    frontMatterChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: safeTitle.toUpperCase(),
+            bold: true,
+            font: selectedFont,
+            size: 40, 
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 2400, after: 1200 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: "Student Name: " + (meta.submittedBy || "___________________") + "\n", font: selectedFont, size: 28, color: "000000" }),
+          new TextRun({ text: "Class/Grade: " + (meta.degree || "___________________") + "\n", font: selectedFont, size: 28, color: "000000" }),
+          new TextRun({ text: "Subject: " + (meta.department || "___________________") + "\n", font: selectedFont, size: 28, color: "000000" }),
+          new TextRun({ text: "School: " + (meta.institutionName || "___________________") + "\n", font: selectedFont, size: 28, color: "000000" }),
+          new TextRun({ text: "Date: " + new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }), font: selectedFont, size: 28, color: "000000" })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 120, line: 400 }
+      })
+    );
+  } else if (reportCategory === "Corporate") {
+    frontMatterChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: (meta.institutionName || "Company Name").toUpperCase(),
+            bold: true,
+            font: selectedFont,
+            size: 32, 
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 1000, after: 1800 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: safeTitle.toUpperCase(),
+            bold: true,
+            font: selectedFont,
+            size: 40,
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 600 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: "Prepared For:\n", bold: true, font: selectedFont, size: 24, color: "000000" }),
+          new TextRun({ text: (meta.guideName || "Client / Executive Team") + "\n", font: selectedFont, size: 24, color: "000000" })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 800 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: "Prepared By:\n", bold: true, font: selectedFont, size: 24, color: "000000" }),
+          new TextRun({ text: (meta.submittedBy || "Project Team") + "\n", font: selectedFont, size: 24, color: "000000" })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 1200 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+            bold: true,
+            font: selectedFont,
+            size: 24,
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 400 }
+      })
+    );
+  } else if (isFormal) {
+    // Formal University / Engineering Report Cover Page
     frontMatterChildren.push(
       new Paragraph({
         children: [
@@ -913,7 +1000,7 @@ export async function assembleWordDocument(
             text: (meta.institutionName || "").toUpperCase(),
             bold: true,
             font: selectedFont,
-            size: 32, // 16pt Bold
+            size: 32,
             color: headingColor
           })
         ],
@@ -925,7 +1012,7 @@ export async function assembleWordDocument(
           new TextRun({
             text: meta.department || "Department of Computer Science & Engineering",
             font: selectedFont,
-            size: 26, // 13pt
+            size: 26,
             color: "000000"
           })
         ],
@@ -938,7 +1025,7 @@ export async function assembleWordDocument(
             text: safeTitle.toUpperCase(),
             bold: true,
             font: selectedFont,
-            size: 40, // 20pt Bold
+            size: 40,
             color: headingColor
           })
         ],
@@ -951,7 +1038,7 @@ export async function assembleWordDocument(
             text: "A PROJECT REPORT",
             bold: true,
             font: selectedFont,
-            size: 28, // 14pt Bold
+            size: 28,
             color: headingColor
           })
         ],
@@ -961,7 +1048,7 @@ export async function assembleWordDocument(
       new Paragraph({
         children: [
           new TextRun({
-            text: `Submitted in partial fulfillment of the requirements for the award of the degree of`,
+            text: "Submitted in partial fulfillment of the requirements for the award of the degree of",
             italics: true,
             font: selectedFont,
             size: 24,
@@ -1015,7 +1102,7 @@ export async function assembleWordDocument(
       })
     );
   } else {
-    // Standard Clean Academic / Corporate Cover Page
+    // College Standard Cover Page
     frontMatterChildren.push(
       new Paragraph({
         children: [
@@ -1023,7 +1110,7 @@ export async function assembleWordDocument(
             text: safeTitle.toUpperCase(),
             bold: true,
             font: selectedFont,
-            size: 40, // 20pt Bold
+            size: 40,
             color: headingColor
           })
         ],
@@ -1035,7 +1122,7 @@ export async function assembleWordDocument(
           new TextRun({
             text: safeSubtitle,
             font: selectedFont,
-            size: 28, // 14pt
+            size: 28,
             color: "000000"
           })
         ],
@@ -1047,7 +1134,7 @@ export async function assembleWordDocument(
           new TextRun({
             text: "Generated by Paperrrrrr",
             font: selectedFont,
-            size: 24, // 12pt
+            size: 24,
             color: "000000"
           })
         ],
@@ -1059,7 +1146,7 @@ export async function assembleWordDocument(
           new TextRun({
             text: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
             font: selectedFont,
-            size: 24, // 12pt
+            size: 24,
             color: "000000"
           })
         ],
@@ -1234,49 +1321,53 @@ export async function assembleWordDocument(
     );
   }
 
-  // 5. Abstract Page (Lowercase Roman Numeral)
-  frontMatterRomanPage++;
-  const abstractRomanPage = toRomanNumeral(frontMatterRomanPage).toLowerCase();
-  frontMatterChildren.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "ABSTRACT",
-          bold: true,
-          font: selectedFont,
-          size: 32, // 16pt Bold
-          color: headingColor
-        })
-      ],
-      alignment: AlignmentType.CENTER,
-      pageBreakBefore: true,
-      spacing: { before: 720, after: 480 }
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: abstractSummary,
-          font: selectedFont,
-          size: 24, // 12pt
-          color: "000000"
-        })
-      ],
-      alignment: AlignmentType.JUSTIFIED,
-      spacing: { after: 240, line: 360 } // 1.5 line spacing
-    })
-  );
+  // 5. Abstract Page / Executive Summary (Conditional)
+  let abstractRomanPage = "";
+  if (reportCategory !== "School") {
+    frontMatterRomanPage++;
+    abstractRomanPage = toRomanNumeral(frontMatterRomanPage).toLowerCase();
+    frontMatterChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: reportCategory === "Corporate" ? "EXECUTIVE SUMMARY" : "ABSTRACT",
+            bold: true,
+            font: selectedFont,
+            size: 32, // 16pt Bold
+            color: headingColor
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        pageBreakBefore: true,
+        spacing: { before: 720, after: 480 }
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: abstractSummary,
+            font: selectedFont,
+            size: 24, // 12pt
+            color: "000000"
+          })
+        ],
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 240, line: 360 } // 1.5 line spacing
+      })
+    );
+  }
 
   // 6. Table of Contents Page (Lowercase Roman Numeral)
-  frontMatterRomanPage++;
   const tocEntries: Array<{ label: string; page: string; isSubsection?: boolean }> = [];
-
+  
   if (isFormal) {
     if (certPageRoman) tocEntries.push({ label: "Certificate", page: certPageRoman });
     if (declPageRoman) tocEntries.push({ label: "Declaration", page: declPageRoman });
     if (ackPageRoman) tocEntries.push({ label: "Acknowledgement", page: ackPageRoman });
   }
 
-  tocEntries.push({ label: "Abstract", page: abstractRomanPage });
+  if (abstractRomanPage) {
+    tocEntries.push({ label: reportCategory === "Corporate" ? "Executive Summary" : "Abstract", page: abstractRomanPage });
+  }
 
   // Calculate nested decimal page numbers for each chapter and its subsections
   let runningPageNumber = 1;
@@ -1334,11 +1425,18 @@ export async function assembleWordDocument(
   runningPageNumber += 1;
   tocEntries.push({ label: "REFERENCES", page: runningPageNumber.toString() });
 
-  frontMatterChildren.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "TABLE OF CONTENTS",
+  let renderTOC = true;
+  if (reportCategory === "School") {
+    renderTOC = false; // Generally no TOC for short school assignments
+  }
+  
+  if (renderTOC) {
+    frontMatterRomanPage++;
+    frontMatterChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "TABLE OF CONTENTS",
           bold: true,
           font: selectedFont,
           size: 32, // 16pt Bold
@@ -1389,6 +1487,8 @@ export async function assembleWordDocument(
   });
 
   // =========================================================================
+  } // End of renderTOC
+  
   // SECTION 2: BODY & BACK MATTER (Chapters 1..N with Nested Subsections, Conclusion, References)
   // Page numbers: Arabic numerals (1, 2, 3...) starting at Chapter 1
   // =========================================================================

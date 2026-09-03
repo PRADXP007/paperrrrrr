@@ -20,6 +20,7 @@ export interface ResearchBundle {
 export interface ResearchOptions {
   depth?: "standard" | "deep";
   audience?: string;
+  reportCategory?: string;
 }
 
 function getAudienceSearchModifier(audience?: string): string {

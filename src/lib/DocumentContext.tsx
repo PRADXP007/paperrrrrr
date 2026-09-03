@@ -21,10 +21,14 @@ interface DocumentContextType {
   setTotalPages: (val: number) => void;
   color: string;
   setColor: (val: string) => void;
-  audienceContext: string;
-  setAudienceContext: (val: string) => void;
+  reportCategory: string;
+  setReportCategory: (val: string) => void;
   customChapterCount: number;
   setCustomChapterCount: (val: number) => void;
+  additionalInstructions: string;
+  setAdditionalInstructions: (val: string) => void;
+  customGeminiKey: string;
+  setCustomGeminiKey: (val: string) => void;
   isInitialized: boolean;
 }
 
@@ -40,8 +44,10 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   const [font, setFont] = useState("Times New Roman");
   const [totalPages, setTotalPages] = useState(15);
   const [color, setColor] = useState("000000");
-  const [audienceContext, setAudienceContext] = useState("College");
+  const [reportCategory, setReportCategory] = useState("College");
   const [customChapterCount, setCustomChapterCount] = useState(6);
+  const [additionalInstructions, setAdditionalInstructions] = useState("");
+  const [customGeminiKey, setCustomGeminiKey] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -59,8 +65,10 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         if (parsed.font) setFont(parsed.font);
         if (parsed.totalPages) setTotalPages(parsed.totalPages);
         if (parsed.color) setColor(parsed.color === "Black" ? "000000" : parsed.color);
-        if (parsed.audienceContext) setAudienceContext(parsed.audienceContext);
+        if (parsed.reportCategory) setReportCategory(parsed.reportCategory);
         if (parsed.customChapterCount) setCustomChapterCount(parsed.customChapterCount);
+        if (parsed.additionalInstructions) setAdditionalInstructions(parsed.additionalInstructions);
+        if (parsed.customGeminiKey) setCustomGeminiKey(parsed.customGeminiKey);
       } catch (e) {
         console.error("Failed to parse docContext from localStorage");
       }
@@ -71,9 +79,23 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Save state to localStorage whenever it changes, but only after initial load
     if (!isInitialized) return;
-    const data = { prompt, format, docType, researchBundle, outline, finalSections, font, totalPages, color, audienceContext, customChapterCount };
+    const data = { 
+      prompt, 
+      format, 
+      docType, 
+      researchBundle, 
+      outline, 
+      finalSections, 
+      font, 
+      totalPages, 
+      color, 
+      reportCategory, 
+      customChapterCount, 
+      additionalInstructions,
+      customGeminiKey 
+    };
     localStorage.setItem("docContext", JSON.stringify(data));
-  }, [prompt, format, docType, researchBundle, outline, finalSections, font, totalPages, color, audienceContext, customChapterCount, isInitialized]);
+  }, [prompt, format, docType, researchBundle, outline, finalSections, font, totalPages, color, reportCategory, customChapterCount, additionalInstructions, customGeminiKey, isInitialized]);
 
   return (
     <DocumentContext.Provider
@@ -96,10 +118,14 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         setTotalPages,
         color,
         setColor,
-        audienceContext,
-        setAudienceContext,
+        reportCategory,
+        setReportCategory,
         customChapterCount,
         setCustomChapterCount,
+        additionalInstructions,
+        setAdditionalInstructions,
+        customGeminiKey,
+        setCustomGeminiKey,
         isInitialized,
       }}
     >
