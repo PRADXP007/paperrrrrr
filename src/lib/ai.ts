@@ -1163,9 +1163,9 @@ STRICT EMPIRICAL GROUNDING & ANTI-AI-SMELL (HALLMARK) INSTRUCTIONS:
 4. NO TEMPLATED REPETITION: Every subsection must feature distinct arguments, operational mechanics, and synthesis. Do NOT repeat paragraph structures or copy-paste identical sentences.
 5. COMPLETE DE-AI / HUMANIZED SYNTAX (Zero AI Tell-Signs):
    - PROHIBITED AI TELL-WORDS: Strictly NEVER use "delve", "tapestry", "beacon", "testament", "elevate", "cutting-edge", "game-changer", "seamless", "realm", "crucial", "harness", "leverage", "moreover", "furthermore", "in conclusion", "it is worth noting", "in this fast-paced world", "it goes without saying", "serves as a reminder", "intertwined".
-   - NO RULE-OF-THREE EPIDEMIC: Do not force symmetrical 3-item lists or triplet adjectives. Write natural, asymmetrical sentences.
+   - NATURAL HUMAN TONE: The writing MUST flow like a seasoned human author wrote it. Avoid robotic, repetitive, or overly formal robotic structures. Do not sound like an AI assistant.
+   - IMPERFECT AND ASYMMETRICAL: Human writing is bursty. Mix very short, punchy declarative statements with detailed explanations. Do not force symmetrical 3-item lists or triplet adjectives.
    - NO AI SANDWICH FORMULAS: Avoid generic introductions ("In today's landscape...") and redundant wrap-ups ("Overall, it is important to..."). Dive straight into the technical substance.
-   - BURSTINESS & RHYTHMIC VARIATION: Mix short, punchy declarative statements with detailed analytical explanations. Use active verbs and precise engineering/scholarly terminology.
    - DO NOT PAD: If you can state the point clearly in fewer words, do so. Do not fill the budget with redundant conclusions.
 ${formatInstruction}
 - Output ONLY the section body markdown.`;
@@ -1344,7 +1344,7 @@ STRICT EMPIRICAL GROUNDING & ZERO-HALLUCINATION RULES:
 2. If the research snippets lack numerical metrics for a specific subtopic, provide deep qualitative and architectural analysis (e.g. theoretical foundations, component trade-offs, engineering paradigms, governance considerations) instead of guessing numbers.
 3. Every citation MUST use the real URLs provided in the research snippets: [Source: Title](URL).
 4. Substantially enrich each subsection with deep domain precision.
-5. Avoid repetition, templated phrases, or boilerplate clichés.
+5. COMPLETE DE-AI / HUMANIZED SYNTAX: Never use AI tell-words like "delve", "tapestry", "moreover", "leverage", "cutting-edge". Write organically, mixing short sentences with long ones. Avoid robotic AI transitions or summarizing sandwich paragraphs. Write like a seasoned human author.
 6. When expanding the content to hit the target word count, seamlessly continue the prose under the existing headings. IF, AND ONLY IF, the new content introduces a genuinely distinct new subtopic, you may insert a highly specific and descriptive subsection heading (e.g., "### 1.3 Supply Chain Vulnerabilities"). 
 7. NEVER use generic, templated filler headings like "Extended Evaluation", "Additional Analysis", or "Further Discussion".
 8. Return the COMPLETE, expanded section markdown.`;

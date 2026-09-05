@@ -72,6 +72,39 @@ export default function WorkspacePage() {
   const [typingBuffer, setTypingBuffer] = useState<string>("");
   const typingBufferRef = useRef<string>("");
   const [displayedText, setDisplayedText] = useState<string>("");
+  const [downloadFormat, setDownloadFormat] = useState<"docx" | "pdf">("docx");
+
+  const getSyncedSections = () => {
+    if (!isStreaming) return finalSections && finalSections.length > 0 ? finalSections : liveSections;
+    if (!displayedText.trim()) return outline?.sections || outline?.chapters || [];
+
+    const parts = displayedText.split("\n\n### ");
+    const synced: any[] = [];
+    
+    // First part is usually empty or pre-section text if it didn't start with ###
+    if (parts.length > 0 && parts[0].trim() && !displayedText.startsWith("\n\n### ")) {
+      // Just ignore anything before the first section
+    }
+
+    parts.forEach((part, index) => {
+      if (!part.trim()) return;
+      // If this is the very first chunk and it didn't start with "###", it's ignored above.
+      // Now part looks like "1. Introduction\nThis is the content..."
+      const breakIdx = part.indexOf("\n");
+      if (breakIdx === -1) {
+        synced.push({ title: part.trim(), content: "" });
+      } else {
+        const title = part.substring(0, breakIdx).trim();
+        const content = part.substring(breakIdx + 1);
+        synced.push({ title, content });
+      }
+    });
+
+    // If we didn't parse anything (e.g. still typing), fallback to empty
+    if (synced.length === 0) return [];
+    
+    return synced;
+  };
 
   useEffect(() => {
     if (outline && (outline.sections || outline.chapters)) {
@@ -204,33 +237,8 @@ export default function WorkspacePage() {
         }
 
         setIsStreaming(false);
-        setIsAssembling(true);
-        addLog("Stream complete. Preparing for final assembly...");
-
-        // Assemble phase
-        const resAssemble = await fetch("/api/assemble", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            format,
-            title: outline.title || prompt,
-            subtitle: outline.subtitle || "",
-            docType: outline.docType || docType,
-            sections: localFinalSections,
-            selectedFont: font,
-            accentColor: color
-          }),
-        });
-
-        if (!resAssemble.ok) throw new Error("Assembly failed");
-
-        const blob = await resAssemble.blob();
-        const url = URL.createObjectURL(blob);
-        
-          setDownloadUrl(url);
-          setDownloadFilename(`${(outline.title || prompt).replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${format}`);
-          setIsAssembling(false);
-          addLog("Assembly complete. Ready for download.");
+        setIsAssembling(false);
+        addLog("Stream complete. Ready for manual download.");
       } catch (err: any) {
         setError(err.message || "Generation error.");
         setIsStreaming(false);
@@ -240,6 +248,45 @@ export default function WorkspacePage() {
 
     runStreamAndAssemble();
   }, [prompt, format, docType, outline, researchBundle, setFinalSections, router, isInitialized, font, totalPages, color, reportCategory, customChapterCount, additionalInstructions, customGeminiKey]);
+
+  const handleDownload = async () => {
+    try {
+      setIsAssembling(true);
+      const currentSections = finalSections && finalSections.length > 0 ? finalSections : liveSections;
+      const resAssemble = await fetch("/api/assemble", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          format: downloadFormat,
+          title: outline.title || prompt,
+          subtitle: outline.subtitle || "",
+          docType: outline.docType || docType,
+          sections: currentSections,
+          selectedFont: font,
+          accentColor: color,
+          academicMeta: { reportCategory }
+        }),
+      });
+
+      if (!resAssemble.ok) throw new Error(`Assembly failed for ${downloadFormat}`);
+
+      const blob = await resAssemble.blob();
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(outline.title || prompt).replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${downloadFormat}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setIsAssembling(false);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Download error.");
+      setIsAssembling(false);
+    }
+  };
 
   return (
     <div className={styles.container} style={{ overflow: "hidden", display: "flex", flexDirection: "column", height: "100vh" }}>
@@ -303,13 +350,47 @@ export default function WorkspacePage() {
             </h2>
             {!isStreaming && isAssembling && (
               <div style={{ margin: 0, padding: '8px 16px', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
-                <Loader2 size={16} className="animate-spin" /> Packaging {format.toUpperCase()}...
+                <Loader2 size={16} className="animate-spin" /> Packaging {downloadFormat.toUpperCase()}...
               </div>
             )}
-            {!isStreaming && !isAssembling && downloadUrl && (
-              <a href={downloadUrl} download={downloadFilename} className={styles.submitBtn} style={{ margin: 0, padding: '8px 16px', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-                <FileDown size={16} /> Download Document
-              </a>
+            {!isStreaming && !isAssembling && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <select 
+                  value={downloadFormat} 
+                  onChange={(e) => setDownloadFormat(e.target.value as "docx" | "pdf")}
+                  style={{
+                    backgroundColor: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="pdf">PDF Document</option>
+                  <option value="docx">Word Document</option>
+                </select>
+                <button 
+                  onClick={handleDownload} 
+                  style={{ 
+                    margin: 0, 
+                    padding: '8px 16px', 
+                    fontSize: '0.9rem', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    border: 'none', 
+                    cursor: 'pointer',
+                    backgroundColor: 'var(--brand-accent)',
+                    color: 'white',
+                    borderRadius: '8px'
+                  }}
+                >
+                  <FileDown size={16} /> Download
+                </button>
+              </div>
             )}
           </div>
           
@@ -334,7 +415,7 @@ export default function WorkspacePage() {
             {!error && (
               <>
                 <div style={{ flex: 1, width: '100%', minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                  <LivePreview sections={finalSections && finalSections.length > 0 ? finalSections : liveSections} />
+                  <LivePreview sections={getSyncedSections()} />
                 </div>
               </>
             )}
