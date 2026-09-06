@@ -75,8 +75,9 @@ export default function WorkspacePage() {
   const [downloadFormat, setDownloadFormat] = useState<"docx" | "pdf">("docx");
 
   const getSyncedSections = () => {
-    if (!isStreaming) return finalSections && finalSections.length > 0 ? finalSections : liveSections;
-    if (!displayedText.trim()) return outline?.sections || outline?.chapters || [];
+    const isTyping = displayedText.length < typingBufferRef.current.length;
+    if (!isStreaming && !isTyping) return finalSections && finalSections.length > 0 ? finalSections : liveSections;
+    if (!displayedText.trim()) return [];
 
     const parts = displayedText.split("\n\n### ");
     const synced: any[] = [];

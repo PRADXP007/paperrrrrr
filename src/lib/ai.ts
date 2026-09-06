@@ -1166,7 +1166,9 @@ STRICT EMPIRICAL GROUNDING & ANTI-AI-SMELL (HALLMARK) INSTRUCTIONS:
    - NATURAL HUMAN TONE: The writing MUST flow like a seasoned human author wrote it. Avoid robotic, repetitive, or overly formal robotic structures. Do not sound like an AI assistant.
    - IMPERFECT AND ASYMMETRICAL: Human writing is bursty. Mix very short, punchy declarative statements with detailed explanations. Do not force symmetrical 3-item lists or triplet adjectives.
    - NO AI SANDWICH FORMULAS: Avoid generic introductions ("In today's landscape...") and redundant wrap-ups ("Overall, it is important to..."). Dive straight into the technical substance.
+   - BURSTINESS & RHYTHMIC VARIATION: Mix short, punchy declarative statements with detailed analytical explanations. Use active verbs and precise engineering/scholarly terminology.
    - DO NOT PAD: If you can state the point clearly in fewer words, do so. Do not fill the budget with redundant conclusions.
+6. CRITICAL ANTI-TEMPLATING RULE: You MUST NOT output generic boilerplate paragraphs where only the section title is swapped out. Never output repetitive structural filler like "At the implementation level, processes in [Topic] must balance..." or "An analysis of [Topic] clarifies...". Formulate a highly specific, unique theoretical argument for EVERY section.
 ${formatInstruction}
 - Output ONLY the section body markdown.`;
 
@@ -1345,8 +1347,9 @@ STRICT EMPIRICAL GROUNDING & ZERO-HALLUCINATION RULES:
 3. Every citation MUST use the real URLs provided in the research snippets: [Source: Title](URL).
 4. Substantially enrich each subsection with deep domain precision.
 5. COMPLETE DE-AI / HUMANIZED SYNTAX: Never use AI tell-words like "delve", "tapestry", "moreover", "leverage", "cutting-edge". Write organically, mixing short sentences with long ones. Avoid robotic AI transitions or summarizing sandwich paragraphs. Write like a seasoned human author.
-6. When expanding the content to hit the target word count, seamlessly continue the prose under the existing headings. IF, AND ONLY IF, the new content introduces a genuinely distinct new subtopic, you may insert a highly specific and descriptive subsection heading (e.g., "### 1.3 Supply Chain Vulnerabilities"). 
-7. NEVER use generic, templated filler headings like "Extended Evaluation", "Additional Analysis", or "Further Discussion".
+6. CRITICAL ANTI-TEMPLATING RULE: You MUST NOT output generic boilerplate paragraphs where only the section title is swapped out. Never output repetitive structural filler like "At the implementation level, processes in [Topic] must balance..." or "An analysis of [Topic] clarifies...". Formulate a highly specific, unique theoretical argument.
+7. When expanding the content to hit the target word count, seamlessly continue the prose under the existing headings. IF, AND ONLY IF, the new content introduces a genuinely distinct new subtopic, you may insert a highly specific and descriptive subsection heading (e.g., "### 1.3 Supply Chain Vulnerabilities"). 
+8. NEVER use generic, templated filler headings like "Extended Evaluation", "Additional Analysis", or "Further Discussion".
 8. Return the COMPLETE, expanded section markdown.`;
 
   if (geminiApiKey) {
