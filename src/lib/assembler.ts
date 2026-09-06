@@ -22,7 +22,8 @@ import {
 } from "docx";
 import pptxgen from "pptxgenjs";
 import PDFDocument from "pdfkit";
-import { detectAndCreateDiagramsForSection } from "./diagrams";
+import { detectAndCreateDiagramsForSection, renderMermaidToPngBuffer } from "./diagrams";
+import { tavily } from "@tavily/core";
 
 export interface AssembleSubsection {
   id?: string;
@@ -185,6 +186,68 @@ function parseMarkdownTableToDocx(blockText: string, font: string = "Times New R
   });
 }
 
+export async function preprocessVisualElements(rawText: string, sectionTitle: string): Promise<string> {
+  let processedText = rawText;
+
+  // 1. Process Mermaid blocks
+  const mermaidRegex = /```mermaid\s*([\s\S]*?)```/g;
+  const mermaidMatches = [...processedText.matchAll(mermaidRegex)];
+  
+  for (const match of mermaidMatches) {
+    const fullBlock = match[0];
+    const syntax = match[1].trim();
+    try {
+      const buffer = await renderMermaidToPngBuffer(syntax, [], sectionTitle);
+      if (buffer && buffer.length > 0) {
+        const base64 = buffer.toString("base64");
+        processedText = processedText.replace(fullBlock, `\n\n[INJECTED_IMAGE_BASE64:${base64}]\n\n`);
+      }
+    } catch (e) {
+      console.warn("Mermaid rendering failed:", e);
+    }
+  }
+
+  // 2. Process Image Search blocks
+  const imageSearchRegex = /\[IMAGE_SEARCH:\s*["']?([^"']+)["']?\s*\]/g;
+  const imageMatches = [...processedText.matchAll(imageSearchRegex)];
+  
+  if (imageMatches.length > 0) {
+    let tavilyClient: any = null;
+    if (process.env.TAVILY_API_KEY) {
+      tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY });
+    }
+    
+    for (const match of imageMatches) {
+      const fullBlock = match[0];
+      const query = match[1].trim();
+      
+      try {
+        if (tavilyClient) {
+          const searchRes = await tavilyClient.search(query, { searchDepth: "basic", includeImages: true });
+          if (searchRes.images && searchRes.images.length > 0) {
+            const imgUrl = searchRes.images[0];
+            const imgRes = await fetch(imgUrl);
+            if (imgRes.ok) {
+              const arrayBuffer = await imgRes.arrayBuffer();
+              const buffer = Buffer.from(arrayBuffer);
+              const base64 = buffer.toString("base64");
+              processedText = processedText.replace(fullBlock, `\n\n[INJECTED_IMAGE_BASE64:${base64}]\n\n`);
+              continue;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Image search failed:", e);
+      }
+      
+      // If we failed, just remove the tag
+      processedText = processedText.replace(fullBlock, "");
+    }
+  }
+
+  return processedText;
+}
+
 function parseParagraphsToDocx(
   rawText: string,
   chapterIndex?: number,
@@ -198,6 +261,31 @@ function parseParagraphsToDocx(
     if (isMarkdownTable(block)) {
       elements.push(parseMarkdownTableToDocx(block, font));
       continue;
+    }
+
+    if (block.startsWith("[INJECTED_IMAGE_BASE64:")) {
+      const match = block.match(/\[INJECTED_IMAGE_BASE64:([^\]]+)\]/);
+      if (match && match[1]) {
+        try {
+          const buffer = Buffer.from(match[1], "base64");
+          elements.push(
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  type: "png",
+                  data: buffer,
+                  transformation: { width: 500, height: 300 } // generic size, aspect ratio might be skewed but works as default
+                })
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 200, after: 200 }
+            })
+          );
+        } catch (e) {
+          console.warn("Failed to inject base64 image", e);
+        }
+        continue;
+      }
     }
 
     // Handle Sub-subsections (#### 1.1.1)
@@ -363,6 +451,31 @@ function parseIEEEParagraphsToDocx(
         })
       );
       continue;
+    }
+
+    if (block.startsWith("[INJECTED_IMAGE_BASE64:")) {
+      const match = block.match(/\[INJECTED_IMAGE_BASE64:([^\]]+)\]/);
+      if (match && match[1]) {
+        try {
+          const buffer = Buffer.from(match[1], "base64");
+          elements.push(
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  type: "png",
+                  data: buffer,
+                  transformation: { width: 350, height: 210 } // fits in IEEE column better
+                })
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 200, after: 200 }
+            })
+          );
+        } catch (e) {
+          console.warn("Failed to inject base64 image in IEEE", e);
+        }
+        continue;
+      }
     }
 
     // Handle Sub-subheadings (e.g. #### ) -> 1) Heading:
@@ -687,7 +800,8 @@ export async function assembleIEEEWordDocument(input: AssembleDocumentInput): Pr
     );
 
     // Section Content
-    const secBody = sec.content || sec.brief || "";
+    let secBody = sec.content || sec.brief || "";
+    secBody = await preprocessVisualElements(secBody, sec.title);
     const parsedElements = parseIEEEParagraphsToDocx(secBody, selectedFont, headingColor);
     bodyChildren.push(...parsedElements);
 
@@ -1538,8 +1652,9 @@ export async function assembleWordDocument(
     }
 
     // Check if section has full generated content or fallback to subsection briefs
-    const rawContent = sec.content || "";
+    let rawContent = sec.content || "";
     if (rawContent && rawContent.trim().length > 0) {
+      rawContent = await preprocessVisualElements(rawContent, sec.title);
       const contentBlocks = rawContent.split("\n\n").map(b => b.trim()).filter(Boolean);
 
       for (const block of contentBlocks) {
@@ -1558,7 +1673,7 @@ export async function assembleWordDocument(
         bodyChildren.push(...blockParagraphs);
       }
     } else if (sec.subsections && sec.subsections.length > 0) {
-      sec.subsections.forEach((sub, subIdx) => {
+      for (const [subIdx, sub] of sec.subsections.entries()) {
         const subNumber = `${chapterNum}.${subIdx + 1}`;
         const cleanSubTitle = sub.title.replace(/^\d+\.\d+\s*/, "").trim();
 
@@ -1580,10 +1695,11 @@ export async function assembleWordDocument(
           })
         );
 
-        const subRaw = sub.content || sub.brief || "";
+        let subRaw = sub.content || sub.brief || "";
+        subRaw = await preprocessVisualElements(subRaw, sub.title);
         const subParagraphs = parseParagraphsToDocx(subRaw, chapterNum, selectedFont, headingColor);
         bodyChildren.push(...subParagraphs);
-      });
+      }
     }
 
     // Detect and embed visual diagrams (flowcharts/charts) for this chapter
@@ -2444,7 +2560,7 @@ export async function assemblePdfDocument(input: AssembleDocumentInput): Promise
     doc.moveDown(1.5);
 
     // Chapters & Subsections
-    input.sections.forEach((sec, idx) => {
+    for (const [idx, sec] of input.sections.entries()) {
       if (doc.y > 640) {
         doc.addPage();
       }
@@ -2464,7 +2580,9 @@ export async function assemblePdfDocument(input: AssembleDocumentInput): Promise
         doc.moveDown(0.6);
       }
 
-      const paragraphs = (sec.content || sec.brief || "").split("\n\n");
+      let rawContent = sec.content || sec.brief || "";
+      rawContent = await preprocessVisualElements(rawContent, sec.title);
+      const paragraphs = rawContent.split("\n\n");
       paragraphs.forEach((pText) => {
         if (!pText.trim()) return;
 
@@ -2533,6 +2651,25 @@ export async function assemblePdfDocument(input: AssembleDocumentInput): Promise
           return;
         }
 
+        if (pText.startsWith("[INJECTED_IMAGE_BASE64:")) {
+          const match = pText.match(/\[INJECTED_IMAGE_BASE64:([^\]]+)\]/);
+          if (match && match[1]) {
+            try {
+              const buffer = Buffer.from(match[1], "base64");
+              if (doc.y > 550) doc.addPage();
+              doc.image(buffer, {
+                fit: [451, 300],
+                align: 'center',
+                valign: 'center'
+              });
+              doc.moveDown(0.5);
+            } catch (e) {
+              console.warn("Failed to inject image into PDF:", e);
+            }
+            return;
+          }
+        }
+
         const formattedText = pText.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g, "$1 ($2)");
 
         if (doc.y > 690) {
@@ -2547,7 +2684,7 @@ export async function assemblePdfDocument(input: AssembleDocumentInput): Promise
       });
 
       doc.moveDown(1.0);
-    });
+    }
 
     doc.end();
   });

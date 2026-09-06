@@ -1169,6 +1169,9 @@ STRICT EMPIRICAL GROUNDING & ANTI-AI-SMELL (HALLMARK) INSTRUCTIONS:
    - BURSTINESS & RHYTHMIC VARIATION: Mix short, punchy declarative statements with detailed analytical explanations. Use active verbs and precise engineering/scholarly terminology.
    - DO NOT PAD: If you can state the point clearly in fewer words, do so. Do not fill the budget with redundant conclusions.
 6. CRITICAL ANTI-TEMPLATING RULE: You MUST NOT output generic boilerplate paragraphs where only the section title is swapped out. Never output repetitive structural filler like "At the implementation level, processes in [Topic] must balance..." or "An analysis of [Topic] clarifies...". Formulate a highly specific, unique theoretical argument for EVERY section.
+7. VISUAL & DIAGRAMMATIC ELEMENTS:
+   - When explaining architectures, systems, step-by-step processes, or complex relationships, output a Mermaid.js flowchart or block diagram using standard \`\`\`mermaid ... \`\`\` markdown syntax (e.g., \`\`\`mermaid\ngraph TD;\nA-->B;\n\`\`\`).
+   - For highly contextual, real-world examples, you may insert an image search placeholder in the format \`[IMAGE_SEARCH: "highly descriptive search query for photograph"]\`. Use this sparingly and only when a real photograph/illustration would genuinely elevate the section.
 ${formatInstruction}
 - Output ONLY the section body markdown.`;
 
@@ -1348,8 +1351,11 @@ STRICT EMPIRICAL GROUNDING & ZERO-HALLUCINATION RULES:
 4. Substantially enrich each subsection with deep domain precision.
 5. COMPLETE DE-AI / HUMANIZED SYNTAX: Never use AI tell-words like "delve", "tapestry", "moreover", "leverage", "cutting-edge". Write organically, mixing short sentences with long ones. Avoid robotic AI transitions or summarizing sandwich paragraphs. Write like a seasoned human author.
 6. CRITICAL ANTI-TEMPLATING RULE: You MUST NOT output generic boilerplate paragraphs where only the section title is swapped out. Never output repetitive structural filler like "At the implementation level, processes in [Topic] must balance..." or "An analysis of [Topic] clarifies...". Formulate a highly specific, unique theoretical argument.
-7. When expanding the content to hit the target word count, seamlessly continue the prose under the existing headings. IF, AND ONLY IF, the new content introduces a genuinely distinct new subtopic, you may insert a highly specific and descriptive subsection heading (e.g., "### 1.3 Supply Chain Vulnerabilities"). 
-8. NEVER use generic, templated filler headings like "Extended Evaluation", "Additional Analysis", or "Further Discussion".
+7. VISUAL & DIAGRAMMATIC ELEMENTS:
+   - When explaining architectures, systems, step-by-step processes, or complex relationships, output a Mermaid.js flowchart or block diagram using standard \`\`\`mermaid ... \`\`\` markdown syntax.
+   - For highly contextual, real-world examples, you may insert an image search placeholder in the format \`[IMAGE_SEARCH: "highly descriptive search query"]\`. Use this sparingly.
+8. When expanding the content to hit the target word count, seamlessly continue the prose under the existing headings. IF, AND ONLY IF, the new content introduces a genuinely distinct new subtopic, you may insert a highly specific and descriptive subsection heading (e.g., "### 1.3 Supply Chain Vulnerabilities"). 
+9. NEVER use generic, templated filler headings like "Extended Evaluation", "Additional Analysis", or "Further Discussion".
 8. Return the COMPLETE, expanded section markdown.`;
 
   if (geminiApiKey) {
