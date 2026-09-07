@@ -1,11 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  assembleWordDocument,
-  assemblePowerPoint,
-  assemblePdfDocument,
-  AssembleDocumentInput
-} from "@/lib/assembler";
+import { NextRequest } from "next/server";
+import { generateDocument } from "@/lib/assemblers";
+import { AssembleDocumentInput } from "@/types/document";
 import { connectToDatabase } from "@/lib/mongodb";
+import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
 import Document from "@/models/Document";
 
 export const dynamic = "force-dynamic";
@@ -13,57 +10,53 @@ export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
-    const body: AssembleDocumentInput & { docId?: string } = await req.json();
-    const { title, subtitle, format = "docx", sections, chapters, academicMeta, docId } = body;
+    const ip = getClientIp(req as any);
+    const rateLimit = checkRateLimit(`assemble:${ip}`, { limit: 15, windowMs: 60 * 1000 });
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({ error: `Rate limit exceeded. Please wait ${rateLimit.resetInSeconds}s before generating again.` }), {
+        status: 429,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
 
-    const safeTitle = (academicMeta?.projectTitleOverride || title || "Document").replace(/[^a-zA-Z0-9_\-]/g, "_");
-    const safeSubtitle = subtitle || "Comprehensive Academic & Project Report";
-    const safeSections = Array.isArray(chapters || sections) && (chapters || sections)!.length > 0
-      ? (chapters || sections)!
-      : [{ title: "1. Introduction & Overview", brief: "Document summary", content: "Prepared with Paperrrrrr Document Studio." }];
-
-    let fileBuffer: Buffer;
-    let contentType: string;
-    let fileExtension: string;
-
-    const selectedFont = body.selectedFont || academicMeta?.selectedFont || "Times New Roman";
-    const accentColor = body.accentColor || academicMeta?.accentColor || "000000";
-
+    const body = await req.json();
+    const docId = body.docId;
+    
+    // Backwards compatibility layer to construct valid DocumentSettings if UI still sends old flat structure
+    const title = body.title || body.settings?.title || "Document";
+    const subtitle = body.subtitle || body.settings?.subtitle || "Comprehensive Academic & Project Report";
+    const format = body.format || body.settings?.format || "docx";
+    const reportCategory = body.reportCategory || body.academicMeta?.reportCategory || body.settings?.reportCategory;
+    const isIEEEPaper = body.isIEEEPaper || body.docType === "Research Paper" || body.docType === "IEEE Research Paper" || body.settings?.isIEEEPaper;
+    const selectedFont = body.selectedFont || body.academicMeta?.selectedFont || body.settings?.selectedFont || "Times New Roman";
+    const accentColor = body.accentColor || body.academicMeta?.accentColor || body.settings?.accentColor || "000000";
+    
+    const sections = body.sections || body.chapters || [];
+    
     const assembleInput: AssembleDocumentInput = {
-      title: title || "Document",
-      subtitle: safeSubtitle,
-      format,
-      docType: body.docType,
-      isIEEEPaper: body.isIEEEPaper || body.docType === "Research Paper" || body.docType === "IEEE Research Paper",
-      sections: safeSections,
-      chapters: safeSections,
-      selectedFont,
-      accentColor,
-      academicMeta: {
-        ...academicMeta,
+      settings: {
+        title,
+        subtitle,
+        format,
+        docType: body.docType || body.settings?.docType,
+        reportCategory,
+        isIEEEPaper,
         selectedFont,
-        accentColor
-      }
+        accentColor,
+        ...body.academicMeta,
+        ...body.settings
+      },
+      sections: Array.isArray(sections) && sections.length > 0 
+        ? sections 
+        : [{ title: "1. Introduction & Overview", brief: "Document summary", content: "Prepared with Paperrrrrr Document Studio." }]
     };
 
-    switch (format) {
-      case "pptx":
-        fileBuffer = await assemblePowerPoint(assembleInput);
-        contentType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-        fileExtension = "pptx";
-        break;
-      case "pdf":
-        fileBuffer = await assemblePdfDocument(assembleInput);
-        contentType = "application/pdf";
-        fileExtension = "pdf";
-        break;
-      case "docx":
-      default:
-        fileBuffer = await assembleWordDocument(assembleInput);
-        contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-        fileExtension = "docx";
-        break;
-    }
+    const fileBuffer = await generateDocument(assembleInput);
+    
+    let contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    let fileExtension = format;
+    if (format === "pptx") contentType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    if (format === "pdf") contentType = "application/pdf";
 
     if (docId) {
       try {
@@ -76,7 +69,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const filename = `Paperrrrrr_${safeTitle}.${fileExtension}`;
+    const safeFilenameTitle = (assembleInput.settings.projectTitleOverride || title).replace(/[^a-zA-Z0-9_\-]/g, "_");
+    const filename = `Paperrrrrr_${safeFilenameTitle}.${fileExtension}`;
 
     return new Response(new Uint8Array(fileBuffer), {
       status: 200,

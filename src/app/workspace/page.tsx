@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { useDocumentContext } from "@/lib/DocumentContext";
 import { Logo } from "@/components/ui/Logo";
 import styles from "../page.module.css";
-import { FileText, Download, CheckCircle2, Loader2, FileDown } from "lucide-react";
+import { FileText, Download, CheckCircle2, Loader2, FileDown } from 'lucide-react';
+import { runMechanicalLint, autoFixMechanicalIssues, LintReport } from "@/lib/linter";
+import { runHallmarkAudit, HallmarkAuditResult } from "@/lib/hallmark";
+import { ShieldAlert, Sparkles, Wrench, X } from "lucide-react";
 
 function LivePreview({ sections }: { sections: any[] }) {
   if (!sections || sections.length === 0) return null;
@@ -73,6 +76,11 @@ export default function WorkspacePage() {
   const typingBufferRef = useRef<string>("");
   const [displayedText, setDisplayedText] = useState<string>("");
   const [downloadFormat, setDownloadFormat] = useState<"docx" | "pdf">("docx");
+  const [lintReport, setLintReport] = useState<LintReport | null>(null);
+  const [hallmarkReport, setHallmarkReport] = useState<HallmarkAuditResult | null>(null);
+  const [showLintModal, setShowLintModal] = useState(false);
+  const [showHallmarkModal, setShowHallmarkModal] = useState(false);
+
 
   const getSyncedSections = () => {
     const isTyping = displayedText.length < typingBufferRef.current.length;
@@ -250,6 +258,34 @@ export default function WorkspacePage() {
     runStreamAndAssemble();
   }, [prompt, format, docType, outline, researchBundle, setFinalSections, router, isInitialized, font, totalPages, color, reportCategory, customChapterCount, additionalInstructions, customGeminiKey]);
 
+  
+  const handleRunLint = () => {
+    const currentSections = finalSections && finalSections.length > 0 ? finalSections : liveSections;
+    const report = runMechanicalLint(currentSections);
+    setLintReport(report);
+    setShowLintModal(true);
+  };
+
+  const handleAutoFixLint = () => {
+    const currentSections = finalSections && finalSections.length > 0 ? finalSections : liveSections;
+    const { fixedSections, fixesAppliedCount } = autoFixMechanicalIssues(currentSections);
+    if (fixesAppliedCount > 0) {
+      if (finalSections && finalSections.length > 0) {
+        setFinalSections(fixedSections);
+      } else {
+        setLiveSections(fixedSections);
+      }
+      setLintReport(runMechanicalLint(fixedSections));
+    }
+  };
+
+  const handleRunHallmark = () => {
+    const currentSections = finalSections && finalSections.length > 0 ? finalSections : liveSections;
+    const report = runHallmarkAudit(currentSections);
+    setHallmarkReport(report);
+    setShowHallmarkModal(true);
+  };
+
   const handleDownload = async () => {
     try {
       setIsAssembling(true);
@@ -356,6 +392,16 @@ export default function WorkspacePage() {
             )}
             {!isStreaming && !isAssembling && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                
+                <button onClick={handleRunLint} style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <Wrench size={16} /> Lint 
+                  {lintReport && !lintReport.isClean && <span style={{ background: '#f87171', color: 'white', borderRadius: '100%', padding: '0 4px', fontSize: '10px' }}>{lintReport.issueCount}</span>}
+                </button>
+                <button onClick={handleRunHallmark} style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <ShieldAlert size={16} /> Audit
+                  {hallmarkReport && hallmarkReport.status === "flagged" && <span style={{ background: '#fbbf24', color: 'black', borderRadius: '100%', padding: '0 4px', fontSize: '10px' }}>!</span>}
+                </button>
+
                 <select 
                   value={downloadFormat} 
                   onChange={(e) => setDownloadFormat(e.target.value as "docx" | "pdf")}
@@ -425,6 +471,87 @@ export default function WorkspacePage() {
         </div>
 
       </main>
+    
+      {/* Linter Modal */}
+      {showLintModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-primary)', padding: '24px', borderRadius: '12px', width: '90%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Wrench /> Mechanical Lint Report</h3>
+              <button onClick={() => setShowLintModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X /></button>
+            </div>
+            
+            {lintReport && lintReport.isClean ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--brand-accent)' }}>
+                <CheckCircle2 size={48} style={{ margin: '0 auto 16px' }} />
+                <p>Document is perfectly clean! No formatting or mechanical issues found.</p>
+              </div>
+            ) : (
+              <>
+                <p>{lintReport?.summary}</p>
+                <button 
+                  onClick={handleAutoFixLint}
+                  style={{ background: 'var(--brand-accent)', color: 'white', padding: '10px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}
+                >
+                  <Sparkles size={16} /> 1-Click Auto Fix All
+                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {lintReport?.issues.map((issue, idx) => (
+                    <div key={idx} style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', borderLeft: `4px solid ${issue.severity === 'error' ? '#f87171' : issue.severity === 'warning' ? '#fbbf24' : '#60a5fa'}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <strong style={{ fontSize: '0.9rem' }}>{issue.type}</strong>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{issue.sectionTitle}</span>
+                      </div>
+                      <p style={{ fontSize: '0.9rem', margin: '0 0 8px', color: 'var(--text-secondary)' }}>{issue.description}</p>
+                      <pre style={{ margin: 0, background: 'var(--bg-primary)', padding: '8px', borderRadius: '4px', fontSize: '0.8rem', overflowX: 'auto' }}>{issue.contextSnippet}</pre>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Hallmark Modal */}
+      {showHallmarkModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-primary)', padding: '24px', borderRadius: '12px', width: '90%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldAlert /> Hallmark AI Audit</h3>
+              <button onClick={() => setShowHallmarkModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X /></button>
+            </div>
+            
+            {hallmarkReport && hallmarkReport.status !== "flagged" ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#10b981' }}>
+                <CheckCircle2 size={48} style={{ margin: '0 auto 16px' }} />
+                <p>Document passes the Hallmark audit! The prose reads naturally without formulaic AI phrasing.</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Score: {hallmarkReport.score}/100</p>
+              </div>
+            ) : (
+              <>
+                <p style={{ color: '#f87171' }}>Warning: The document contains formulaic AI phrasing that may be detected by academic scanners.</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
+                  <span style={{ fontWeight: 'bold' }}>Overall Naturalness Score:</span>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: (hallmarkReport?.score || 0) > 80 ? '#10b981' : '#fbbf24' }}>{hallmarkReport?.score}/100</span>
+                </div>
+                
+                <h4 style={{ marginBottom: '12px' }}>Identified AI Hallmarks:</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {hallmarkReport?.flags.map((flag, idx) => (
+                    <div key={idx} style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', borderLeft: `4px solid ${flag.severity === 'high' ? '#f87171' : flag.severity === 'medium' ? '#fbbf24' : '#60a5fa'}` }}>
+                      <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '4px' }}>"{flag.matchedText}"</strong>
+                      <p style={{ fontSize: '0.85rem', margin: '0 0 8px', color: 'var(--text-secondary)' }}>{flag.explanation}</p>
+                      <pre style={{ margin: 0, background: 'var(--bg-primary)', padding: '8px', borderRadius: '4px', fontSize: '0.8rem', whiteSpace: 'pre-wrap' }}>{flag.contextSnippet}</pre>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
