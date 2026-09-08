@@ -1,3 +1,4 @@
+import { DocumentSettings } from "@/types/document";
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import { ResearchBundle, ResearchSnippet } from "./tavily";
@@ -39,30 +40,9 @@ export interface GeneratedOutline {
   sections: OutlineSection[];
 }
 
-export interface GenerateOutlineOptions {
-  format?: string;
-  tone?: string;
-  audience?: string;
-  reportCategory?: string;
-  targetLength?: string;
-  docType?: string;
-  isIEEEPaper?: boolean;
-  customGeminiKey?: string;
-  customOpenAIKey?: string;
-  geminiModel?: string;
-  referenceNotes?: string;
-  isFormalAcademicReport?: boolean;
-  institutionName?: string;
-  department?: string;
-  degree?: string;
-  submittedBy?: string;
-  guideName?: string;
-  pageCount?: number;
-  customChapterCount?: number;
-  font?: string;
-  accentColor?: string;
-  additionalRequirements?: string;
-}
+export type GenerateOutlineOptions = Partial<DocumentSettings>;
+
+export type GenerateSectionOptions = Partial<DocumentSettings>;
 
 export interface DocumentBudget {
   pageCount: number;
@@ -284,7 +264,7 @@ export function buildDynamicOutline(
         relevantSourceIndices: srcCount >= 4 ? [1, 2, 3, 4] : [1, 2]
       }
     ];
-  } else if (docType === "Research Paper" || docType === "IEEE Research Paper" || cleanTitle.toLowerCase().includes("ieee") || (cleanTitle.toLowerCase().includes("research paper") && options.format !== "pptx")) {
+  } else if (docType === "Research Paper" || docType === "IEEE Research Paper" || cleanTitle.toLowerCase().includes("ieee") || (cleanTitle.toLowerCase().includes("research paper") && options.format !== ("pptx" as any))) {
     subtitle = `IEEE Conference & Journal Standard Manuscript`;
     sections = [
       {
@@ -1187,9 +1167,9 @@ ${formatInstruction}
           contents: prompt
         });
       } catch (modelErr) {
-        console.warn("Requested model failed, falling back to gemini-2.5-pro:", modelErr);
+        console.warn("Requested model failed, falling back to gemini-3.1-pro-preview:", modelErr);
         response = await ai.models.generateContent({
-          model: "gemini-2.5-pro",
+          model: "gemini-3.1-pro-preview",
           contents: prompt
         });
       }
@@ -1369,9 +1349,9 @@ STRICT EMPIRICAL GROUNDING & ZERO-HALLUCINATION RULES:
           contents: expansionPrompt
         });
       } catch (modelErr) {
-        console.warn("Requested outline model failed, falling back to gemini-2.5-pro:", modelErr);
+        console.warn("Requested outline model failed, falling back to gemini-3.1-pro-preview:", modelErr);
         response = await ai.models.generateContent({
-          model: "gemini-2.5-pro",
+          model: "gemini-3.1-pro-preview",
           contents: expansionPrompt
         });
       }
@@ -1504,9 +1484,9 @@ Instructions:
           contents: prompt
         });
       } catch (modelErr) {
-        console.warn(`Gemini model "${requestedModel}" failed for regeneration, falling back to gemini-2.5-pro:`, modelErr);
+        console.warn(`Gemini model "${requestedModel}" failed for regeneration, falling back to gemini-3.1-pro-preview:`, modelErr);
         response = await ai.models.generateContent({
-          model: "gemini-2.5-pro",
+          model: "gemini-3.1-pro-preview",
           contents: prompt
         });
       }

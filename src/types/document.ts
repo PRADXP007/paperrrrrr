@@ -17,7 +17,6 @@ export interface DocumentSettings {
   selectedFont: string;
   accentColor: string;
 
-  // Front-Matter Meta
   institutionName?: string;
   department?: string;
   degree?: string;
@@ -25,6 +24,14 @@ export interface DocumentSettings {
   guideName?: string;
   academicYear?: string;
   projectTitleOverride?: string;
+
+  // AI & Generation Specific
+  targetLength?: string;
+  customGeminiKey?: string;
+  geminiModel?: string;
+  referenceNotes?: string;
+  additionalRequirements?: string;
+  [key: string]: any;
 }
 
 export interface DocumentSubsection {

@@ -3,6 +3,8 @@ import { generateDocument } from "@/lib/assemblers";
 import { AssembleDocumentInput } from "@/types/document";
 import { connectToDatabase } from "@/lib/mongodb";
 import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
+import { runHallmarkAudit } from "@/lib/hallmark";
+import { autoFixMechanicalIssues } from "@/lib/linter";
 import Document from "@/models/Document";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +52,19 @@ export async function POST(req: NextRequest) {
         ? sections 
         : [{ title: "1. Introduction & Overview", brief: "Document summary", content: "Prepared with Paperrrrrr Document Studio." }]
     };
+
+    // 1. Run Mechanical Linter & Auto-fix
+    const lintResult = autoFixMechanicalIssues(assembleInput.sections as any);
+    if (lintResult.fixesAppliedCount > 0) {
+      assembleInput.sections = lintResult.fixedSections;
+      console.log(`Applied ${lintResult.fixesAppliedCount} mechanical fixes before assembly.`);
+    }
+
+    // 2. Run Hallmark Audit
+    const hallmarkReport = runHallmarkAudit(assembleInput.sections as any);
+    if (hallmarkReport.status === 'flagged') {
+      console.warn(`Hallmark flagged ${hallmarkReport.flags.length} potential AI phrases before assembly.`);
+    }
 
     const fileBuffer = await generateDocument(assembleInput);
     

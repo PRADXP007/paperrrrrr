@@ -3,9 +3,9 @@ import type { NextRequest } from "next/server";
 import { verifySessionToken } from "@/lib/auth";
 
 // Routes that require authentication
-const PROTECTED_ROUTES = ["/history", "/profile"];
+const PROTECTED_ROUTES = ["/history", "/profile", "/workspace"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // 1. Apply Security Headers
